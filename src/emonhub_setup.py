@@ -20,17 +20,15 @@ dictionary with the following keys:
 
         'hub': a dictionary containing the hub settings
         'interfacers': a dictionary containing the interfacers
-        'reporters': a dictionary containing the reporters
 
         The hub settings are:
         'loglevel': the logging level
         
-        interfacers and reporters are dictionaries with the following keys:
+        interfacers are dictionaries with the following keys:
         'Type': class name
         'init_settings': dictionary with initialization settings
         'runtimesettings': dictionary with runtime settings
-        Initialization and runtime settings depend on the interfacer and
-        reporter type.
+        Initialization and runtime settings depend on the interfacer type.
 
 The run() method is supposed to be run regularly by the instantiater, to
 perform regular communication tasks.
@@ -95,7 +93,6 @@ class EmonHubFileSetup(EmonHubSetup):
             # Check the settings file sections
             self.settings['hub']
             self.settings['interfacers']
-            self.settings['reporters']
         except IOError as e:
             raise EmonHubSetupInitError(e)
         except SyntaxError as e:
@@ -146,7 +143,6 @@ class EmonHubFileSetup(EmonHubSetup):
             try:
                 self.settings['hub']
                 self.settings['interfacers']
-                self.settings['reporters']
             except KeyError as e:
                 self._log.warning("Configuration file missing section: " + str(e))
             else:

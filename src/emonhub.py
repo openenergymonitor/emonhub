@@ -18,9 +18,20 @@ import argparse
 import pprint
 
 import emonhub_setup as ehs
-import emonhub_reporter as ehr
-import emonhub_interfacer as ehi
+import interfacers.emonhub_interfacer as ehi
 import emonhub_coder as ehc
+
+import interfacers.EmonHubSerialInterfacer
+import interfacers.EmonHubJeeInterfacer
+import interfacers.EmonHubSocketInterfacer
+import interfacers.EmonHubPacketGenInterfacer
+import interfacers.EmonHubMqttInterfacer
+
+ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
+ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
+ehi.EmonHubSocketInterfacer = interfacers.EmonHubSocketInterfacer.EmonHubSocketInterfacer
+ehi.EmonHubPacketGenInterfacer = interfacers.EmonHubPacketGenInterfacer.EmonHubPacketGenInterfacer
+ehi.EmonHubMqttInterfacer = interfacers.EmonHubMqttInterfacer.EmonHubMqttInterfacer
 
 """class EmonHub
 
@@ -57,8 +68,7 @@ class EmonHub(object):
         self._log.info("EmonHub %s" % self.__version__)
         self._log.info("Opening hub...")
         
-        # Initialize Reporters and Interfacers
-        self._reporters = {}
+        # Initialize Interfacers
         self._interfacers = {}
 
         # Update settings
@@ -83,12 +93,6 @@ class EmonHub(object):
             if self._setup.check_settings():
                 self._update_settings(self._setup.settings)
 
-            # check all reporter threads are still running
-            for R in self._reporters.itervalues():
-                if not R.isAlive():
-                    #R.start()
-                    self._log.warning(R.name + " thread is dead") #had to be restarted")
-
             # For all Interfacers
             for I in self._interfacers.itervalues():
                 # Check thread is still running
@@ -107,10 +111,6 @@ class EmonHub(object):
         for I in self._interfacers.itervalues():
             I.stop = True
             I.join()
-
-        for R in self._reporters.itervalues():
-            R.stop = True
-            R.join()
 
         self._log.info("Exit completed")
         logging.shutdown()
@@ -134,62 +134,6 @@ class EmonHub(object):
         # Create a place to hold buffer contents whilst a deletion & rebuild occurs
         self.temp_buffer = {}
         
-        # Reporters
-        for name in self._reporters.keys():
-            # Delete reporters if not listed or have no 'Type' in the settings without further checks
-            # (This also provides an ability to delete & rebuild by commenting 'Type' in conf)
-            if not name in settings['reporters'] or not 'Type' in settings['reporters'][name]:
-                pass
-            else:
-                try:
-                    # test for 'init_settings' and 'runtime_setting' sections
-                    settings['reporters'][name]['init_settings']
-                    settings['reporters'][name]['runtimesettings']
-                except Exception as e:
-                    # If reporter's settings are incomplete, continue without updating
-                    self._log.error("Unable to update '" + name + "' configuration: " + str(e))
-                    continue
-                else:
-                    # check init_settings against the file copy, if they are the same move on to the next
-                    if self._reporters[name].init_settings == settings['reporters'][name]['init_settings']:
-                        continue
-                    else:
-                        if self._reporters[name].buffer._data_buffer:
-                            self.temp_buffer[name]= self._reporters[name].buffer._data_buffer
-            # Delete reporters if setting changed or name is unlisted or Type is missing
-            self._log.info("Deleting reporter '%s'", name)
-            self._reporters[name].stop = True
-            del(self._reporters[name])
-        for name, R in settings['reporters'].iteritems():
-            # If reporter does not exist, create it
-            if name not in self._reporters:
-                try:
-                    if not 'Type' in R:
-                        continue
-                    self._log.info("Creating " + R['Type'] + " '%s' ", name)
-                    # This gets the class from the 'Type' string
-                    reporter = getattr(ehr, R['Type'])(name, **R['init_settings'])
-                    reporter.set(**R['runtimesettings'])
-                    reporter.init_settings = R['init_settings']
-                    # If a memory buffer back-up exists copy it over and remove the back-up
-                    if name in self.temp_buffer:
-                        reporter.buffer._data_buffer = self.temp_buffer[name]
-                        del self.temp_buffer[name]
-                except ehr.EmonHubReporterInitError as e:
-                    # If reporter can't be created, log error and skip to next
-                    self._log.error("Failed to create '" + name + "' reporter: " + str(e))
-                    continue
-                except Exception as e:
-                    # If reporter can't be created, log error and skip to next
-                    self._log.error("Unable to create '" + name + "' reporter: " + str(e))
-                    continue
-                else:
-                    self._reporters[name] = reporter
-            else:
-                # Otherwise just update the runtime settings if possible
-                if 'runtimesettings' in R:
-                    self._reporters[name].set(**R['runtimesettings'])
-
         # Interfacers
         for name in self._interfacers.keys():
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
@@ -213,6 +157,7 @@ class EmonHub(object):
             self._log.info("Deleting interfacer '%s' ", name)
             self._interfacers[name].stop = True
             del(self._interfacers[name])
+            
         for name, I in settings['interfacers'].iteritems():
             # If interfacer does not exist, create it
             if name not in self._interfacers:
