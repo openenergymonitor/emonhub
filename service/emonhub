@@ -23,7 +23,7 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="OpenEnergyMonitor emonHub"
 NAME=emonhub
 # Enter your installation path here
-DAEMON=/enter/your/installation/path/here/$NAME
+DAEMON=/enter/your/installation/path/here/$NAME.py
 # Specify command line arguments here
 DAEMON_ARGS="--logfile /var/log/emonhub/emonhub.log"
 #DAEMON_ARGS="--logfile /var/log/emonhub/emonhub.log --config-file /path/to/config/file"
