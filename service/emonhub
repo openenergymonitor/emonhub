@@ -18,15 +18,26 @@
 # Short-Description: Start/stop emonHub
 ### END INIT INFO
 
+NAME=emonhub
+SYSCONF_PATH=/etc/default/
+
+# If there's no configuration file, die!!
+[ ! -f $SYSCONF_PATH$NAME ] && echo "Fatal: cannot find $SYSCONF_FILE$NAME config file!" && exit 1
+
+# Pull in the config settings and echo them out for easy troubleshooting.
+. $SYSCONF_PATH$NAME
+echo "Read configuration from $SYSCONF_PATH$NAME as follows:"
+echo "- path to emonhub.py: $EMONHUB_PATH$NAME.py"
+echo "- config file: $EMONHUB_CONFIG"
+echo "- log file: $EMONHUB_LOG"
+
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="OpenEnergyMonitor emonHub"
-NAME=emonhub
 # Enter your installation path here
-DAEMON=/enter/your/installation/path/here/$NAME.py
+DAEMON=$EMONHUB_PATH$NAME.py
 # Specify command line arguments here
-DAEMON_ARGS="--logfile /var/log/emonhub/emonhub.log"
-#DAEMON_ARGS="--logfile /var/log/emonhub/emonhub.log --config-file /path/to/config/file"
+DAEMON_ARGS="--logfile $EMONHUB_LOG --config-file $EMONHUB_CONFIG"
 DAEMONUSER="pi"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
@@ -39,9 +50,6 @@ case `id -u` in
 	0) ;;
 	*) echo "This script must be run as root" >&2; exit 1 ;;
 esac
-
-# Read configuration variable file if it is present
-[ -r /etc/default/$NAME ] && . /etc/default/$NAME
 
 # Load the VERBOSE setting and other rcS variables
 . /lib/init/vars.sh
