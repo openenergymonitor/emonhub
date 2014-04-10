@@ -43,7 +43,7 @@ PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
 # Exit if the package is not installed
-[ -x "$DAEMON" ] || exit 0
+ -x "$DAEMON" ] || echo "Not starting - cannot find $DAEMON" || exit 1
 
 # Exit if not run as root
 case `id -u` in 
