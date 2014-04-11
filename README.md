@@ -3,4 +3,4 @@ emonHub
 
 This software is part of OpenEnergyMonitor project.
 
-(link to emonhub-docs repo?)
+[Visit emonHub Documentation !](https://github.com/emonhub/emonhub-docs)
