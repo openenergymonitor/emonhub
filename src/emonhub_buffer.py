@@ -8,7 +8,7 @@
 """
 
 import logging
-import MySQLdb
+#import MySQLdb
 
 """class AbstractBuffer
 
