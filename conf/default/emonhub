@@ -8,7 +8,7 @@
 # alternate SYSCONF_PATH
 
 # Specify the directory in which emonhub.py is found:
-EMONHUB_PATH=/usr/share/emonhub/src/
+EMONHUB_PATH=/usr/share/emonhub/
 
 # Specify the full config file path:
 EMONHUB_CONFIG=/etc/emonhub/emonhub.conf

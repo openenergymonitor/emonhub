@@ -1,0 +1,29 @@
+#!/bin/sh
+INST_PATH=/usr/share
+LOG_PATH=/var/log/emonhub
+CUR_DIR=`pwd`
+echo
+echo "Installing emonHub................"
+echo
+sudo mkdir -p /etc/emonhub
+sudo rm -r -f $INST_PATH/emonhub
+sudo mv $CUR_DIR/emonhub $INST_PATH
+sudo mv -b $INST_PATH/emonhub/conf/default/emonhub /etc/default
+sudo rmdir $INST_PATH/emonhub/conf/default
+sudo mv -b $INST_PATH/emonhub/conf/emonhub.conf /etc/emonhub
+sudo rmdir $INST_PATH/emonhub/conf
+sudo mv $INST_PATH/emonhub/service/emonhub /etc/init.d
+sudo rmdir $INST_PATH/emonhub/service
+sudo mv $INST_PATH/emonhub/src/* $INST_PATH/emonhub
+sudo rmdir $INST_PATH/emonhub/src
+sudo mkdir -p $LOG_PATH
+sudo chown pi:pi $LOG_PATH
+# temporary fix for log file permission, 
+touch $LOG_PATH/emonhub.log
+echo "emonHub has been installed, configure before use"
+echo "    ' sudo nano /etc/emonhub/emonhub.conf '     "
+echo
+echo "emonHub will be automatically started at boot-up"
+echo " type  ' sudo service emonhub start '  to start!"
+echo
+sudo rm -r $INST_PATH/emonhub/install
