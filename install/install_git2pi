@@ -1,29 +1,27 @@
 #!/bin/sh
-INST_PATH=/usr/share
+INST_PATH=/usr/share/emonhub
 LOG_PATH=/var/log/emonhub
-CUR_DIR=`pwd`
+TEMP_PATH=`pwd`/emonhub
 echo
 echo "Installing emonHub................"
-echo
 sudo mkdir -p /etc/emonhub
-sudo rm -r -f $INST_PATH/emonhub
-sudo mv $CUR_DIR/emonhub $INST_PATH
-sudo mv -b $INST_PATH/emonhub/conf/default/emonhub /etc/default
-sudo rmdir $INST_PATH/emonhub/conf/default
-sudo mv -b $INST_PATH/emonhub/conf/emonhub.conf /etc/emonhub
-sudo rmdir $INST_PATH/emonhub/conf
-sudo mv $INST_PATH/emonhub/service/emonhub /etc/init.d
-sudo rmdir $INST_PATH/emonhub/service
-sudo mv $INST_PATH/emonhub/src/* $INST_PATH/emonhub
-sudo rmdir $INST_PATH/emonhub/src
+sudo rm -r -f $INST_PATH
+sudo mkdir -p $INST_PATH
+sudo mv $TEMP_PATH/conf/default/emonhub /etc/default
+sudo mv -b $TEMP_PATH/conf/emonhub.conf /etc/emonhub
+sudo mv $TEMP_PATH/service/emonhub /etc/init.d
+sudo mv $TEMP_PATH/src/* $INST_PATH
 sudo mkdir -p $LOG_PATH
 sudo chown pi:pi $LOG_PATH
-# temporary fix for log file permission, 
+sudo mv $TEMP_PATH/README.md $INST_PATH
+# temporary fix for log file permission,
 touch $LOG_PATH/emonhub.log
+echo
+sudo service emonhub restart
+echo
 echo "emonHub has been installed, configure before use"
-echo "    ' sudo nano /etc/emonhub/emonhub.conf '     "
+echo "    ' sudo nano /etc/emonhub/emonhub.conf '    "
+echo "after editing configuration, restart service use"
+echo "        ' sudo service emonhub restart '        "
 echo
-echo "emonHub will be automatically started at boot-up"
-echo " type  ' sudo service emonhub start '  to start!"
-echo
-sudo rm -r $INST_PATH/emonhub/install
+sudo rm -r $TEMP_PATH
