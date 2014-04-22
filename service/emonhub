@@ -28,9 +28,7 @@ SYSCONF_PATH=/etc/default/
 . $SYSCONF_PATH$NAME
 
 [ ! -f $EMONHUB_CONFIG ] && echo "Fatal: cannot find $EMONHUB_CONFIG" && exit 1
-[ ! -f $EMONHUB_LOG ] && echo "Fatal: cannot find $EMONHUB_LOG" && exit 1
 [ ! -f $EMONHUB_PATH$NAME.py ] && echo "Fatal: cannot find $EMONHUB_PATH$NAME.py" && exit 1
-
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -38,7 +36,7 @@ DESC="OpenEnergyMonitor emonHub"
 # Enter your installation path here
 DAEMON=$EMONHUB_PATH$NAME.py
 # Specify command line arguments here
-DAEMON_ARGS="--logfile $EMONHUB_LOG --config-file $EMONHUB_CONFIG"
+DAEMON_ARGS="--config-file $EMONHUB_CONFIG"
 DAEMONUSER="emonhub"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME

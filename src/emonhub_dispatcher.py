@@ -141,6 +141,7 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         # Send data to server
         self._log.info("Sending to " + 
                           self._settings['domain'] + self._settings['path'])
+                          
         try:
             result = urllib2.urlopen(url_string, timeout=60)
         except urllib2.HTTPError as e:
@@ -156,9 +157,10 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
             self._log.warning("Couldn't send to server, Exception: " + 
                                  traceback.format_exc())
         else:
-            if (result.readline() == 'ok'):
+            response = result.readline()
+            if (response == 'ok'):
                 self._log.debug("Send ok")
                 return True
             else:
-                self._log.warning("Send failure")
+                self._log.warning("Send failure: wanted 'ok' but got "+response)
         

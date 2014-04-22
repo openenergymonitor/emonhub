@@ -12,7 +12,3 @@ EMONHUB_PATH=/usr/share/emonhub/
 
 # Specify the full config file path:
 EMONHUB_CONFIG=/etc/emonhub/emonhub.conf
-
-# Specify the full log file path:
-EMONHUB_LOG=/var/log/emonhub/emonhub.log
- 
