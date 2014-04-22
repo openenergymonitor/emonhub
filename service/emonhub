@@ -26,10 +26,11 @@ SYSCONF_PATH=/etc/default/
 
 # Pull in the config settings and echo them out for easy troubleshooting.
 . $SYSCONF_PATH$NAME
-echo "Read configuration from $SYSCONF_PATH$NAME as follows:"
-echo "- path to emonhub.py: $EMONHUB_PATH$NAME.py"
-echo "- config file: $EMONHUB_CONFIG"
-echo "- log file: $EMONHUB_LOG"
+
+[ ! -f $EMONHUB_CONFIG ] && echo "Fatal: cannot find $EMONHUB_CONFIG" && exit 1
+[ ! -f $EMONHUB_LOG ] && echo "Fatal: cannot find $EMONHUB_LOG" && exit 1
+[ ! -f $EMONHUB_PATH$NAME.py ] && echo "Fatal: cannot find $EMONHUB_PATH$NAME.py" && exit 1
+
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -38,7 +39,7 @@ DESC="OpenEnergyMonitor emonHub"
 DAEMON=$EMONHUB_PATH$NAME.py
 # Specify command line arguments here
 DAEMON_ARGS="--logfile $EMONHUB_LOG --config-file $EMONHUB_CONFIG"
-DAEMONUSER="pi"
+DAEMONUSER="emonhub"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
@@ -74,7 +75,6 @@ do_start()
 		|| return 1
 	start-stop-daemon --start --quiet --background --no-close --make-pidfile --chuid=$DAEMONUSER --pidfile $PIDFILE --startas $DAEMON -- \
 		$DAEMON_ARGS \
-		2>> "$EMONHUB_LOG" \
 		|| return 2
 	# Add code here, if necessary, that waits for the process to be ready
 	# to handle requests from services started subsequently which depend
