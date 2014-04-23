@@ -229,6 +229,10 @@ class EmonHubRFM2PiListener(EmonHubSerialListener):
         # If information message, discard
         if ((received[0] == '>') or (received[0] == '->')):
             return
+            
+        if (received[0] == '\x01'):
+            self._log.info("Ignoring frame consisting of SOH character")
+            return
 
         # Else, discard if frame not of the form 
         # [node val1_lsb val1_msb val2_lsb val2_msb ...]
