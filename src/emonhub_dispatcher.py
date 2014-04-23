@@ -50,11 +50,12 @@ class EmonHubDispatcher(object):
         active (string): whether the dispatcher is active (True/False)
         
         """
-
+       
         for key, value in kwargs.iteritems():
             # Strip trailing slash
-            if key is 'url':
-                value.rstrip("/") 
+            if key == 'url':
+                value = value.rstrip('/')
+                                    
             self._settings[key] = value
 
     def add(self, data):
