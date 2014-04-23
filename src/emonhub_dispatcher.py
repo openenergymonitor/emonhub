@@ -45,14 +45,16 @@ class EmonHubDispatcher(object):
         
         **kwargs (dict): settings to be modified.
         
-        domain (string): domain name (eg: 'domain.tld')
-        path (string): emoncms path with leading slash (eg: '/emoncms')
+        url (string): eg: 'http://localhost/emoncms' or 'http://emoncms.org' (trailing slash optional)
         apikey (string): API key with write access
         active (string): whether the dispatcher is active (True/False)
         
         """
 
         for key, value in kwargs.iteritems():
+            # Strip trailing slash
+            if key is 'url':
+                value.rstrip("/") 
             self._settings[key] = value
 
     def add(self, data):
@@ -69,7 +71,7 @@ class EmonHubDispatcher(object):
         t = round(time.time(),2)
         
         self._log.debug("Server " + 
-                           self._settings['domain'] + self._settings['path'] + 
+                           self._settings['url'] + 
                            " -> buffer data: " + str(data) + 
                            ", timestamp: " + str(t))
                
@@ -96,7 +98,7 @@ class EmonHubDispatcher(object):
         if (self.buffer.hasItems()):
             time, data = self.buffer.retrieveItem()
             self._log.debug("Server " + 
-                           self._settings['domain'] + self._settings['path'] + 
+                           self._settings['url'] + 
                            " -> send data: " + str(data) + 
                            ", timestamp: " + str(time))
             if self._send_data(data, time):
@@ -133,14 +135,12 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         # 'http://domain.tld/emoncms/input/bulk.json?apikey=
         # 12345&data=[[-10,10,1806],[-5,10,1806],[0,10,1806]]
         # &offset=0' (requires emoncms >= 8.0)
-        url_string = self._settings['protocol'] + self._settings['domain'] + \
-                     self._settings['path'] + "/input/bulk.json?apikey=" + \
+        url_string = self._settings['url'] + "/input/bulk.json?apikey=" + \
                      self._settings['apikey'] + "&data=" + data_string + \
                      "&offset=0"
 
         # Send data to server
-        self._log.info("Sending to " + 
-                          self._settings['domain'] + self._settings['path'])
+        self._log.info("Sending to " + self._settings['url'])
                           
         try:
             result = urllib2.urlopen(url_string, timeout=60)
