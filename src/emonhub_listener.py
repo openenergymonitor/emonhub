@@ -254,8 +254,8 @@ class EmonHubRFM2PiListener(EmonHubSerialListener):
                 # Recombine transmitted chars into signed int
                 values = []
                 for i in range(1, len(received),2):
-                    value = received[i] + 256 * received[i+1]
-                    if value > 32768:
+                    value = received[i+1] << 8 + received[i]
+                    if value >= 32768:
                         value -= 65536
                     values.append(value)
                 
