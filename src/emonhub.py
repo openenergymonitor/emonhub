@@ -201,9 +201,9 @@ if __name__ == "__main__":
 
     # Command line arguments parser
     parser = argparse.ArgumentParser(description='OpenEnergyMonitor emonHub')
-    # Configuration source: config file or emoncms
-    settings_group = parser.add_mutually_exclusive_group()
-    settings_group.add_argument("--config-file", action="store", help='Configuration file')
+    # Configuration file
+    parser.add_argument("--config-file", action="store", 
+        help='Configuration file', default=sys.path[0]+'/emonhub.conf')
     # Logfile
     parser.add_argument('--console-log', action='store_true',
         help='log to STDERR instead of the configured logfile')
@@ -222,10 +222,6 @@ if __name__ == "__main__":
         sys.exit()
 
     # Initialize hub interface
-    # Default filename if none specified
-    if args.config_file is None:
-        args.config_file = sys.path[0]+'/emonhub.conf'
-
     try:
         interface = ehi.EmonHubFileInterface(args.config_file)
     except ehi.EmonHubInterfaceInitError as e:
