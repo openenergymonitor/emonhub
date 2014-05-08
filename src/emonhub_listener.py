@@ -155,11 +155,11 @@ class EmonHubSerialListener(EmonHubListener):
         self._rx_buf = ''
 
     def close(self):
-        """Close socket."""
+        """Close serial port"""
         
         # Close serial port
         if self._ser is not None:
-            self._log.debug("Closing serial port.")
+            self._log.debug("Closing serial port")
             self._ser.close()
 
     def read(self):
@@ -268,7 +268,7 @@ class EmonHubRFM2PiListener(EmonHubSerialListener):
                 return values
 
     def set(self, **kwargs):
-        """Send configuration parameters to the RFM2Pi through COM port.
+        """Send configuration parameters to the RFM2Pi through COM port
 
         **kwargs (dict): settings to be modified. Available settings are
         'baseid', 'frequency', 'sgroup'. Example: 
@@ -314,7 +314,7 @@ class EmonHubRFM2PiListener(EmonHubSerialListener):
                 self._time_update_timestamp = now
     
     def _send_time(self):
-        """Send time over radio link to synchronize emonGLCD.
+        """Send time over radio link to synchronize emonGLCD
 
         The radio module can be used to broadcast time, which is useful
         to synchronize emonGLCD in particular.
@@ -415,6 +415,17 @@ class EmonHubRFM2PiListenerRepeater(EmonHubRFM2PiListener):
         
         # Initialize RX buffer for socket
         self._sock_rx_buf = ''
+
+    def close(self):
+        """Close socket and serial port"""
+        
+        # Close socket
+        if self._socket is not None:
+           self._log.debug('Closing socket')
+           self._socket.close()
+
+        # Close serial port
+        super(EmonHubRFM2PiListenerRepeater, self).close()
 
     def run(self):
         """Monitor socket and repeat data if complete frame received."""
