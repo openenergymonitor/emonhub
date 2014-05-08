@@ -8,17 +8,12 @@
 """
 
 import logging
-#import MySQLdb
 
 """class AbstractBuffer
 
 Represents the actual buffer being used.
 """
 class AbstractBuffer():
-
-    bufferMethodMap = {
-                       'memory':'InMemoryBuffer'
-                      } 
 
     def storeItem(self,data): 
         raise NotImplementedError
@@ -76,3 +71,21 @@ class InMemoryBuffer(AbstractBuffer):
 
     def size(self):
         return len(self._data_buffer)
+
+
+"""
+The getBuffer function returns the buffer class corresponding to a 
+buffering method passed as argument.
+"""
+bufferMethodMap = {
+                   'memory':InMemoryBuffer
+                  } 
+
+def getBuffer(method):
+    """Returns the buffer class corresponding to the method
+
+    method (string): buffering method
+
+    """
+    return bufferMethodMap[method]
+

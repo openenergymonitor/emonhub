@@ -32,10 +32,7 @@ class EmonHubDispatcher(object):
         self._settings = {}
         
         # Create underlying buffer implementation
-        self.buffer = getattr(
-            ehb, 
-            ehb.AbstractBuffer.bufferMethodMap[bufferMethod])(dispatcherName,
-                                                               **kwargs)
+        self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, **kwargs)
         
         self._log.info ("Set up dispatcher '%s' (buffer: %s)"
                         % (dispatcherName, bufferMethod))
