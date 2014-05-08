@@ -72,16 +72,6 @@ class EmonHubInterface(object):
         
         """
     
-    def get_settings(self):
-        """Get settings
-        
-        Returns None if settings couldn't be obtained.
-
-        To be implemented in child class.
-        
-        """
-        pass
-
 class EmonHubFileInterface(EmonHubInterface):
 
     def __init__(self, filename):
