@@ -64,7 +64,7 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info("Received frame : " + f)
+        self._log.info(" ** NEW FRAME ** : " + f)
         
         # Get an array out of the space separated string
         received = f.strip().split(' ')
@@ -77,8 +77,8 @@ class EmonHubListener(object):
         received = self._decode_frame(received)
 
         if received:
-            self._log.debug("Node: " + str(received[0]))
-            self._log.debug("Values: " + str(received[1:]))
+            self._log.debug("   Node : " + str(received[0]))
+            self._log.debug(" Values : " + str(received[1:]))
             return received
         else:
             return
