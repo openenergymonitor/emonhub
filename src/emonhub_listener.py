@@ -30,6 +30,9 @@ class EmonHubListener(object):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
+
+        # Initialise settings
+        self.name = ''
         
     def close(self):
         """Close socket."""
