@@ -33,6 +33,7 @@ class EmonHubDispatcher(object):
 
         # Initialize variables
         self._settings = {}
+        self.name = ''
         
         # Create underlying buffer implementation
         self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, **kwargs)
