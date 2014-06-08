@@ -64,7 +64,7 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info("Received frame : " + f)
+        self._log.info("Serial RX: " + f)
         
         # Get an array out of the space separated string
         received = f.strip().split(' ')
