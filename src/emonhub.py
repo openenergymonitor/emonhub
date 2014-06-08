@@ -33,7 +33,7 @@ Communicates with the user through an EmonHubInterface
 
 class EmonHub(object):
     
-    __version__ = 'v1.0.0'
+    __version__ = 'Pre-Release Development'
     
     def __init__(self, interface):
         """Setup an OpenEnergyMonitor emonHub.
@@ -128,7 +128,7 @@ class EmonHub(object):
                 # This gets the class from the 'type' string
                 dispatcher = getattr(ehd, dis['type'])(name, **dis['init_settings'])
                 self._dispatchers[name] = dispatcher
-                setattr(dispatcher, 'name', name )
+                setattr(dispatcher, 'name', name)
             # Set runtime settings
             self._dispatchers[name].set(**dis['runtime_settings'])
         # If existing dispatcher is not in settings anymore, delete it
@@ -151,7 +151,7 @@ class EmonHub(object):
                     continue
                 else:
                     self._listeners[name] = listener
-                setattr(listener, 'name', name )
+                setattr(listener, 'name', name)
             # Set runtime settings
             self._listeners[name].set(**lis['runtime_settings'])
         # If existing listener is not in settings anymore, delete it
