@@ -14,6 +14,8 @@ import logging
 import socket
 import select
 
+import emonhub_coder as ehc
+
 """class EmonHubListener
 
 Monitors a data source. 
@@ -33,6 +35,7 @@ class EmonHubListener(object):
 
         # Initialise settings
         self.name = ''
+        self._settings = {'defaultdatacode': ''}
         
     def close(self):
         """Close socket."""
@@ -61,26 +64,89 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info("Serial RX: " + f)
+        self._log.info("Received frame : " + f)
         
         # Get an array out of the space separated string
         received = f.strip().split(' ')
+
+        # Validate frame
+        if not self._validate_frame(received):
+            self._log.debug('Discard RX Frame "Failed validation"')
+            return
+
+        received = self._decode_frame(received)
+
+        if received:
+            self._log.debug("Node: " + str(received[0]))
+            self._log.debug("Values: " + str(received[1:]))
+            return received
+        else:
+            return
+
+    def _validate_frame(self, received):
+        """Validate a frame of data
+
+        This function performs logical tests to filter unsuitable data.
+        Each test discards frame with a log entry if False
+
+        Returns True if data frame passes tests.
+
+        """
         
         # Discard if frame not of the form [node, val1, ...]
         # with number of elements at least 2
         if len(received) < 2:
             self._log.warning("Discarded RX frame 'string too short' : " + str(received))
-        
-        # Else, process frame
+            return False
+
+        # Discard if anything non-numerical found
+        try:
+            [float(val) for val in received]
+        except Exception:
+            self._log.warning("Discarded RX frame 'non-numerical content' : " + str(received))
+            return False
+
+        # If it passes all the checks return True
+        return True
+
+    def _decode_frame(self, received):
+        """Decodes a frame of data
+
+        Performs decoding of data types
+
+        Returns decoded string of data.
+
+        """
+
+        node = received[0]
+        data = received[1:]
+
+        datacode = self._settings['defaultdatacode']
+
+        if not datacode:
+                  return received
+
+        if len(data) % ehc.check_datacode(datacode) != 0:
+            self._log.warning("RX data length: " + str(len(data)) +
+                              " is not valid for data code " + str(datacode))
+            return False
         else:
-            try:
-                [float(val) for val in received]
-            except Exception:
-                self._log.warning("Discarded RX frame 'non-numerical content' : " + str(received))
-            else:
-                self._log.debug("Node: " + str(received[0]))
-                self._log.debug("Values: " + str(received[1:]))
-                return received
+            count = len(data) / ehc.check_datacode(datacode)
+
+        # Decode the string of data one value at a time into "decoded"
+        decoded = []
+        bytepos = int(0)
+        #v = 0
+        for i in range(0, count, 1):
+            dc = datacode
+            size = int(ehc.check_datacode(dc))
+            value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
+            bytepos += size
+            decoded.append(value)
+
+        # Insert node ID before data
+        decoded.insert(0, node)
+        return decoded
     
     def set(self, **kwargs):
         """Set configuration parameters.
@@ -89,7 +155,20 @@ class EmonHubListener(object):
         {'setting_1': 'value_1', 'setting_2': 'value_2'}
         
         """
-        pass
+        key = 'defaultdatacode'
+        value = ''
+        try:
+            kwargs[key]
+        except:
+            value = False
+        else:
+            value = kwargs[key]
+            if not ehc.check_datacode(value):
+                value = False
+        finally:
+            if value != self._settings[key]:
+                self._settings[key] = value
+                self._log.debug("Setting " + self.name + " default datacode : %s", self._settings[key])
 
     def run(self):
         """Placeholder for background tasks. 
@@ -215,69 +294,45 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         # Initialize settings
         self._settings = {'baseid': '', 'frequency': '', 'sgroup': '',
-                          'sendtimeinterval': ''}
+                          'sendtimeinterval': '', 'defaultdatacode': ''}
         
         # Initialize time update timestamp
         self._time_update_timestamp = 0
 
-    def _process_frame(self, f):
-        """Process a frame of data
+    def _validate_frame(self, received):
+        """Validate a frame of data
 
-        f (string): 'NodeID val1_lsb val1_msb val2_lsb val2_msb ...'
+        This function performs logical tests to filter unsuitable data.
+        Each test discards frame with a log entry if False
 
-        This function recombines the integers and checks their validity.
-        
-        Return data as a list: [NodeID, val1, val2]
+        Returns True if data frame passes tests.
 
         """
-        
-        # Log data
-        self._log.info("Serial RX: " + f)
-        
-        # Get an array out of the space separated string
-        received = f.strip().split(' ')
-        
-        # If information message, discard
+
+        # include checks from parent
+        super(EmonHubJeeListener, self)._validate_frame(received)
+
+        # Discard information messages
         if (received[0] == '>') or (received[0] == '->'):
-            return
+            self._log.warning("Discard RX frame 'information' : " + str(received))
+            return False
             
         if received[0] == '\x01':
             self._log.info("Ignoring frame consisting of SOH character")
-            return
+            return False
 
-        # Else, discard if frame not of the form 
+        # Discard if frame not at least 3 elements
+        if len(received) < 3:
+            self._log.warning("Discard RX frame 'too short' : " + str(received))
+            return False
+
+        # Discard frame if number of elements not odd
         # [node val1_lsb val1_msb val2_lsb val2_msb ...]
-        # with number of elements odd and at least 3
-        elif (not (len(received) & 1)) or (len(received) < 3):
-            self._log.warning("Discarded RX frame 'in-compatible length' : " + str(received))
-            return
-        
-        # Else, process frame
-        else:
-            try:
-                # Only integers are expected
-                received = [int(val) for val in received]
-            except Exception:
-                self._log.warning("Misformed RX frame: " + str(received))
-            else:
-                # Get node ID
-                node = received[0]
-                
-                # Recombine transmitted chars into signed int
-                values = []
-                for i in range(1, len(received), 2):
-                    value = (received[i+1] << 8) + received[i]
-                    if value >= 32768:
-                        value -= 65536
-                    values.append(value)
-                
-                self._log.debug("Node: " + str(node))
-                self._log.debug("Values: " + str(values))
-    
-                # Insert node ID before data
-                values.insert(0, node)
+        if not (len(received) & 1):
+            self._log.warning("Discard RX frame 'element count incorrect': " + str(received))
+            return False
 
-                return values
+        return True
 
     def set(self, **kwargs):
         """Send configuration parameters to the "Jee" type device through COM port
@@ -287,6 +342,9 @@ class EmonHubJeeListener(EmonHubSerialListener):
         {'baseid': '15', 'frequency': '4', 'sgroup': '210'}
         
         """
+
+        # include kwargs from parent
+        super(EmonHubJeeListener, self).set(**kwargs)
         
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
