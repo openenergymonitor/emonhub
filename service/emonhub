@@ -37,7 +37,7 @@ DESC="OpenEnergyMonitor emonHub"
 DAEMON=$EMONHUB_PATH$NAME.py
 # Specify command line arguments here
 DAEMON_ARGS="--config-file $EMONHUB_CONFIG"
-DAEMONUSER="emonhub"
+DAEMONUSER="root"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
 
