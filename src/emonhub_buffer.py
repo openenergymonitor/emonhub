@@ -13,9 +13,11 @@ import logging
 
 Represents the actual buffer being used.
 """
+
+
 class AbstractBuffer():
 
-    def storeItem(self,data): 
+    def storeItem(self, data):
         raise NotImplementedError
 
     def retrieveItem(self): 
@@ -28,9 +30,11 @@ class AbstractBuffer():
         raise NotImplementedError
 
 """
-This implementation of the AbstractBuffer just uses an in-memory datastructure.
+This implementation of the AbstractBuffer just uses an in-memory data structure.
 It's basically identical to the previous (inline) buffer.
 """
+
+
 class InMemoryBuffer(AbstractBuffer):
   
     def __init__(self, bufferName, bufferSize=1000):
@@ -47,21 +51,21 @@ class InMemoryBuffer(AbstractBuffer):
 
     def getMaxEntrySliceIndex(self):
         return max(0,
-                   self.size() - self._maximumEntriesInBuffer - 1 );
+                   self.size() - self._maximumEntriesInBuffer - 1)
 
     def discardOldestItems(self):
-        self._data_buffer = self._data_buffer[ self.getMaxEntrySliceIndex() : ]
+        self._data_buffer = self._data_buffer[self.getMaxEntrySliceIndex():]
 
     def discardOldestItemsIfFull(self):
         if self.isFull():
             self._log.warning(
-              "In-memory buffer (%s) reached limit of %d items, deleting oldest" 
-              % (self._bufferName, self._maximumEntriesInBuffer))
+                "In-memory buffer (%s) reached limit of %d items, deleting oldest"
+                % (self._bufferName, self._maximumEntriesInBuffer))
         self.discardOldestItems()
 
-    def storeItem(self,data):
-        self.discardOldestItemsIfFull();
-        self._data_buffer.append (data)
+    def storeItem(self, data):
+        self.discardOldestItemsIfFull()
+        self._data_buffer.append(data)
 
     def retrieveItem(self):
         return self._data_buffer[0]
@@ -78,8 +82,9 @@ The getBuffer function returns the buffer class corresponding to a
 buffering method passed as argument.
 """
 bufferMethodMap = {
-                   'memory':InMemoryBuffer
-                  } 
+                   'memory': InMemoryBuffer
+                  }
+
 
 def getBuffer(method):
     """Returns the buffer class corresponding to the method
@@ -88,4 +93,3 @@ def getBuffer(method):
 
     """
     return bufferMethodMap[method]
-

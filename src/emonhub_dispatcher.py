@@ -7,7 +7,8 @@
 
 """
 
-import urllib2, httplib
+import urllib2
+import httplib
 import time
 import logging
 import emonhub_buffer as ehb
@@ -20,6 +21,8 @@ This class is meant to be inherited by subclasses specific to their
 destination server.
 
 """
+
+
 class EmonHubDispatcher(object):
 
     def __init__(self, dispatcherName, bufferMethod="memory", **kwargs):
@@ -34,8 +37,8 @@ class EmonHubDispatcher(object):
         # Create underlying buffer implementation
         self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, **kwargs)
         
-        self._log.info ("Set up dispatcher '%s' (buffer: %s)"
-                        % (dispatcherName, bufferMethod))
+        self._log.info("Set up dispatcher '%s' (buffer: %s)"
+                       % (dispatcherName, bufferMethod))
         
     def set(self, **kwargs):
         """Update settings.
@@ -66,12 +69,12 @@ class EmonHubDispatcher(object):
             return
         
         # Timestamp = now
-        t = round(time.time(),2)
+        t = round(time.time(), 2)
         
         self._log.debug("Server " + 
-                           self._settings['url'] + 
-                           " -> buffer data: " + str(data) + 
-                           ", timestamp: " + str(t))
+                        self._settings['url'] +
+                        " -> buffer data: " + str(data) +
+                        ", timestamp: " + str(t))
                
         self.buffer.storeItem([t, data])
 
@@ -93,12 +96,12 @@ class EmonHubDispatcher(object):
         
         # Buffer management
         # If data buffer not empty, send a set of values
-        if (self.buffer.hasItems()):
+        if self.buffer.hasItems():
             time, data = self.buffer.retrieveItem()
-            self._log.debug("Server " + 
-                           self._settings['url'] + 
-                           " -> send data: " + str(data) + 
-                           ", timestamp: " + str(time))
+            self._log.debug("Server " +
+                            self._settings['url'] +
+                            " -> send data: " + str(data) +
+                            ", timestamp: " + str(time))
             if self._send_data(data, time):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItem()
@@ -108,6 +111,8 @@ class EmonHubDispatcher(object):
 Stores server parameters and buffers the data between two HTTP requests
 
 """
+
+
 class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
 
     def _send_data(self, data, timestamp):
@@ -115,7 +120,7 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         
         # Prepare data string with the values in data buffer
         data_string = '['
-        # WIP: currently, only one set of values (one timsetamp) is sent
+        # WIP: currently, only one set of values (one timestamp) is sent
         # so bulk mode is not really useful yet
         for (timestamp, data) in [(timestamp, data)]:
             data_string += '['
@@ -133,8 +138,8 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         # 'http://domain.tld/emoncms/input/bulk.json?apikey=
         # 12345&data=[[-10,10,1806],[-5,10,1806],[0,10,1806]]
         # &offset=0' (requires emoncms >= 8.0)
-        url_string = self._settings['url'] + "/input/bulk.json?apikey=" + \
-                     self._settings['apikey'] + "&data=" + data_string + \
+        url_string = self._settings['url'] + "/input/bulk.json?apikey=" +\
+                     self._settings['apikey'] + "&data=" + data_string +\
                      "&offset=0"
 
         # Send data to server
@@ -143,22 +148,21 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         try:
             result = urllib2.urlopen(url_string, timeout=60)
         except urllib2.HTTPError as e:
-            self._log.warning("Couldn't send to server, HTTPError: " + 
-                                 str(e.code))
+            self._log.warning("Couldn't send to server, HTTPError: " +
+                              str(e.code))
         except urllib2.URLError as e:
-            self._log.warning("Couldn't send to server, URLError: " + 
-                                 str(e.reason))
+            self._log.warning("Couldn't send to server, URLError: " +
+                              str(e.reason))
         except httplib.HTTPException:
             self._log.warning("Couldn't send to server, HTTPException")
         except Exception:
             import traceback
-            self._log.warning("Couldn't send to server, Exception: " + 
-                                 traceback.format_exc())
+            self._log.warning("Couldn't send to server, Exception: " +
+                              traceback.format_exc())
         else:
             response = result.readline()
-            if (response == 'ok'):
+            if response == 'ok':
                 self._log.debug("Send ok")
                 return True
             else:
                 self._log.warning("Send failure: wanted 'ok' but got "+response)
-        
