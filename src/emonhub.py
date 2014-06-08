@@ -20,6 +20,7 @@ import pprint
 import emonhub_interface as ehi
 import emonhub_dispatcher as ehd
 import emonhub_listener as ehl
+import emonhub_coder as ehc
 
 """class EmonHub
 
@@ -160,6 +161,9 @@ class EmonHub(object):
                 self._listeners[name].close()
                 self._log.info("Deleting listener %s", name)
                 del(self._listeners[name])
+
+        if 'nodes' in settings:
+            ehc.nodelist = settings['nodes']
 
     def _set_logging_level(self, level):
         """Set logging level.

@@ -121,17 +121,32 @@ class EmonHubListener(object):
         node = received[0]
         data = received[1:]
 
-        datacode = self._settings['defaultdatacode']
+        if node in ehc.nodelist and 'codes' in ehc.nodelist[node]:
+            datacodes = ehc.nodelist[node]['codes']
+            datasizes = []
+            for code in datacodes:
+                datasizes.append(ehc.check_datacode(code))
 
-        if not datacode:
-                  return received
-
-        if len(data) % ehc.check_datacode(datacode) != 0:
-            self._log.warning("RX data length: " + str(len(data)) +
-                              " is not valid for data code " + str(datacode))
-            return False
+            if len(data) != sum(datasizes):
+                self._log.warning("RX data length: " + str(len(data)) +
+                                  " is not valid for data codes " + str(datacodes))
+                return False
+            else:
+                count = len(datacodes)
+                datacode = False
         else:
-            count = len(data) / ehc.check_datacode(datacode)
+            if node in ehc.nodelist and ehc.nodelist[node]['code']:
+                datacode = ehc.nodelist[node]['code']
+            else:
+                datacode = self._settings['defaultdatacode']
+            if not datacode:
+                return received
+            elif len(data) % ehc.check_datacode(datacode) != 0:
+                self._log.warning("RX data length: " + str(len(data)) +
+                                  " is not valid for data code " + str(datacode))
+                return False
+            else:
+                count = len(data) / ehc.check_datacode(datacode)
 
         # Decode the string of data one value at a time into "decoded"
         decoded = []
@@ -139,6 +154,8 @@ class EmonHubListener(object):
         #v = 0
         for i in range(0, count, 1):
             dc = datacode
+            if not datacode:
+                dc = datacodes[i]
             size = int(ehc.check_datacode(dc))
             value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
             bytepos += size

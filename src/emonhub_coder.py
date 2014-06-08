@@ -4,6 +4,9 @@ import logging
 # Initialize logger
 log = logging.getLogger("EmonHub")
 
+# Initialize nodes data
+nodelist = {}
+
 
 def check_datacode(datacode):
 
@@ -34,4 +37,4 @@ def decode(datacode, frame):
         return result[0]
     except:
         log.info("Unable to decode as datacode incorrect for value")
-        return
+        return False
