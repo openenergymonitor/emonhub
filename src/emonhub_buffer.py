@@ -20,10 +20,16 @@ class AbstractBuffer():
     def storeItem(self, data):
         raise NotImplementedError
 
+    def retrieveItems(self, number):
+        raise NotImplementedError
+
     def retrieveItem(self): 
         raise NotImplementedError
 
     def discardLastRetrievedItem(self):
+        raise NotImplementedError
+
+    def discardLastRetrievedItems(self, number):
         raise NotImplementedError
 
     def hasItems(self): 
@@ -70,8 +76,20 @@ class InMemoryBuffer(AbstractBuffer):
     def retrieveItem(self):
         return self._data_buffer[0]
 
+    def retrieveItems(self, number):
+        blen = len(self._data_buffer)
+        if number > blen:
+            number = blen
+        return self._data_buffer[:number]
+
     def discardLastRetrievedItem(self):
         del self._data_buffer[0]
+
+    def discardLastRetrievedItems(self, number):
+        blen = len(self._data_buffer)
+        if number > blen:
+            number = blen
+        self._data_buffer = self._data_buffer[number:]
 
     def size(self):
         return len(self._data_buffer)

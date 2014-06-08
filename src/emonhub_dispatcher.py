@@ -11,6 +11,8 @@ import urllib2
 import httplib
 import time
 import logging
+import json
+
 import emonhub_buffer as ehb
   
 """class EmonHubDispatcher
@@ -70,15 +72,18 @@ class EmonHubDispatcher(object):
         
         # Timestamp = now
         t = round(time.time(), 2)
-        
-        self._log.debug("Server " + 
-                        self._settings['url'] +
-                        " -> buffer data: " + str(data) +
-                        ", timestamp: " + str(t))
-               
-        self.buffer.storeItem([t, data])
 
-    def _send_data(self, data, time):
+        self._log.debug("Append to '" + self.name +
+                        "' buffer => time: " + str(t)
+                        + ", data: " + str(data))
+        # databuffer is of format:
+        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+        # [[1399980731, 10, 150, 3450 ...]]
+        item = [t]
+        item += data
+        self.buffer.storeItem(item)
+
+    def _send_data(self, data):
         """Send data to server.
 
         data (list): node and values (eg: '[node,val1,val2,...]')
@@ -97,12 +102,13 @@ class EmonHubDispatcher(object):
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
-            time, data = self.buffer.retrieveItem()
-            self._log.debug("Server " +
-                            self._settings['url'] +
-                            " -> send data: " + str(data) +
-                            ", timestamp: " + str(time))
-            if self._send_data(data, time):
+            if 'maxItemsPerPost' in self._settings.keys():
+                max_items = int(self._settings['maxItemsPerPost'])
+            else:
+                max_items = 250
+
+            databuffer = self.buffer.retrieveItems(max_items)
+            if self._send_data(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItem()
 
@@ -115,38 +121,38 @@ Stores server parameters and buffers the data between two HTTP requests
 
 class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
 
-    def _send_data(self, data, timestamp):
+    def _send_data(self, databuffer):
         """Send data to server."""
         
-        # Prepare data string with the values in data buffer
-        data_string = '['
-        # WIP: currently, only one set of values (one timestamp) is sent
-        # so bulk mode is not really useful yet
-        for (timestamp, data) in [(timestamp, data)]:
-            data_string += '['
-            data_string += str(int(round(timestamp-time.time())))
-            for sample in data:
-                data_string += ','
-                data_string += str(sample)
-            data_string += '],'
-        # Remove trailing comma and close bracket
-        data_string = data_string[0:-1]+']'
+        # databuffer is of format:
+        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+        # [[1399980731, 10, 150, 250 ...]]
+
+        data_string = json.dumps(databuffer, separators=(',', ':'))
 
         self._log.debug("Data string: " + data_string)
         
         # Prepare URL string of the form
-        # 'http://domain.tld/emoncms/input/bulk.json?apikey=
-        # 12345&data=[[-10,10,1806],[-5,10,1806],[0,10,1806]]
-        # &offset=0' (requires emoncms >= 8.0)
-        url_string = self._settings['url'] + "/input/bulk.json?apikey=" +\
-                     self._settings['apikey'] + "&data=" + data_string +\
-                     "&offset=0"
+        # http://domain.tld/emoncms/input/bulk.json?apikey=12345
+        # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
+        # &sentat=15' (requires emoncms >= 8.0)
+
+        # time that the request was sent at
+        sentat = int(time.time())
 
         # Send data to server
-        self._log.info("Sending to " + self._settings['url'])
-                          
+        self._log.info("Sending: " + self._settings['url'] + "/input/bulk" +
+                       " | data="+data_string+"&sentat="+str(sentat))
+
+        # The Develop branch of emoncms allows for the sending of the apikey in the post
+        # body, this should be moved from the url to the body as soon as this is widely
+        # adopted
+        req = urllib2.Request(
+            self._settings['url']+'/input/bulk'+'.json?apikey='+self._settings['apikey'],
+            "data="+data_string+"&sentat="+str(sentat))
+
         try:
-            result = urllib2.urlopen(url_string, timeout=60)
+            response = urllib2.urlopen(req, timeout=60)
         except urllib2.HTTPError as e:
             self._log.warning("Couldn't send to server, HTTPError: " +
                               str(e.code))
@@ -160,9 +166,9 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
             self._log.warning("Couldn't send to server, Exception: " +
                               traceback.format_exc())
         else:
-            response = result.readline()
-            if response == 'ok':
-                self._log.debug("Send ok")
+            reply = response.read()
+            if reply == 'ok':
+                self._log.debug("Receipt acknowledged with '" + reply + "' from " + self._settings['url'])
                 return True
             else:
-                self._log.warning("Send failure: wanted 'ok' but got "+response)
+                self._log.warning("Send failure: wanted 'ok' but got "+reply)
