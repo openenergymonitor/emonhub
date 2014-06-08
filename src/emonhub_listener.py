@@ -71,7 +71,7 @@ class EmonHubListener(object):
         # Else, process frame
         else:
             try:
-                received = [float(val) for val in received]
+                [float(val) for val in received]
             except Exception:
                 self._log.warning("Discarded RX frame 'non-numerical content' : " + str(received))
             else:
