@@ -61,7 +61,7 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info(" ** NEW FRAME ** : " + f)
+        self._log.info("NEW FRAME : " + f)
         
         # Get an array out of the space separated string
         received = f.strip().split(' ')
@@ -78,8 +78,8 @@ class EmonHubListener(object):
             except Exception:
                 self._log.warning("Discarded RX frame 'non-numerical content' : " + str(received))
             else:
-                self._log.debug("   Node : " + str(received[0]))
-                self._log.debug(" Values : " + str(received[1:]))
+                self._log.debug("     Node : " + str(received[0]))
+                self._log.debug("   Values : " + str(received[1:]))
                 return received
     
     def set(self, **kwargs):
