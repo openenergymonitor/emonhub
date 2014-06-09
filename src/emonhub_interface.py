@@ -7,11 +7,8 @@
 
 """
 
-import urllib2
 import time
 import logging
-import csv
-import urlparse
 from configobj import ConfigObj
 
 """class EmonHubInterface
@@ -19,7 +16,7 @@ from configobj import ConfigObj
 User interface to communicate with the hub.
 
 The settings attribute stores the settings of the hub. It is a
-dictionnary with the following keys:
+dictionary with the following keys:
 
         'hub': a dictionary containing the hub settings
         'listeners': a dictionary containing the listeners
@@ -28,14 +25,14 @@ dictionnary with the following keys:
         The hub settings are:
         'loglevel': the logging level
         
-        Listeners and dispatchers are dictionaries with the folowing keys:
+        Listeners and dispatchers are dictionaries with the following keys:
         'type': class name
         'init_settings': dictionary with initialization settings
         'runtime_settings': dictionary with runtime settings
         Initialization and runtime settings depend on the listener and
         dispatcher type.
 
-The run() method is supposed to be run regularly by the instanciater, to
+The run() method is supposed to be run regularly by the instantiater, to
 perform regular communication tasks.
 
 The check_settings() method is run regularly as well. It checks the settings 
@@ -45,6 +42,8 @@ This almost empty class is meant to be inherited by subclasses specific to
 each user interface.
 
 """
+
+
 class EmonHubInterface(object):
 
     def __init__(self):
@@ -72,6 +71,7 @@ class EmonHubInterface(object):
         
         """
     
+
 class EmonHubFileInterface(EmonHubInterface):
 
     def __init__(self, filename):
@@ -89,7 +89,7 @@ class EmonHubFileInterface(EmonHubInterface):
         except IOError as e:
             raise EmonHubInterfaceInitError(e)
         except SyntaxError as e:
-            raise EmonHubInterfaceInitError( \
+            raise EmonHubInterfaceInitError(
                 'Error parsing config file \"%s\": ' % filename + str(e))
 
     def check_settings(self):
@@ -101,7 +101,7 @@ class EmonHubFileInterface(EmonHubInterface):
         
         # Check settings only once per second
         now = time.time()
-        if (now - self._settings_update_timestamp < 1):
+        if now - self._settings_update_timestamp < 1:
             return
         # Update timestamp
         self._settings_update_timestamp = now
@@ -123,8 +123,8 @@ class EmonHubFileInterface(EmonHubInterface):
             return
         except Exception:
             import traceback
-            self._log.warning("Couldn't get settings, Exception: " + 
-                traceback.format_exc())
+            self._log.warning("Couldn't get settings, Exception: " +
+                              traceback.format_exc())
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         
@@ -136,6 +136,7 @@ class EmonHubFileInterface(EmonHubInterface):
 Raise this when init fails.
 
 """
+
+
 class EmonHubInterfaceInitError(Exception):
     pass
-

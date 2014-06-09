@@ -11,7 +11,8 @@
 
 import sys
 import time
-import logging, logging.handlers
+import logging
+import logging.handlers
 import signal
 import argparse
 import pprint
@@ -19,6 +20,7 @@ import pprint
 import emonhub_interface as ehi
 import emonhub_dispatcher as ehd
 import emonhub_listener as ehl
+import emonhub_coder as ehc
 
 """class EmonHub
 
@@ -28,9 +30,11 @@ target servers through EmonHubEmoncmsDispatcher instances.
 Communicates with the user through an EmonHubInterface
 
 """
+
+
 class EmonHub(object):
     
-    __version__ = 'v1.0.0'
+    __version__ = 'Pre-Release Development Version'
     
     def __init__(self, interface):
         """Setup an OpenEnergyMonitor emonHub.
@@ -64,7 +68,7 @@ class EmonHub(object):
 
         """
 
-       # Set signal handler to catch SIGINT and shutdown gracefully
+        # Set signal handler to catch SIGINT and shutdown gracefully
         signal.signal(signal.SIGINT, self._sigint_handler)
         
         # Until asked to stop
@@ -77,23 +81,23 @@ class EmonHub(object):
             
             # For all listeners
             for l in self._listeners.itervalues():
-                # Execture run method
+                # Execute run method
                 l.run()
                 # Read socket
                 values = l.read()
                 # If complete and valid data was received
                 if values is not None:
                     # Add data to dispatcher
-                    for b in self._dispatchers.itervalues():
-                        b.add(values)
+                    for d in self._dispatchers.itervalues():
+                        d.add(values)
             
             # For all dispatchers
-            for b in self._dispatchers.itervalues():
+            for d in self._dispatchers.itervalues():
                 # Send one set of values to server
-                b.flush()
+                d.flush()
 
             # Sleep until next iteration
-            time.sleep(0.2);
+            time.sleep(0.2)
          
     def close(self):
         """Close hub. Do some cleanup before leaving."""
@@ -118,27 +122,27 @@ class EmonHub(object):
         self._set_logging_level(settings['hub']['loglevel'])
         
         # Dispatchers
-        for name, buf in settings['dispatchers'].iteritems():
+        for name, dis in settings['dispatchers'].iteritems():
             # If dispatcher does not exist, create it
             if name not in self._dispatchers:
+                self._log.info("Creating " + dis['type'] + " '%s' ", name)
                 # This gets the class from the 'type' string
-                self._log.info("Creating dispatcher %s", name)
-
-                self._dispatchers[name] = \
-                    getattr(ehd, buf['type'])(name, **buf['init_settings'])
+                dispatcher = getattr(ehd, dis['type'])(name, **dis['init_settings'])
+                self._dispatchers[name] = dispatcher
+                setattr(dispatcher, 'name', name)
             # Set runtime settings
-            self._dispatchers[name].set(**buf['runtime_settings'])
+            self._dispatchers[name].set(**dis['runtime_settings'])
         # If existing dispatcher is not in settings anymore, delete it
         for name in self._dispatchers:
             if name not in settings['dispatchers']:
-                self._log.info("Deleting dispatcher %s", name)
+                self._log.info("Deleting dispatcher '%s'", name)
                 del(self._dispatchers[name])
 
         # Listeners
         for name, lis in settings['listeners'].iteritems():
             # If listener does not exist, create it
             if name not in self._listeners:
-                self._log.info("Creating listener %s", name)
+                self._log.info("Creating " + lis['type'] + " '%s' ", name)
                 try:
                     # This gets the class from the 'type' string
                     listener = getattr(ehl, lis['type'])(**lis['init_settings'])
@@ -148,6 +152,7 @@ class EmonHub(object):
                     continue
                 else:
                     self._listeners[name] = listener
+                setattr(listener, 'name', name)
             # Set runtime settings
             self._listeners[name].set(**lis['runtime_settings'])
         # If existing listener is not in settings anymore, delete it
@@ -156,6 +161,9 @@ class EmonHub(object):
                 self._listeners[name].close()
                 self._log.info("Deleting listener %s", name)
                 del(self._listeners[name])
+
+        if 'nodes' in settings:
+            ehc.nodelist = settings['nodes']
 
     def _set_logging_level(self, level):
         """Set logging level.
@@ -188,10 +196,10 @@ class EmonHub(object):
         else:
             # Otherwise, rotating logging over two 5 MB files
             loghandler = logging.handlers.RotatingFileHandler(settings['hub']['logfile'],
-                                                           'a', 5000 * 1024, 1)
+                                                              'a', 5000 * 1024, 1)
         # Format log strings
         loghandler.setFormatter(logging.Formatter(
-                '%(asctime)s %(levelname)s %(message)s'))
+            '%(asctime)s %(levelname)s %(message)s'))
         self._log.addHandler(loghandler)
     
         self._set_logging_level(settings['hub']['loglevel'])
@@ -202,17 +210,17 @@ if __name__ == "__main__":
     # Command line arguments parser
     parser = argparse.ArgumentParser(description='OpenEnergyMonitor emonHub')
     # Configuration file
-    parser.add_argument("--config-file", action="store", 
-        help='Configuration file', default=sys.path[0]+'/emonhub.conf')
+    parser.add_argument("--config-file", action="store",
+                        help='Configuration file', default=sys.path[0]+'/emonhub.conf')
     # Logfile
     parser.add_argument('--console-log', action='store_true',
-        help='log to STDERR instead of the configured logfile')
+                        help='log to STDERR instead of the configured logfile')
     # Show settings
     parser.add_argument('--show-settings', action='store_true',
-        help='show settings and exit (for debugging purposes)')
+                        help='show settings and exit (for debugging purposes)')
     # Show version
     parser.add_argument('--version', action='store_true',
-        help='display version number and exit')
+                        help='display version number and exit')
     # Parse arguments
     args = parser.parse_args()
     
@@ -225,7 +233,7 @@ if __name__ == "__main__":
     try:
         interface = ehi.EmonHubFileInterface(args.config_file)
     except ehi.EmonHubInterfaceInitError as e:
-        sys.exit("Configuration file not found: "+ args.config_file)
+        sys.exit("Configuration file not found: " + args.config_file)
  
     # Inject the console log arg into the settings, however they were loaded
     # this abstracts emonhub from having to worry about args and settings 
@@ -246,4 +254,3 @@ if __name__ == "__main__":
             hub.run()
             # When done, close hub
             hub.close()
- 
