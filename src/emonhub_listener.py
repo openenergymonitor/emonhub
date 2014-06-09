@@ -64,7 +64,7 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info(" ** NEW FRAME ** : " + f)
+        self._log.info("NEW FRAME : " + f)
         
         # Get an array out of the space separated string
         received = f.strip().split(' ')
