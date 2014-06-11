@@ -140,8 +140,14 @@ case "$1" in
 	esac
 	;;
   status)
-	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
-	;;
+    # Check the status of the process.
+    if [ -e $PIDFILE ]; then
+        status_of_proc -p $PIDFILE $DAEMON "$NAME process" && exit 0 || exit $?
+    else
+        log_daemon_msg "$NAME Process is not running"
+        log_end_msg 0
+    fi
+    ;;
   #reload|force-reload)
 	#
 	# If do_reload() is not implemented then leave this commented out
