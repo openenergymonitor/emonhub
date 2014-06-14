@@ -104,6 +104,17 @@ do_stop()
 	rm -f $PIDFILE
 	return "$RETVAL"
 }
+do_status() {
+	status="0"
+    	pidofproc -p $PIDFILE $DAEMON >/dev/null || status="$?"
+	if [ "$status" = 3 ]; then
+		pid=`ps -ef | grep '[p]ython '$DAEMON | awk '{ print $2 }'`
+		if [ "$pid" != "" ]; then
+		 	return 4
+		fi
+	fi
+	return $status
+}
 
 #
 # Function that sends a SIGHUP to the daemon/service
@@ -140,7 +151,20 @@ case "$1" in
 	esac
 	;;
   status)
-	status_of_proc "$DAEMON" "$NAME" && exit 0 || exit $?
+	[ "$VERBOSE" != no ] && log_daemon_msg "Checking $DESC" "$NAME"
+	do_status
+	case "$?" in
+		0) [ "$VERBOSE" != no ] && log_progress_msg "process is running"
+		   [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		1) [ "$VERBOSE" != no ] && log_progress_msg "process has" #failed
+		   [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+		3) [ "$VERBOSE" != no ] && log_progress_msg "process not running"
+		   [ "$VERBOSE" != no ] && log_end_msg 0 ;;
+		4) [ "$VERBOSE" != no ] && log_progress_msg "running but PID file has" #failed
+		   [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+		*) [ "$VERBOSE" != no ] && log_progress_msg "status unknown as checks" #failed
+		   [ "$VERBOSE" != no ] && log_end_msg 1 ;;
+	esac
 	;;
   #reload|force-reload)
 	#
