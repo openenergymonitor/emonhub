@@ -63,12 +63,16 @@ VERBOSE=yes
 #
 # Function that starts the daemon/service
 #
-do_start()
-{
-	# Return
-	#   0 if daemon has been started
-	#   1 if daemon was already running
-	#   2 if daemon could not be started
+do_start() {
+	do_status
+	case "$?" in
+		0)	return 1 ;;
+		1) 	rm -f $PIDFILE;;
+		3)	;;
+		4)	PID=`ps -ef | grep '[p]ython '$DAEMON | awk '{ print $2 }'`
+			echo "$PID" > $PIDFILE;;
+		*)	return "$?" ;;
+	esac
 	start-stop-daemon --start --quiet --background --make-pidfile --chuid=$DAEMONUSER --pidfile $PIDFILE --startas $DAEMON --test > /dev/null \
 		|| return 1
 	start-stop-daemon --start --quiet --background --no-close --make-pidfile --chuid=$DAEMONUSER --pidfile $PIDFILE --startas $DAEMON -- \
@@ -94,15 +98,6 @@ do_stop() {
 	esac
 	start-stop-daemon --stop --quiet --retry=INT/30/KILL/5 --pidfile $PIDFILE >/dev/null || RETVAL="$?"
 	[ "$RETVAL" = 2 ] && return 2
-	# Wait for children to finish too if this is a daemon that forks
-	# and if the daemon is only ever run from this initscript.
-	# If the above conditions are not satisfied then add some other code
-	# that waits for the process to drop all resources that could be
-	# needed by services started subsequently.  A last resort is to
-	# sleep for some time.
-	#start-stop-daemon --stop --quiet --oknodo --retry=0/30/KILL/5 --exec $DAEMON
-	#[ "$?" = 2 ] && return 2
-	# Many daemons don't delete their pidfiles when they exit.
 	rm -f $PIDFILE
 	return "$?"
 }
