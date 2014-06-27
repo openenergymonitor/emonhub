@@ -121,29 +121,29 @@ class EmonHubListener(object):
         node = received[0]
         data = received[1:]
 
-        if node in ehc.nodelist and 'codes' in ehc.nodelist[node]:
-            datacodes = ehc.nodelist[node]['codes']
+        if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
+            datacodes = ehc.nodelist[node]['datacodes']
             datasizes = []
             for code in datacodes:
                 datasizes.append(ehc.check_datacode(code))
 
             if len(data) != sum(datasizes):
                 self._log.warning("RX data length: " + str(len(data)) +
-                                  " is not valid for data codes " + str(datacodes))
+                                  " is not valid for datacodes " + str(datacodes))
                 return False
             else:
                 count = len(datacodes)
                 datacode = False
         else:
-            if node in ehc.nodelist and ehc.nodelist[node]['code']:
-                datacode = ehc.nodelist[node]['code']
+            if node in ehc.nodelist and 'datacode' in ehc.nodelist[node]:
+                datacode = ehc.nodelist[node]['datacode']
             else:
                 datacode = self._settings['defaultdatacode']
             if not datacode:
                 return received
             elif len(data) % ehc.check_datacode(datacode) != 0:
                 self._log.warning("RX data length: " + str(len(data)) +
-                                  " is not valid for data code " + str(datacode))
+                                  " is not valid for datacode " + str(datacode))
                 return False
             else:
                 count = len(data) / ehc.check_datacode(datacode)
