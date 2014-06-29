@@ -105,13 +105,16 @@ class EmonHubDispatcher(object):
         if self.buffer.hasItems():
             if 'maxItemsPerPost' in self._settings.keys():
                 max_items = int(self._settings['maxItemsPerPost'])
+                if max_items > 250:
+                    max_items = 250
             else:
-                max_items = 250
+                max_items = 1
 
             databuffer = self.buffer.retrieveItems(max_items)
+            retrievedlength = len(databuffer)
             if self._send_data(databuffer):
                 # In case of success, delete sample set from buffer
-                self.buffer.discardLastRetrievedItem()
+                self.buffer.discardLastRetrievedItems(retrievedlength)
 
 """class EmonHubEmoncmsDispatcher
 
