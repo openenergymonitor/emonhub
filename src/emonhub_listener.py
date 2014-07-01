@@ -49,7 +49,7 @@ class EmonHubListener(object):
         """
         pass
 
-    def _process_frame(self, f):
+    def _process_frame(self, t, f):
         """Process a frame of data
 
         f (string): 'NodeID val1 val2 ...'
@@ -64,7 +64,7 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info(" NEW FRAME : " + f)
+        self._log.info(" NEW FRAME : " + str(t) + " " + f)
         
         # Get an array out of the space separated string
         received = f.strip().split(' ')
@@ -74,12 +74,15 @@ class EmonHubListener(object):
             self._log.debug('Discard RX Frame "Failed validation"')
             return
 
-        received = self._decode_frame(received)
+        decoded = self._decode_frame(received)
 
-        if received:
-            self._log.debug("     Node : " + str(received[0]))
-            self._log.debug("   Values : " + str(received[1:]))
-            return received
+        if decoded:
+            self._log.debug("Timestamp : " + str(t))
+            self._log.debug("     Node : " + str(decoded[0]))
+            self._log.debug("   Values : " + str(decoded[1:]))
+            processed = [t]
+            processed += decoded
+            return processed
         else:
             return
 
@@ -287,8 +290,11 @@ class EmonHubSerialListener(EmonHubListener):
         # Reset buffer
         self._rx_buf = ''
 
+        # unix timestamp
+        t = round(time.time(), 2)
+
         # Process data frame
-        return self._process_frame(f)
+        return self._process_frame(t, f)
 
 """class EmonHubJeeListener
 
@@ -475,10 +481,13 @@ class EmonHubSocketListener(EmonHubListener):
 
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
+
+            # timestamp
+            t = round(time.time(), 2)
             
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(f)
+            return self._process_frame(t, f)
 
 """class EmonHubJeeListenerRepeater
 
