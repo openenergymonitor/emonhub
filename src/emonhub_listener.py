@@ -13,6 +13,7 @@ import datetime
 import logging
 import socket
 import select
+import sys
 
 import emonhub_coder as ehc
 
@@ -123,6 +124,7 @@ class EmonHubListener(object):
 
         node = received[0]
         data = received[1:]
+        decoded = []
 
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
             datacodes = ehc.nodelist[node]['datacodes']
@@ -143,7 +145,12 @@ class EmonHubListener(object):
             else:
                 datacode = self._settings['defaultdatacode']
             if not datacode:
-                return received
+                for val in data:
+                    if float(val) % 1 != 0:
+                        val = float(val)
+                    else:
+                        val = int(val)
+                    decoded.append(val)
             elif len(data) % ehc.check_datacode(datacode) != 0:
                 self._log.warning("RX data length: " + str(len(data)) +
                                   " is not valid for datacode " + str(datacode))
@@ -152,20 +159,23 @@ class EmonHubListener(object):
                 count = len(data) / ehc.check_datacode(datacode)
 
         # Decode the string of data one value at a time into "decoded"
-        decoded = []
-        bytepos = int(0)
-        #v = 0
-        for i in range(0, count, 1):
-            dc = datacode
-            if not datacode:
-                dc = datacodes[i]
-            size = int(ehc.check_datacode(dc))
-            value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
-            bytepos += size
-            decoded.append(value)
+        if not decoded:
+            bytepos = int(0)
+            for i in range(0, count, 1):
+                dc = datacode
+                if not datacode:
+                    dc = datacodes[i]
+                size = int(ehc.check_datacode(dc))
+                try:
+                    value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
+                except:
+                    self._log.warning("Unable to decode as values incorrect for datacode(s)")
+                    return False
+                bytepos += size
+                decoded.append(value)
 
         # Insert node ID before data
-        decoded.insert(0, node)
+        decoded.insert(0, int(node))
         return decoded
     
     def set(self, **kwargs):
