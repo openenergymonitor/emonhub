@@ -70,19 +70,14 @@ class EmonHubDispatcher(object):
        
         if self._settings['active'] == 'False':
             return
-        
-        # Timestamp = now
-        t = round(time.time(), 2)
 
         self._log.debug("Append to '" + self.name +
-                        "' buffer => time: " + str(t)
-                        + ", data: " + str(data))
+                        "' buffer => time: " + str(data[0])
+                        + ", data: " + str(data[1:]))
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 3450 ...]]
-        item = [t]
-        item += data
-        self.buffer.storeItem(item)
+        self.buffer.storeItem(data)
 
     def _send_data(self, data):
         """Send data to server.
