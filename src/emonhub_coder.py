@@ -1,8 +1,4 @@
 import struct
-import logging
-
-# Initialize logger
-log = logging.getLogger("EmonHub")
 
 # Initialize nodes data
 nodelist = {}
@@ -32,9 +28,5 @@ def decode(datacode, frame):
     # get data size from data code
     s = int(check_datacode(datacode))
 
-    try:
-        result = struct.unpack(e + datacode[0], struct.pack(e + b*s, *frame))
-        return result[0]
-    except:
-        log.info("Unable to decode as datacode incorrect for value")
-        return False
+    result = struct.unpack(e + datacode[0], struct.pack(e + b*s, *frame))
+    return result[0]
