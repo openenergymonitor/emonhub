@@ -382,12 +382,6 @@ class EmonHubJeeListener(EmonHubSerialListener):
             self._log.warning("Discard RX frame 'too short' : " + str(received))
             return False
 
-        # Discard frame if number of elements not odd
-        # [node val1_lsb val1_msb val2_lsb val2_msb ...]
-        if not (len(received) & 1):
-            self._log.warning("Discard RX frame 'element count incorrect': " + str(received))
-            return False
-
         return True
 
     def set(self, **kwargs):
