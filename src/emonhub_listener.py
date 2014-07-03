@@ -13,7 +13,6 @@ import datetime
 import logging
 import socket
 import select
-import sys
 
 import emonhub_coder as ehc
 
@@ -83,9 +82,15 @@ class EmonHubListener(object):
             self._log.debug("   Values : " + str(decoded[1:]))
             processed = [t]
             processed += decoded
-            return processed
         else:
             return
+
+        # pause output if 'pause' set to true or to pause output only
+        if 'pause' in self._settings and self._settings['pause'] in \
+                ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
+            return
+        
+        return processed
 
     def _validate_frame(self, received):
         """Validate a frame of data
@@ -183,6 +188,12 @@ class EmonHubListener(object):
 
         **kwargs (dict): settings to be sent. Example:
         {'setting_1': 'value_1', 'setting_2': 'value_2'}
+
+        pause (string): pause status
+            'pause' = i/I/in/In/IN to pause the input only, no input read performed
+            'pause' = o/O/out/Out/OUT to pause output only, input is read, processed but not posted to buffer
+            'pause' = t/T/true/True/TRUE full pause, nothing read or posted.
+            'pause' = anything else, commented out or omitted then dispatcher is fully operational
         
         """
         key = 'defaultdatacode'
@@ -199,6 +210,14 @@ class EmonHubListener(object):
             if value != self._settings[key]:
                 self._settings[key] = value
                 self._log.debug("Setting " + self.name + " default datacode : %s", self._settings[key])
+
+        # check if 'pause' has been removed or commented out
+        if not 'pause' in kwargs and 'pause' in self._settings:
+            self._settings['pause'] = False
+
+        for key, value in kwargs.iteritems():
+
+            self._settings[key] = value
 
     def run(self):
         """Placeholder for background tasks. 
@@ -286,6 +305,10 @@ class EmonHubSerialListener(EmonHubListener):
         Return data as a list: [NodeID, val1, val2]
         
         """
+        # pause input if 'pause' set to true or to pause input only
+        if 'pause' in self._settings and self._settings['pause'] in \
+                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
+            return
         
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
@@ -476,6 +499,11 @@ class EmonHubSocketListener(EmonHubListener):
         # Check if data received
         ready_to_read, ready_to_write, in_error = \
             select.select([self._socket], [], [], 0)
+
+        # pause input if 'pause' set to true or to pause input only
+        if 'pause' in self._settings and self._settings['pause'] in \
+                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
+            return
 
         # If data received, add it to socket RX buffer
         if self._socket in ready_to_read:

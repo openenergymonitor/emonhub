@@ -46,13 +46,20 @@ class EmonHubDispatcher(object):
     def set(self, **kwargs):
         """Update settings.
         
-        **kwargs (dict): settings to be modified.
+        **kwargs (dict): runtime settings to be modified.
         
         url (string): eg: 'http://localhost/emoncms' or 'http://emoncms.org' (trailing slash optional)
         apikey (string): API key with write access
-        active (string): whether the dispatcher is active (True/False)
+        pause (string): pause status
+            'pause' = i/I/in/In/IN to pause the input only, no add to buffer but flush still functional
+            'pause' = o/O/out/Out/OUT to pause output only, no flush but data can accumulate in buffer
+            'pause' = t/T/true/True/TRUE nothing gets posted to buffer or sent by url (buffer retained)
+            'pause' = anything else, commented out or omitted then dispatcher is fully operational
         
         """
+        # check if 'pause' has been removed or commented out
+        if not 'pause' in kwargs and 'pause' in self._settings:
+            self._settings['pause'] = False
        
         for key, value in kwargs.iteritems():
             # Strip trailing slash
@@ -67,8 +74,9 @@ class EmonHubDispatcher(object):
         data (list): node and values (eg: '[node,val1,val2,...]')
 
         """
-       
-        if self._settings['active'] == 'False':
+        # pause input if 'pause' set to true or to pause input only
+        if 'pause' in self._settings and self._settings['pause'] in \
+                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
             return
 
         self._log.debug("Append to '" + self.name +
@@ -94,6 +102,11 @@ class EmonHubDispatcher(object):
 
     def flush(self):
         """Send oldest data in buffer, if any."""
+
+        # pause output if 'pause' set to true or to pause output only
+        if 'pause' in self._settings and self._settings['pause'] in \
+                ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
+            return
         
         # Buffer management
         # If data buffer not empty, send a set of values
