@@ -214,10 +214,8 @@ class EmonHubListener(object):
         # check if 'pause' has been removed or commented out
         if not 'pause' in kwargs and 'pause' in self._settings:
             self._settings['pause'] = False
-
-        for key, value in kwargs.iteritems():
-
-            self._settings[key] = value
+        elif 'pause' in kwargs:
+            self._settings['pause'] = kwargs['pause']
 
     def run(self):
         """Placeholder for background tasks. 
