@@ -56,9 +56,9 @@ class EmonHubListener(object):
 
         This function splits the string into numbers and check its validity.
 
-        'NodeID val1 val2 ...' is the generic data format. If the source uses 
+        'NodeID val1 val2 ...' is the generic data format. If the source uses
         a different format, override this method.
-        
+
         Return data as a list: [NodeID, val1, val2]
 
         """
@@ -89,7 +89,7 @@ class EmonHubListener(object):
         if 'pause' in self._settings and self._settings['pause'] in \
                 ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
             return
-        
+
         return processed
 
     def _validate_frame(self, received):
@@ -131,24 +131,32 @@ class EmonHubListener(object):
         data = received[1:]
         decoded = []
 
+        # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
+            # fetch the string of datacodes
             datacodes = ehc.nodelist[node]['datacodes']
+            # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
                 datasizes.append(ehc.check_datacode(code))
-
+            # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(data) != sum(datasizes):
                 self._log.warning("RX data length: " + str(len(data)) +
                                   " is not valid for datacodes " + str(datacodes))
                 return False
             else:
+                # Determine the expected number of values to be decoded
                 count = len(datacodes)
+                # Set decoder to "Per value" decoding using datacode 'False' as flag
                 datacode = False
         else:
+            # if node is listed, but has only a single default datacode for all values
             if node in ehc.nodelist and 'datacode' in ehc.nodelist[node]:
                 datacode = ehc.nodelist[node]['datacode']
             else:
+            # when node not listed or has no datacode(s) use the listeners default if specified
                 datacode = self._settings['defaultdatacode']
+            # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
                     if float(val) % 1 != 0:
@@ -156,20 +164,24 @@ class EmonHubListener(object):
                     else:
                         val = int(val)
                     decoded.append(val)
+            # Discard frame if total size is not an exact multiple of the specified datacode size.
             elif len(data) % ehc.check_datacode(datacode) != 0:
                 self._log.warning("RX data length: " + str(len(data)) +
                                   " is not valid for datacode " + str(datacode))
                 return False
             else:
+            # Determine the number of values in the frame of the specified code & size
                 count = len(data) / ehc.check_datacode(datacode)
 
         # Decode the string of data one value at a time into "decoded"
         if not decoded:
             bytepos = int(0)
             for i in range(0, count, 1):
+                # Use single datacode unless datacode = False then use datacodes
                 dc = datacode
                 if not datacode:
                     dc = datacodes[i]
+                # Determine the number of bytes to use for each value by it's datacode
                 size = int(ehc.check_datacode(dc))
                 try:
                     value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
