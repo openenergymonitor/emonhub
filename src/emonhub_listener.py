@@ -49,39 +49,38 @@ class EmonHubListener(object):
         """
         pass
 
-    def _process_frame(self, t, f):
+    def _process_frame(self, timestamp, frame):
         """Process a frame of data
 
         f (string): 'NodeID val1 val2 ...'
 
         This function splits the string into numbers and check its validity.
 
-        'NodeID val1 val2 ...' is the generic data format. If the source uses
+        'NodeID val1 val2 ...' is the generic data format. If the source uses 
         a different format, override this method.
-
+        
         Return data as a list: [NodeID, val1, val2]
 
         """
 
         # Log data
-        self._log.info(" NEW FRAME : " + str(t) + " " + f)
+        self._log.info(" NEW FRAME : " + str(timestamp) + " " + frame)
         
         # Get an array out of the space separated string
-        received = f.strip().split(' ')
+        frame = frame.strip().split(' ')
 
         # Validate frame
-        if not self._validate_frame(received):
+        if not self._validate_frame(frame):
             self._log.debug('Discard RX Frame "Failed validation"')
             return
 
-        decoded = self._decode_frame(received)
+        frame = self._decode_frame(frame)
 
-        if decoded:
-            self._log.debug("Timestamp : " + str(t))
-            self._log.debug("     Node : " + str(decoded[0]))
-            self._log.debug("   Values : " + str(decoded[1:]))
-            processed = [t]
-            processed += decoded
+        if frame:
+            self._log.debug("Timestamp : " + str(timestamp))
+            self._log.debug("     Node : " + str(frame[0]))
+            self._log.debug("   Values : " + str(frame[1:]))
+            frame = [timestamp] + frame
         else:
             return
 
@@ -89,8 +88,8 @@ class EmonHubListener(object):
         if 'pause' in self._settings and self._settings['pause'] in \
                 ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
             return
-
-        return processed
+        
+        return frame
 
     def _validate_frame(self, received):
         """Validate a frame of data
@@ -118,7 +117,7 @@ class EmonHubListener(object):
         # If it passes all the checks return True
         return True
 
-    def _decode_frame(self, received):
+    def _decode_frame(self, data):
         """Decodes a frame of data
 
         Performs decoding of data types
@@ -127,8 +126,8 @@ class EmonHubListener(object):
 
         """
 
-        node = received[0]
-        data = received[1:]
+        node = data[0]
+        data = data[1:]
         decoded = []
 
         # check if node is listed and has individual datacodes for each value
