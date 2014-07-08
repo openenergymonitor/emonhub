@@ -237,7 +237,7 @@ class EmonHubListener(object):
         """
         pass
 
-    def _open_serial_port(self, com_port):
+    def _open_serial_port(self, com_port, com_baud):
         """Open serial port
 
         com_port (string): path to COM port
@@ -246,8 +246,13 @@ class EmonHubListener(object):
         
         self._log.debug('Opening serial port: %s', com_port)
         
+        if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+            self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
+            com_baud = 9600
+
         try:
-            s = serial.Serial(com_port, 9600, timeout=0)
+            s = serial.Serial(com_port, com_baud, timeout=0)
+            self._log.info("Opened serial port : " + str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             raise EmonHubListenerInitError('Could not open COM port %s' %
@@ -284,7 +289,7 @@ Monitors the serial port for data
 
 class EmonHubSerialListener(EmonHubListener):
 
-    def __init__(self, com_port):
+    def __init__(self, com_port, com_baud=9600):
         """Initialize listener
 
         com_port (string): path to COM port
@@ -295,7 +300,7 @@ class EmonHubSerialListener(EmonHubListener):
         super(EmonHubSerialListener, self).__init__()
 
         # Open serial port
-        self._ser = self._open_serial_port(com_port)
+        self._ser = self._open_serial_port(com_port, com_baud)
         
         # Initialize RX buffer
         self._rx_buf = ''
@@ -347,7 +352,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeListener(EmonHubSerialListener):
 
-    def __init__(self, com_port):
+    def __init__(self, com_port, com_baud=9600):
         """Initialize listener
 
         com_port (string): path to COM port
@@ -355,7 +360,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
         """
         
         # Initialization
-        super(EmonHubJeeListener, self).__init__(com_port)
+        super(EmonHubJeeListener, self).__init__(com_port, com_baud)
 
         # Initialize settings
         self._settings = {'baseid': '', 'frequency': '', 'sgroup': '',
@@ -540,7 +545,7 @@ and repeats on RF link the frames received through a socket
 
 class EmonHubJeeListenerRepeater(EmonHubJeeListener):
 
-    def __init__(self, com_port, port_nb):
+    def __init__(self, com_port, port_nb, com_baud=9600):
         """Initialize listener
 
         com_port (string): path to COM port
@@ -549,7 +554,7 @@ class EmonHubJeeListenerRepeater(EmonHubJeeListener):
         """
         
         # Initialization
-        super(EmonHubJeeListenerRepeater, self).__init__(com_port)
+        super(EmonHubJeeListenerRepeater, self).__init__(com_port, com_baud)
 
         # Open socket
         self._socket = self._open_socket(port_nb)
