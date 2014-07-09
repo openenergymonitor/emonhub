@@ -252,7 +252,7 @@ class EmonHubListener(object):
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.info("Opened serial port : " + str(com_baud) + " bits/s")
+            self._log.info("Opened serial port: " + str(com_port) + " "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             raise EmonHubListenerInitError('Could not open COM port %s' %

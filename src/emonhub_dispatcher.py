@@ -34,14 +34,17 @@ class EmonHubDispatcher(object):
         self._log = logging.getLogger("EmonHub")
 
         # Initialise settings
+        self.name = dispatcherName
         self._defaults = {'pause': 0, 'interval': 0, 'maxItemsPerPost': 1}
         self._settings = {}
-        self.name = ''
-        
+
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
         self._settings.update(self._defaults)
+
+        # Initialize interval timer's "started at" timestamp
+        self._interval_timestamp = 0
 
         # Create underlying buffer implementation
         self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, **kwargs)
