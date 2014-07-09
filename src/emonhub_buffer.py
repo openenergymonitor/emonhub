@@ -43,7 +43,7 @@ It's basically identical to the previous (inline) buffer.
 
 class InMemoryBuffer(AbstractBuffer):
   
-    def __init__(self, bufferName, bufferSize=1000):
+    def __init__(self, bufferName, bufferSize):
         self._bufferName = str(bufferName)
         self._maximumEntriesInBuffer = int(bufferSize)
         self._data_buffer = []

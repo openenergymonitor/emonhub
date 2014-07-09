@@ -27,7 +27,7 @@ destination server.
 
 class EmonHubDispatcher(object):
 
-    def __init__(self, dispatcherName, bufferMethod="memory", **kwargs):
+    def __init__(self, dispatcherName, bufferMethod="memory", bufferSize=1000, **kwargs):
         """Create a server data buffer initialized with server settings."""
         
         # Initialize logger
@@ -47,10 +47,10 @@ class EmonHubDispatcher(object):
         self._interval_timestamp = 0
 
         # Create underlying buffer implementation
-        self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, **kwargs)
+        self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, bufferSize, **kwargs)
         
-        self._log.info("Set up dispatcher '%s' (buffer: %s)"
-                       % (dispatcherName, bufferMethod))
+        self._log.info("Set up dispatcher '%s' (buffer: %s | size: %s)"
+                       % (dispatcherName, bufferMethod, bufferSize))
         
     def set(self, **kwargs):
         """Update settings.
