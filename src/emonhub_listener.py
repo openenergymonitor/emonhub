@@ -35,7 +35,11 @@ class EmonHubListener(object):
 
         # Initialise settings
         self.name = ''
-        self._settings = {'defaultdatacode': ''}
+        self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
+        self._settings = {}
+
+        # Initialize interval timer's "started at" timestamp
+        self._interval_timestamp = 0
         
     def close(self):
         """Close socket."""
@@ -207,26 +211,17 @@ class EmonHubListener(object):
             'pause' = anything else, commented out or omitted then dispatcher is fully operational
         
         """
-        key = 'defaultdatacode'
-        value = ''
-        try:
-            kwargs[key]
-        except:
-            value = False
-        else:
-            value = kwargs[key]
-            if not ehc.check_datacode(value):
-                value = False
-        finally:
-            if value != self._settings[key]:
-                self._settings[key] = value
-                self._log.debug("Setting " + self.name + " default datacode : %s", self._settings[key])
 
-        # check if 'pause' has been removed or commented out
-        if not 'pause' in kwargs and 'pause' in self._settings:
-            self._settings['pause'] = False
-        elif 'pause' in kwargs:
-            self._settings['pause'] = kwargs['pause']
+        for key, setting in self._defaults.iteritems():
+            if not key in kwargs.keys():
+                setting = self._defaults[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                pass
+            else:
+                self._settings[key] = setting
+                self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
     def run(self):
         """Placeholder for background tasks. 
@@ -363,11 +358,8 @@ class EmonHubJeeListener(EmonHubSerialListener):
         super(EmonHubJeeListener, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._settings = {'baseid': '', 'frequency': '', 'sgroup': '',
-                          'sendtimeinterval': '', 'defaultdatacode': ''}
-        
-        # Initialize time update timestamp
-        self._time_update_timestamp = 0
+        self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
+        self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
 
     def _validate_frame(self, received):
         """Validate a frame of data
@@ -407,9 +399,6 @@ class EmonHubJeeListener(EmonHubSerialListener):
         
         """
 
-        # include kwargs from parent
-        super(EmonHubJeeListener, self).set(**kwargs)
-        
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
             if key in ['baseid', 'frequency', 'sgroup']:
@@ -426,10 +415,9 @@ class EmonHubJeeListener(EmonHubSerialListener):
                     self._ser.write(string)
                     # Wait a sec between two settings
                     time.sleep(1)
-            elif key == 'sendtimeinterval':
-                if value != self._settings[key]:
-                    self._log.info("Setting " + self.name + " send time interval : %s", value)
-                    self._settings[key] = value
+
+        # include kwargs from parent
+        super(EmonHubJeeListener, self).set(**kwargs)
 
     def run(self):
         """Actions that need to be done on a regular basis. 
@@ -441,11 +429,11 @@ class EmonHubJeeListener(EmonHubSerialListener):
         now = time.time()
 
         # Broadcast time to synchronize emonGLCD
-        interval = int(self._settings['sendtimeinterval'])
+        interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if now - self._time_update_timestamp > interval:
+            if now - self._interval_timestamp > interval:
                 self._send_time()
-                self._time_update_timestamp = now
+                self._interval_timestamp = now
     
     def _send_time(self):
         """Send time over radio link to synchronize emonGLCD
@@ -460,7 +448,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         now = datetime.datetime.now()
 
-        self._log.debug("Broadcasting time: %d:%d" % (now.hour, now.minute))
+        self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
 
         self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
