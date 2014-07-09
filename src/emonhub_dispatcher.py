@@ -33,8 +33,7 @@ class EmonHubDispatcher(object):
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
-        # Initialise settings
-        self._defaults = {'pause': 0, 'interval': 0, 'maxItemsPerPost': 1}
+        # Initialize variables
         self._settings = {}
         self.name = ''
         
@@ -58,18 +57,10 @@ class EmonHubDispatcher(object):
             'pause' = anything else, commented out or omitted then dispatcher is fully operational
         
         """
-
-        for key, setting in self._defaults.iteritems():
-            if not key in kwargs.keys():
-                setting = self._defaults[key]
-            else:
-                setting = kwargs[key]
-            if key in self._settings and self._settings[key] == setting:
-                pass
-            else:
-                self._settings[key] = setting
-                self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
-
+        # check if 'pause' has been removed or commented out
+        if not 'pause' in kwargs and 'pause' in self._settings:
+            self._settings['pause'] = False
+       
         for key, value in kwargs.iteritems():
             # Strip trailing slash
             if key == 'url':
@@ -120,11 +111,12 @@ class EmonHubDispatcher(object):
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
-            max_items = int(self._settings['maxItemsPerPost'])
-            if max_items > 250:
-                max_items = 250
-            elif max_items <= 0:
-                return
+            if 'maxItemsPerPost' in self._settings.keys():
+                max_items = int(self._settings['maxItemsPerPost'])
+                if max_items > 250:
+                    max_items = 250
+            else:
+                max_items = 1
 
             databuffer = self.buffer.retrieveItems(max_items)
             retrievedlength = len(databuffer)
