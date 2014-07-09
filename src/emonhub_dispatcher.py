@@ -200,3 +200,13 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
                 return True
             else:
                 self._log.warning("Send failure: wanted 'ok' but got "+reply)
+
+"""class EmonHubDispatcherInitError
+
+Raise this when init fails.
+
+"""
+
+
+class EmonHubDispatcherInitError(Exception):
+    pass
