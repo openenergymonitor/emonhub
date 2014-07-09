@@ -38,6 +38,11 @@ class EmonHubDispatcher(object):
         self._settings = {}
         self.name = ''
         
+        # This line will stop the default values printing to logfile at start-up
+        # unless they have been overwritten by emonhub.conf entries
+        # comment out if diagnosing a startup value issue
+        self._settings.update(self._defaults)
+
         # Create underlying buffer implementation
         self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, **kwargs)
         

@@ -38,6 +38,11 @@ class EmonHubListener(object):
         self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
         self._settings = {}
 
+        # This line will stop the default values printing to logfile at start-up
+        # unless they have been overwritten by emonhub.conf entries
+        # comment out if diagnosing a startup value issue
+        self._settings.update(self._defaults)
+
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
         
@@ -360,6 +365,11 @@ class EmonHubJeeListener(EmonHubSerialListener):
         # Initialize settings
         self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
         self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
+
+        # This line will stop the default values printing to logfile at start-up
+        # unless they have been overwritten by emonhub.conf entries
+        # comment out if diagnosing a startup value issue
+        self._settings.update(self._defaults)
 
     def _validate_frame(self, received):
         """Validate a frame of data
