@@ -413,15 +413,16 @@ class EmonHubJeeListener(EmonHubSerialListener):
             # If radio setting modified, transmit on serial link
             if key in ['baseid', 'frequency', 'sgroup']:
                 if value != self._settings[key]:
+                    if key == 'baseid' and int(value) >=1 and int(value) <=26:
+                        string = value + 'i'
+                    elif key == 'frequency' and value in {'433','868','915'}:
+                        string = value[:1] + 'b'
+                    elif key == 'sgroup'and int(value) >=0 and int(value) <=212:
+                        string = value + 'g'
+                    else:
+                        continue
                     self._settings[key] = value
-                    self._log.info("Setting " + self.name + " %s: %s :" % (key, value))
-                    string = value
-                    if key == 'baseid':
-                        string += 'i'
-                    elif key == 'frequency':
-                        string += 'b'
-                    elif key == 'sgroup':
-                        string += 'g'
+                    self._log.debug("Setting " + self.name + " %s: %s" % (key, value) + " (" + string + ")")
                     self._ser.write(string)
                     # Wait a sec between two settings
                     time.sleep(1)
