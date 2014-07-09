@@ -122,44 +122,56 @@ class EmonHub(object):
         self._set_logging_level(settings['hub']['loglevel'])
         
         # Dispatchers
+        for name in self._dispatchers.keys():
+            # If dispatcher is not in the settings anymore or if 'type' is omitted, delete it
+            # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
+            if name not in settings['dispatchers'] or 'type' not in settings['dispatchers'][name]:
+                self._log.info("Deleting dispatcher '%s'", name)
+                del(self._dispatchers[name])
         for name, dis in settings['dispatchers'].iteritems():
             # If dispatcher does not exist, create it
             if name not in self._dispatchers:
-                self._log.info("Creating " + dis['type'] + " '%s' ", name)
-                # This gets the class from the 'type' string
-                dispatcher = getattr(ehd, dis['type'])(name, **dis['init_settings'])
-                self._dispatchers[name] = dispatcher
+                try:
+                    if not 'type' in dis:
+                        continue
+                    self._log.info("Creating " + dis['type'] + " '%s' ", name)
+                    # This gets the class from the 'type' string
+                    dispatcher = getattr(ehd, dis['type'])(name, **dis['init_settings'])
+                except ehd.EmonHubDispatcherInitError as e:
+                    # If dispatcher can't be created, log error and skip to next
+                    self._log.error("Failed to create '" + name + "' dispatcher: " + str(e))
+                    continue
+                else:
+                    self._dispatchers[name] = dispatcher
             # Set runtime settings
             self._dispatchers[name].set(**dis['runtime_settings'])
-        # If existing dispatcher is not in settings anymore, delete it
-        for name in self._dispatchers:
-            if name not in settings['dispatchers']:
-                self._log.info("Deleting dispatcher '%s'", name)
-                del(self._dispatchers[name])
 
         # Listeners
+        for name in self._listeners.keys():
+            # If listener is not in the settings anymore or if 'type' is omitted, delete it
+            # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
+            if name not in settings['listeners'] or 'type' not in settings['listeners'][name]:
+                self._listeners[name].close()
+                self._log.info("Deleting listener '%s' ", name)
+                del(self._listeners[name])
         for name, lis in settings['listeners'].iteritems():
             # If listener does not exist, create it
             if name not in self._listeners:
-                self._log.info("Creating " + lis['type'] + " '%s' ", name)
                 try:
+                    if not 'type' in lis:
+                        continue
+                    self._log.info("Creating " + lis['type'] + " '%s' ", name)
                     # This gets the class from the 'type' string
                     listener = getattr(ehl, lis['type'])(**lis['init_settings'])
                 except ehl.EmonHubListenerInitError as e:
                     # If listener can't be created, log error and skip to next
-                    self._log.error(e)
+                    self._log.error("Failed to create '" + name + "' listener: " + str(e))
                     continue
                 else:
                     self._listeners[name] = listener
                 setattr(listener, 'name', name)
             # Set runtime settings
             self._listeners[name].set(**lis['runtime_settings'])
-        # If existing listener is not in settings anymore, delete it
-        for name in self._listeners:
-            if name not in settings['listeners']:
-                self._listeners[name].close()
-                self._log.info("Deleting listener %s", name)
-                del(self._listeners[name])
 
         if 'nodes' in settings:
             ehc.nodelist = settings['nodes']
