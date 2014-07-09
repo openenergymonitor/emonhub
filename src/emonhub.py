@@ -129,7 +129,6 @@ class EmonHub(object):
                 # This gets the class from the 'type' string
                 dispatcher = getattr(ehd, dis['type'])(name, **dis['init_settings'])
                 self._dispatchers[name] = dispatcher
-                setattr(dispatcher, 'name', name)
             # Set runtime settings
             self._dispatchers[name].set(**dis['runtime_settings'])
         # If existing dispatcher is not in settings anymore, delete it

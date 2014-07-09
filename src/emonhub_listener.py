@@ -38,6 +38,11 @@ class EmonHubListener(object):
         self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
         self._settings = {}
 
+        # This line will stop the default values printing to logfile at start-up
+        # unless they have been overwritten by emonhub.conf entries
+        # comment out if diagnosing a startup value issue
+        self._settings.update(self._defaults)
+
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
         
@@ -247,7 +252,7 @@ class EmonHubListener(object):
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.info("Opened serial port : " + str(com_baud) + " bits/s")
+            self._log.info("Opened serial port: " + str(com_port) + " "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             raise EmonHubListenerInitError('Could not open COM port %s' %
@@ -361,6 +366,11 @@ class EmonHubJeeListener(EmonHubSerialListener):
         self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
         self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
 
+        # This line will stop the default values printing to logfile at start-up
+        # unless they have been overwritten by emonhub.conf entries
+        # comment out if diagnosing a startup value issue
+        self._settings.update(self._defaults)
+
     def _validate_frame(self, received):
         """Validate a frame of data
 
@@ -403,15 +413,16 @@ class EmonHubJeeListener(EmonHubSerialListener):
             # If radio setting modified, transmit on serial link
             if key in ['baseid', 'frequency', 'sgroup']:
                 if value != self._settings[key]:
+                    if key == 'baseid' and int(value) >=1 and int(value) <=26:
+                        string = value + 'i'
+                    elif key == 'frequency' and value in {'433','868','915'}:
+                        string = value[:1] + 'b'
+                    elif key == 'sgroup'and int(value) >=0 and int(value) <=212:
+                        string = value + 'g'
+                    else:
+                        continue
                     self._settings[key] = value
-                    self._log.info("Setting " + self.name + " %s: %s :" % (key, value))
-                    string = value
-                    if key == 'baseid':
-                        string += 'i'
-                    elif key == 'frequency':
-                        string += 'b'
-                    elif key == 'sgroup':
-                        string += 'g'
+                    self._log.debug("Setting " + self.name + " %s: %s" % (key, value) + " (" + string + ")")
                     self._ser.write(string)
                     # Wait a sec between two settings
                     time.sleep(1)
