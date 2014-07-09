@@ -35,7 +35,11 @@ class EmonHubListener(object):
 
         # Initialise settings
         self.name = ''
-        self._settings = {'defaultdatacode': ''}
+        self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
+        self._settings = {}
+
+        # Initialize interval timer's "started at" timestamp
+        self._interval_timestamp = 0
         
     def close(self):
         """Close socket."""
@@ -49,7 +53,7 @@ class EmonHubListener(object):
         """
         pass
 
-    def _process_frame(self, t, f):
+    def _process_frame(self, timestamp, frame):
         """Process a frame of data
 
         f (string): 'NodeID val1 val2 ...'
@@ -64,24 +68,23 @@ class EmonHubListener(object):
         """
 
         # Log data
-        self._log.info(" NEW FRAME : " + str(t) + " " + f)
+        self._log.info(" NEW FRAME : " + str(timestamp) + " " + frame)
         
         # Get an array out of the space separated string
-        received = f.strip().split(' ')
+        frame = frame.strip().split(' ')
 
         # Validate frame
-        if not self._validate_frame(received):
+        if not self._validate_frame(frame):
             self._log.debug('Discard RX Frame "Failed validation"')
             return
 
-        decoded = self._decode_frame(received)
+        frame = self._decode_frame(frame)
 
-        if decoded:
-            self._log.debug("Timestamp : " + str(t))
-            self._log.debug("     Node : " + str(decoded[0]))
-            self._log.debug("   Values : " + str(decoded[1:]))
-            processed = [t]
-            processed += decoded
+        if frame:
+            self._log.debug("Timestamp : " + str(timestamp))
+            self._log.debug("     Node : " + str(frame[0]))
+            self._log.debug("   Values : " + str(frame[1:]))
+            frame = [timestamp] + frame
         else:
             return
 
@@ -90,7 +93,7 @@ class EmonHubListener(object):
                 ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
             return
         
-        return processed
+        return frame
 
     def _validate_frame(self, received):
         """Validate a frame of data
@@ -118,7 +121,7 @@ class EmonHubListener(object):
         # If it passes all the checks return True
         return True
 
-    def _decode_frame(self, received):
+    def _decode_frame(self, data):
         """Decodes a frame of data
 
         Performs decoding of data types
@@ -127,28 +130,36 @@ class EmonHubListener(object):
 
         """
 
-        node = received[0]
-        data = received[1:]
+        node = data[0]
+        data = data[1:]
         decoded = []
 
+        # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
+            # fetch the string of datacodes
             datacodes = ehc.nodelist[node]['datacodes']
+            # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
                 datasizes.append(ehc.check_datacode(code))
-
+            # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(data) != sum(datasizes):
                 self._log.warning("RX data length: " + str(len(data)) +
                                   " is not valid for datacodes " + str(datacodes))
                 return False
             else:
+                # Determine the expected number of values to be decoded
                 count = len(datacodes)
+                # Set decoder to "Per value" decoding using datacode 'False' as flag
                 datacode = False
         else:
+            # if node is listed, but has only a single default datacode for all values
             if node in ehc.nodelist and 'datacode' in ehc.nodelist[node]:
                 datacode = ehc.nodelist[node]['datacode']
             else:
+            # when node not listed or has no datacode(s) use the listeners default if specified
                 datacode = self._settings['defaultdatacode']
+            # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
                     if float(val) % 1 != 0:
@@ -156,20 +167,24 @@ class EmonHubListener(object):
                     else:
                         val = int(val)
                     decoded.append(val)
+            # Discard frame if total size is not an exact multiple of the specified datacode size.
             elif len(data) % ehc.check_datacode(datacode) != 0:
                 self._log.warning("RX data length: " + str(len(data)) +
                                   " is not valid for datacode " + str(datacode))
                 return False
             else:
+            # Determine the number of values in the frame of the specified code & size
                 count = len(data) / ehc.check_datacode(datacode)
 
         # Decode the string of data one value at a time into "decoded"
         if not decoded:
             bytepos = int(0)
             for i in range(0, count, 1):
+                # Use single datacode unless datacode = False then use datacodes
                 dc = datacode
                 if not datacode:
                     dc = datacodes[i]
+                # Determine the number of bytes to use for each value by it's datacode
                 size = int(ehc.check_datacode(dc))
                 try:
                     value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
@@ -196,26 +211,17 @@ class EmonHubListener(object):
             'pause' = anything else, commented out or omitted then dispatcher is fully operational
         
         """
-        key = 'defaultdatacode'
-        value = ''
-        try:
-            kwargs[key]
-        except:
-            value = False
-        else:
-            value = kwargs[key]
-            if not ehc.check_datacode(value):
-                value = False
-        finally:
-            if value != self._settings[key]:
-                self._settings[key] = value
-                self._log.debug("Setting " + self.name + " default datacode : %s", self._settings[key])
 
-        # check if 'pause' has been removed or commented out
-        if not 'pause' in kwargs and 'pause' in self._settings:
-            self._settings['pause'] = False
-        elif 'pause' in kwargs:
-            self._settings['pause'] = kwargs['pause']
+        for key, setting in self._defaults.iteritems():
+            if not key in kwargs.keys():
+                setting = self._defaults[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                pass
+            else:
+                self._settings[key] = setting
+                self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
     def run(self):
         """Placeholder for background tasks. 
@@ -352,11 +358,8 @@ class EmonHubJeeListener(EmonHubSerialListener):
         super(EmonHubJeeListener, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._settings = {'baseid': '', 'frequency': '', 'sgroup': '',
-                          'sendtimeinterval': '', 'defaultdatacode': ''}
-        
-        # Initialize time update timestamp
-        self._time_update_timestamp = 0
+        self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
+        self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
 
     def _validate_frame(self, received):
         """Validate a frame of data
@@ -396,9 +399,6 @@ class EmonHubJeeListener(EmonHubSerialListener):
         
         """
 
-        # include kwargs from parent
-        super(EmonHubJeeListener, self).set(**kwargs)
-        
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
             if key in ['baseid', 'frequency', 'sgroup']:
@@ -415,10 +415,9 @@ class EmonHubJeeListener(EmonHubSerialListener):
                     self._ser.write(string)
                     # Wait a sec between two settings
                     time.sleep(1)
-            elif key == 'sendtimeinterval':
-                if value != self._settings[key]:
-                    self._log.info("Setting " + self.name + " send time interval : %s", value)
-                    self._settings[key] = value
+
+        # include kwargs from parent
+        super(EmonHubJeeListener, self).set(**kwargs)
 
     def run(self):
         """Actions that need to be done on a regular basis. 
@@ -430,11 +429,11 @@ class EmonHubJeeListener(EmonHubSerialListener):
         now = time.time()
 
         # Broadcast time to synchronize emonGLCD
-        interval = int(self._settings['sendtimeinterval'])
+        interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if now - self._time_update_timestamp > interval:
+            if now - self._interval_timestamp > interval:
                 self._send_time()
-                self._time_update_timestamp = now
+                self._interval_timestamp = now
     
     def _send_time(self):
         """Send time over radio link to synchronize emonGLCD
@@ -449,7 +448,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         now = datetime.datetime.now()
 
-        self._log.debug("Broadcasting time: %d:%d" % (now.hour, now.minute))
+        self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
 
         self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
