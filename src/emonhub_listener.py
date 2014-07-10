@@ -78,18 +78,26 @@ class EmonHubListener(object):
         # Get an array out of the space separated string
         frame = frame.strip().split(' ')
 
-        # Validate frame
-        if not self._validate_frame(frame):
-            self._log.debug('Discard RX Frame "Failed validation"')
-            return
+        # create a RSSI variable
+        self.rssi = False
 
-        frame = self._decode_frame(frame)
+        # Validate frame
+        validated = self._validate_frame(frame)
+        if not validated:
+            #self._log.debug('Discard RX Frame "Failed validation"')
+            return
+        else:
+            frame = self._decode_frame(validated)
 
         if frame:
             self._log.debug("Timestamp : " + str(timestamp))
             self._log.debug("     Node : " + str(frame[0]))
             self._log.debug("   Values : " + str(frame[1:]))
             frame = [timestamp] + frame
+            # Append RSSI only if value is not 'False'
+            if self.rssi:
+                self._log.debug("     RSSI : " + str(self.rssi))
+                frame += [self.rssi]
         else:
             return
 
@@ -123,8 +131,8 @@ class EmonHubListener(object):
             self._log.warning("Discarded RX frame 'non-numerical content' : " + str(received))
             return False
 
-        # If it passes all the checks return True
-        return True
+        # If it passes all the checks return
+        return received
 
     def _decode_frame(self, data):
         """Decodes a frame of data
@@ -381,9 +389,6 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         """
 
-        # include checks from parent
-        super(EmonHubJeeListener, self)._validate_frame(received)
-
         # Discard information messages
         if (received[0] == '>') or (received[0] == '->'):
             self._log.warning("Discard RX frame 'information' : " + str(received))
@@ -393,12 +398,20 @@ class EmonHubJeeListener(EmonHubSerialListener):
             self._log.info("Ignoring frame consisting of SOH character")
             return False
 
-        # Discard if frame not at least 3 elements
-        if len(received) < 3:
-            self._log.warning("Discard RX frame 'too short' : " + str(received))
+        # Strip 'OK' and extract RSSI if packet is from RFM69 type Jee Device
+        if received[0]=='OK' and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
+            self.rssi = int(received[-1][1:-1])
+            received = received[1:-1]
+            return received
+        else:
+            # set RSSI false for standard frames so RSSI is not re-appended later
+            self.rssi = False
+
+        # include checks from parent
+        if not super(EmonHubJeeListener, self)._validate_frame(received):
             return False
 
-        return True
+        return received
 
     def set(self, **kwargs):
         """Send configuration parameters to the "Jee" type device through COM port
