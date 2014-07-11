@@ -78,13 +78,6 @@ class EmonHubDispatcher(object):
                 self._settings[key] = setting
                 self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
-        for key, value in kwargs.iteritems():
-            # Strip trailing slash
-            if key == 'url':
-                value = value.rstrip('/')
-                                    
-            self._settings[key] = value
-
     def add(self, data):
         """Append data to buffer.
 
@@ -149,12 +142,40 @@ Stores server parameters and buffers the data between two HTTP requests
 
 class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
 
+    def __init__(self, dispatcherName, bufferMethod="memory", **kwargs):
+        """Initialize dispatcher
+
+        """
+
+        # Initialization
+        super(EmonHubEmoncmsDispatcher, self).__init__(dispatcherName, bufferMethod, **kwargs)
+
+        # add or alter any default settings for this dispatcher
+        self._defaults.update({'maxItemsPerPost': 100, 'url': 'http://emoncms.org'})
+        self._settings.update({'apikey': ''})
+
+        # This line will stop the default values printing to logfile at start-up
+        self._settings.update(self._defaults)
+
+    def set(self, **kwargs):
+
+        # include default setting checks
+        super(EmonHubEmoncmsDispatcher, self).set(**kwargs)
+
+        # apply any changes to non-default settings (eg apikey)
+        for key, setting in kwargs.iteritems():
+            if key in self._settings and setting != self._settings[key]:
+                self._settings[key] = setting
+
     def _send_data(self, databuffer):
         """Send data to server."""
         
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 250 ...]]
+
+        if not 'apikey' in self._settings.keys() or str.lower(self._settings['apikey'][:4]) == 'xxxx':
+            return
 
         data_string = json.dumps(databuffer, separators=(',', ':'))
 
