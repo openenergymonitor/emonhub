@@ -48,6 +48,11 @@ class EmonHubDispatcher(object):
 
         # Create underlying buffer implementation
         self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, bufferSize, **kwargs)
+
+        # set an absolute upper limit for number of items to process per post
+        # number of items posted is the lower of this item limit, buffersize, or the
+        # maxItemsPerPost, as set in dispatcher settings or by the default value.
+        self._item_limit = bufferSize
         
         self._log.info("Set up dispatcher '%s' (buffer: %s | size: %s)"
                        % (dispatcherName, bufferMethod, bufferSize))
@@ -78,6 +83,11 @@ class EmonHubDispatcher(object):
                 self._settings[key] = setting
                 self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
+        # apply any changes to non-default settings (eg apikey)
+        for key, setting in kwargs.iteritems():
+            if key in self._settings and setting != self._settings[key]:
+                self._settings[key] = setting
+
     def add(self, data):
         """Append data to buffer.
 
@@ -97,18 +107,12 @@ class EmonHubDispatcher(object):
         # [[1399980731, 10, 150, 3450 ...]]
         self.buffer.storeItem(data)
 
-    def _send_data(self, data):
-        """Send data to server.
-
-        data (list): node and values (eg: '[node,val1,val2,...]')
-        time (int): timestamp, time when sample was recorded
-
-        return True if data sent correctly
-        
-        To be implemented in subclass.
+    def run(self):
+        """
+        Any regularly performed tasks actioned here along with flushing the buffer
 
         """
-        pass
+        self.flush()
 
     def flush(self):
         """Send oldest data in buffer, if any."""
@@ -122,16 +126,61 @@ class EmonHubDispatcher(object):
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
             max_items = int(self._settings['maxItemsPerPost'])
-            if max_items > 250:
-                max_items = 250
+            if max_items > self._item_limit:
+                max_items = self._item_limit
             elif max_items <= 0:
                 return
 
             databuffer = self.buffer.retrieveItems(max_items)
             retrievedlength = len(databuffer)
-            if self._send_data(databuffer):
+            if self._process_post(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItems(retrievedlength)
+
+    def _process_post(self, data):
+        """
+        To be implemented in subclass.
+
+        :return: True if data posted successfully and can be discarded
+        """
+        pass
+
+    def _send_post(self, post_url, post_body=None):
+        """
+
+        :param post_url:
+        :param post_body:
+        :return: the received reply if request is successful
+        """
+        """Send data to server.
+
+        data (list): node and values (eg: '[node,val1,val2,...]')
+        time (int): timestamp, time when sample was recorded
+
+        return True if data sent correctly
+
+        """
+
+        reply = ""
+        request = urllib2.Request(post_url, post_body)
+        try:
+            response = urllib2.urlopen(request, timeout=60)
+        except urllib2.HTTPError as e:
+            self._log.warning("Couldn't send to server, HTTPError: " +
+                              str(e.code))
+        except urllib2.URLError as e:
+            self._log.warning("Couldn't send to server, URLError: " +
+                              str(e.reason))
+        except httplib.HTTPException:
+            self._log.warning("Couldn't send to server, HTTPException")
+        except Exception:
+            import traceback
+            self._log.warning("Couldn't send to server, Exception: " +
+                              traceback.format_exc())
+        else:
+            reply = response.read()
+        finally:
+            return reply
 
 """class EmonHubEmoncmsDispatcher
 
@@ -157,17 +206,10 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         # This line will stop the default values printing to logfile at start-up
         self._settings.update(self._defaults)
 
-    def set(self, **kwargs):
+        # set an absolute upper limit for number of items to process per post
+        self._item_limit = 250
 
-        # include default setting checks
-        super(EmonHubEmoncmsDispatcher, self).set(**kwargs)
-
-        # apply any changes to non-default settings (eg apikey)
-        for key, setting in kwargs.iteritems():
-            if key in self._settings and setting != self._settings[key]:
-                self._settings[key] = setting
-
-    def _send_data(self, databuffer):
+    def _process_post(self, databuffer):
         """Send data to server."""
         
         # databuffer is of format:
@@ -178,8 +220,6 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
             return
 
         data_string = json.dumps(databuffer, separators=(',', ':'))
-
-        self._log.debug("Data string: " + data_string)
         
         # Prepare URL string of the form
         # http://domain.tld/emoncms/input/bulk.json?apikey=12345
@@ -189,38 +229,26 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         # time that the request was sent at
         sentat = int(time.time())
 
-        # Send data to server
-        self._log.info("Sending: " + self._settings['url'] + "/input/bulk" +
-                       " | data="+data_string+"&sentat="+str(sentat))
+        # Construct post_url (without apikey)
+        post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
+        post_body = "data="+data_string+"&sentat="+str(sentat)
+
+        # logged before apikey added for security
+        self._log.info("Sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
+
+        # Add apikey to post_url
+        post_url = post_url + self._settings['apikey']
 
         # The Develop branch of emoncms allows for the sending of the apikey in the post
         # body, this should be moved from the url to the body as soon as this is widely
         # adopted
-        req = urllib2.Request(
-            self._settings['url']+'/input/bulk'+'.json?apikey='+self._settings['apikey'],
-            "data="+data_string+"&sentat="+str(sentat))
 
-        try:
-            response = urllib2.urlopen(req, timeout=60)
-        except urllib2.HTTPError as e:
-            self._log.warning("Couldn't send to server, HTTPError: " +
-                              str(e.code))
-        except urllib2.URLError as e:
-            self._log.warning("Couldn't send to server, URLError: " +
-                              str(e.reason))
-        except httplib.HTTPException:
-            self._log.warning("Couldn't send to server, HTTPException")
-        except Exception:
-            import traceback
-            self._log.warning("Couldn't send to server, Exception: " +
-                              traceback.format_exc())
+        reply = self._send_post(post_url, post_body)
+        if reply == 'ok':
+            self._log.debug("Receipt acknowledged with '" + reply + "' from " + self._settings['url'])
+            return True
         else:
-            reply = response.read()
-            if reply == 'ok':
-                self._log.debug("Receipt acknowledged with '" + reply + "' from " + self._settings['url'])
-                return True
-            else:
-                self._log.warning("Send failure: wanted 'ok' but got "+reply)
+            self._log.warning("Send failure: wanted 'ok' but got "+reply)
 
 """class EmonHubDispatcherInitError
 

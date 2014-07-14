@@ -93,8 +93,8 @@ class EmonHub(object):
             
             # For all dispatchers
             for d in self._dispatchers.itervalues():
-                # Send one set of values to server
-                d.flush()
+                # Execute run method
+                d.run()
 
             # Sleep until next iteration
             time.sleep(0.2)
