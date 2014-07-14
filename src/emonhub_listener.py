@@ -398,6 +398,10 @@ class EmonHubJeeListener(EmonHubSerialListener):
             self._log.info("Ignoring frame consisting of SOH character")
             return False
 
+        if received[0] == '?'and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
+            self._log.info("Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
+            return False
+
         # Strip 'OK' and extract RSSI if packet is from RFM69 type Jee Device
         if received[0]=='OK' and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
             self.rssi = int(received[-1][1:-1])
