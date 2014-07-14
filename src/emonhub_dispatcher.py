@@ -145,7 +145,7 @@ class EmonHubDispatcher(object):
         """
         pass
 
-    def _send_post(self, post_url, post_body):
+    def _send_post(self, post_url, post_body=None):
         """
 
         :param post_url:
