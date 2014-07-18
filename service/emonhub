@@ -35,8 +35,11 @@ PATH=/sbin:/usr/sbin:/bin:/usr/bin
 DESC="OpenEnergyMonitor emonHub"
 # Enter your installation path here
 DAEMON=$EMONHUB_PATH$NAME.py
+
 # Specify command line arguments here
 DAEMON_ARGS="--config-file $EMONHUB_CONFIG"
+#DAEMON_ARGS="--console-log --config-file $EMONHUB_CONFIG"
+
 DAEMONUSER="root"
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
