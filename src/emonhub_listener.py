@@ -178,7 +178,7 @@ class EmonHubListener(object):
                     if float(val) % 1 != 0:
                         val = float(val)
                     else:
-                        val = int(val)
+                        val = int(float(val))
                     decoded.append(val)
             # Discard frame if total size is not an exact multiple of the specified datacode size.
             elif len(data) % ehc.check_datacode(datacode) != 0:
