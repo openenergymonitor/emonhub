@@ -125,11 +125,11 @@ class EmonHubDispatcher(threading.Thread):
                 # Add each frame to the buffer
                 frame = self._queue.get()
                 self.add(frame)
-            # Then attempt to flush the buffer
-            self.flush()
             # Don't loop to fast
             time.sleep(0.1)
-
+            # Then attempt to flush the buffer
+            self.flush()
+            
     def flush(self):
         """Send oldest data in buffer, if any."""
 
