@@ -132,6 +132,7 @@ class EmonHub(object):
             # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
             if name not in settings['dispatchers'] or 'type' not in settings['dispatchers'][name]:
                 self._log.info("Deleting dispatcher '%s'", name)
+                self._dispatchers[name].stop = True
                 del(self._dispatchers[name])
         for name, dis in settings['dispatchers'].iteritems():
             # If dispatcher does not exist, create it
