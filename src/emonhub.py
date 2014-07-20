@@ -16,6 +16,7 @@ import logging.handlers
 import signal
 import argparse
 import pprint
+import Queue
 
 import emonhub_interface as ehi
 import emonhub_dispatcher as ehd
@@ -49,15 +50,16 @@ class EmonHub(object):
         # Initialize interface and get settings
         self._interface = interface
         settings = self._interface.settings
-        
+
         # Logging
         self._init_logger()
         self._log.info("EmonHub %s" % self.__version__)
         self._log.info("Opening hub...")
-        
+
         # Initialize dispatchers and listeners
         self._dispatchers = {}
         self._listeners = {}
+        self._queue = {}
         self._update_settings(settings)
         
     def run(self):
@@ -87,14 +89,14 @@ class EmonHub(object):
                 values = l.read()
                 # If complete and valid data was received
                 if values is not None:
-                    # Add data to dispatcher
-                    for d in self._dispatchers.itervalues():
-                        d.add(values)
-            
-            # For all dispatchers
-            for d in self._dispatchers.itervalues():
-                # Execute run method
-                d.run()
+                    # Place a copy of the values in a queue for each dispatcher
+                    for name in self._dispatchers:
+                        # discard if 'pause' set to true or to pause input only
+                        if 'pause' in self._dispatchers[name]._settings \
+                                and self._dispatchers[name]._settings['pause'] in \
+                                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
+                            continue
+                        self._queue[name].put(values)
 
             # Sleep until next iteration
             time.sleep(0.2)
@@ -104,6 +106,9 @@ class EmonHub(object):
         
         for l in self._listeners.itervalues():
             l.close()
+
+        for d in self._dispatchers.itervalues():
+            d.stop = True
         
         self._log.info("Exiting hub...")
         logging.shutdown()
@@ -135,8 +140,10 @@ class EmonHub(object):
                     if not 'type' in dis:
                         continue
                     self._log.info("Creating " + dis['type'] + " '%s' ", name)
+                    # Create the queue for this dispatcher
+                    self._queue[name] = Queue.Queue(0)
                     # This gets the class from the 'type' string
-                    dispatcher = getattr(ehd, dis['type'])(name, **dis['init_settings'])
+                    dispatcher = getattr(ehd, dis['type'])(name, self._queue[name], **dis['init_settings'])
                 except ehd.EmonHubDispatcherInitError as e:
                     # If dispatcher can't be created, log error and skip to next
                     self._log.error("Failed to create '" + name + "' dispatcher: " + str(e))
