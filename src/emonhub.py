@@ -50,12 +50,13 @@ class EmonHub(object):
         # Initialize interface and get settings
         self._interface = interface
         settings = self._interface.settings
-
-        # Logging
-        self._init_logger()
+        
+        # Initialize logging
+        self._log = logging.getLogger("EmonHub")
+        self._set_logging_level(settings['hub']['loglevel'])
         self._log.info("EmonHub %s" % self.__version__)
         self._log.info("Opening hub...")
-
+        
         # Initialize dispatchers and listeners
         self._dispatchers = {}
         self._listeners = {}
@@ -203,37 +204,18 @@ class EmonHub(object):
         if loglevel != self._log.getEffectiveLevel():
             self._log.setLevel(level)
             self._log.info('Logging level set to %s' % level)
-
-    # Logging configuration
-    def _init_logger(self):
-        settings = self._interface.settings
-        self._log = logging.getLogger("EmonHub")
-        
-        if settings['hub']['console_log'] is True:
-            # If this flag is provided, everything goes to sys.stderr
-            loghandler = logging.StreamHandler()
-        else:
-            # Otherwise, rotating logging over two 5 MB files
-            loghandler = logging.handlers.RotatingFileHandler(settings['hub']['logfile'],
-                                                              'a', 5000 * 1024, 1)
-        # Format log strings
-        loghandler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s %(message)s'))
-        self._log.addHandler(loghandler)
-    
-        self._set_logging_level(settings['hub']['loglevel'])
-        
         
 if __name__ == "__main__":
 
     # Command line arguments parser
     parser = argparse.ArgumentParser(description='OpenEnergyMonitor emonHub')
+
     # Configuration file
     parser.add_argument("--config-file", action="store",
-                        help='Configuration file', default=sys.path[0]+'/emonhub.conf')
-    # Logfile
-    parser.add_argument('--console-log', action='store_true',
-                        help='log to STDERR instead of the configured logfile')
+                        help='Configuration file', default=sys.path[0]+'/../conf/emonhub.conf')
+    # Log file
+    parser.add_argument('--logfile', action='store', type=argparse.FileType('a'),
+                        help='Log file (default: log to Standard error stream STDERR)')
     # Show settings
     parser.add_argument('--show-settings', action='store_true',
                         help='show settings and exit (for debugging purposes)')
@@ -248,15 +230,30 @@ if __name__ == "__main__":
         print('emonHub %s' % EmonHub.__version__)
         sys.exit()
 
+    # Logging configuration
+    logger = logging.getLogger("EmonHub")
+    if args.logfile is None:
+        # If no path was specified, everything goes to sys.stderr
+        loghandler = logging.StreamHandler()
+    else:
+        # Otherwise, rotating logging over two 5 MB files
+        # If logfile is supplied, argparse opens the file in append mode,
+        # this ensures it is writable
+        # Close the file for now and get its path
+        args.logfile.close()
+        loghandler = logging.handlers.RotatingFileHandler(args.logfile.name,
+                                                       'a', 5000 * 1024, 1)
+    # Format log strings
+    loghandler.setFormatter(logging.Formatter(
+            '%(asctime)s %(levelname)s %(message)s'))
+    logger.addHandler(loghandler)
+
     # Initialize hub interface
     try:
         interface = ehi.EmonHubFileInterface(args.config_file)
     except ehi.EmonHubInterfaceInitError as e:
+        logger.critical(e)
         sys.exit("Configuration file not found: " + args.config_file)
- 
-    # Inject the console log arg into the settings, however they were loaded
-    # this abstracts emonhub from having to worry about args and settings 
-    interface.settings['hub']['console_log'] = args.console_log
  
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
