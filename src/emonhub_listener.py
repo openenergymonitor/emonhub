@@ -98,11 +98,12 @@ class EmonHubListener(object):
             self._log.debug(str(ref) + " Timestamp : " + str(timestamp))
             self._log.debug(str(ref) + "      Node : " + str(frame[0]))
             self._log.debug(str(ref) + "    Values : " + str(frame[1:]))
-            frame = [timestamp] + frame + [ref]
+            frame = [timestamp] + frame
             # Append RSSI only if value is not 'False'
             if self.rssi:
                 self._log.debug(str(ref) + "      RSSI : " + str(self.rssi))
                 frame += [self.rssi]
+            frame += [ref]
         else:
             return
 
@@ -417,7 +418,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
             self.rssi = False
 
         # include checks from parent
-        if not super(EmonHubJeeListener, self)._validate_frame(received):
+        if not super(EmonHubJeeListener, self)._validate_frame(ref, received):
             return False
 
         return received
