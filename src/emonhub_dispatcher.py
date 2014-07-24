@@ -12,6 +12,8 @@ import httplib
 import time
 import logging
 import json
+import threading
+import Queue
 
 import emonhub_buffer as ehb
   
@@ -25,18 +27,22 @@ destination server.
 """
 
 
-class EmonHubDispatcher(object):
+class EmonHubDispatcher(threading.Thread):
 
-    def __init__(self, dispatcherName, bufferMethod="memory", bufferSize=1000, **kwargs):
+    def __init__(self, dispatcherName, queue, bufferMethod="memory", bufferSize=1000, **kwargs):
         """Create a server data buffer initialized with server settings."""
-        
+
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
+
+        # Initialise thread
+        threading.Thread.__init__(self)
 
         # Initialise settings
         self.name = dispatcherName
         self._defaults = {'pause': 0, 'interval': 0, 'maxItemsPerPost': 1}
         self._settings = {}
+        self._queue = queue
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -56,6 +62,10 @@ class EmonHubDispatcher(object):
         
         self._log.info("Set up dispatcher '%s' (buffer: %s | size: %s)"
                        % (dispatcherName, bufferMethod, bufferSize))
+
+        # Initialise a thread and start the dispatcher
+        self.stop = False
+        self.start()
         
     def set(self, **kwargs):
         """Update settings.
@@ -94,10 +104,6 @@ class EmonHubDispatcher(object):
         data (list): node and values (eg: '[node,val1,val2,...]')
 
         """
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
-            return
 
         self._log.debug("Append to '" + self.name +
                         "' buffer => time: " + str(data[0])
@@ -109,11 +115,21 @@ class EmonHubDispatcher(object):
 
     def run(self):
         """
+        Run the dispatcher thread.
         Any regularly performed tasks actioned here along with flushing the buffer
 
         """
-        self.flush()
-
+        while not self.stop:
+            # If there are frames in the queue
+            while not self._queue.empty():
+                # Add each frame to the buffer
+                frame = self._queue.get()
+                self.add(frame)
+            # Don't loop to fast
+            time.sleep(0.1)
+            # Then attempt to flush the buffer
+            self.flush()
+            
     def flush(self):
         """Send oldest data in buffer, if any."""
 
@@ -121,6 +137,11 @@ class EmonHubDispatcher(object):
         if 'pause' in self._settings and self._settings['pause'] in \
                 ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
             return
+
+        # If an interval is set, check if that time has passed since last post
+        if int(self._settings['interval']):
+            if time.time() - self._interval_timestamp < int(self._settings['interval']):
+                return
         
         # Buffer management
         # If data buffer not empty, send a set of values
@@ -136,6 +157,8 @@ class EmonHubDispatcher(object):
             if self._process_post(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItems(retrievedlength)
+                # log the time of last succesful post
+                self._interval_timestamp = time.time()
 
     def _process_post(self, data):
         """
