@@ -37,6 +37,7 @@ class EmonHubListener(object):
         self.name = ''
         self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
         self._settings = {}
+        self._packet_counter = 0
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -72,8 +73,12 @@ class EmonHubListener(object):
 
         """
 
+        # Assign a "Packet" reference number
+        self._packet_counter +=1
+        ref = self._packet_counter
+
         # Log data
-        self._log.info(" NEW FRAME : " + str(timestamp) + " " + frame)
+        self._log.debug(str(ref) + " NEW FRAME : " + str(timestamp) + " " + frame)
         
         # Get an array out of the space separated string
         frame = frame.strip().split(' ')
@@ -82,21 +87,21 @@ class EmonHubListener(object):
         self.rssi = False
 
         # Validate frame
-        validated = self._validate_frame(frame)
+        validated = self._validate_frame(ref, frame)
         if not validated:
             #self._log.debug('Discard RX Frame "Failed validation"')
             return
         else:
-            frame = self._decode_frame(validated)
+            frame = self._decode_frame(ref, validated)
 
         if frame:
-            self._log.debug("Timestamp : " + str(timestamp))
-            self._log.debug("     Node : " + str(frame[0]))
-            self._log.debug("   Values : " + str(frame[1:]))
-            frame = [timestamp] + frame
+            self._log.debug(str(ref) + " Timestamp : " + str(timestamp))
+            self._log.debug(str(ref) + "      Node : " + str(frame[0]))
+            self._log.debug(str(ref) + "    Values : " + str(frame[1:]))
+            frame = [timestamp] + frame + [ref]
             # Append RSSI only if value is not 'False'
             if self.rssi:
-                self._log.debug("     RSSI : " + str(self.rssi))
+                self._log.debug(str(ref) + "      RSSI : " + str(self.rssi))
                 frame += [self.rssi]
         else:
             return
@@ -108,7 +113,7 @@ class EmonHubListener(object):
         
         return frame
 
-    def _validate_frame(self, received):
+    def _validate_frame(self, ref, received):
         """Validate a frame of data
 
         This function performs logical tests to filter unsuitable data.
@@ -121,20 +126,20 @@ class EmonHubListener(object):
         # Discard if frame not of the form [node, val1, ...]
         # with number of elements at least 2
         if len(received) < 2:
-            self._log.warning("Discarded RX frame 'string too short' : " + str(received))
+            self._log.warning(str(ref) + " Discarded RX frame 'string too short' : " + str(received))
             return False
 
         # Discard if anything non-numerical found
         try:
             [float(val) for val in received]
         except Exception:
-            self._log.warning("Discarded RX frame 'non-numerical content' : " + str(received))
+            self._log.warning(str(ref) + " Discarded RX frame 'non-numerical content' : " + str(received))
             return False
 
         # If it passes all the checks return
         return received
 
-    def _decode_frame(self, data):
+    def _decode_frame(self, ref, data):
         """Decodes a frame of data
 
         Performs decoding of data types
@@ -157,7 +162,7 @@ class EmonHubListener(object):
                 datasizes.append(ehc.check_datacode(code))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(data) != sum(datasizes):
-                self._log.warning("RX data length: " + str(len(data)) +
+                self._log.warning(str(ref) + " RX data length: " + str(len(data)) +
                                   " is not valid for datacodes " + str(datacodes))
                 return False
             else:
@@ -182,7 +187,7 @@ class EmonHubListener(object):
                     decoded.append(val)
             # Discard frame if total size is not an exact multiple of the specified datacode size.
             elif len(data) % ehc.check_datacode(datacode) != 0:
-                self._log.warning("RX data length: " + str(len(data)) +
+                self._log.warning(str(ref) + " RX data length: " + str(len(data)) +
                                   " is not valid for datacode " + str(datacode))
                 return False
             else:
@@ -202,7 +207,7 @@ class EmonHubListener(object):
                 try:
                     value = ehc.decode(dc, [int(v) for v in data[bytepos:bytepos+size]])
                 except:
-                    self._log.warning("Unable to decode as values incorrect for datacode(s)")
+                    self._log.warning(str(ref) + " Unable to decode as values incorrect for datacode(s)")
                     return False
                 bytepos += size
                 decoded.append(value)
@@ -379,7 +384,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
         # comment out if diagnosing a startup value issue
         self._settings.update(self._defaults)
 
-    def _validate_frame(self, received):
+    def _validate_frame(self, ref, received):
         """Validate a frame of data
 
         This function performs logical tests to filter unsuitable data.
@@ -391,15 +396,15 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         # Discard information messages
         if (received[0] == '>') or (received[0] == '->'):
-            self._log.warning("Discard RX frame 'information' : " + str(received))
+            self._log.warning(str(ref) + " Discard RX frame 'information' : " + str(received))
             return False
             
         if received[0] == '\x01':
-            self._log.info("Ignoring frame consisting of SOH character")
+            self._log.info(str(ref) + " Ignoring frame consisting of SOH character")
             return False
 
         if received[0] == '?'and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
-            self._log.info("Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
+            self._log.info(str(ref) + " Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
             return False
 
         # Strip 'OK' and extract RSSI if packet is from RFM69 type Jee Device
