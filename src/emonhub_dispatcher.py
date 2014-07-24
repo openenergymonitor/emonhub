@@ -110,8 +110,8 @@ class EmonHubDispatcher(threading.Thread):
                         + ", data: " + str(data[1:-1])
                         # TODO "ref" temporarily left on end of data string for info
                         + ", ref: " + str(data[-1]))
-        # TODO "ref" can be removed from end of data string here so not sent to emoncms
-        #data = data[:-1]
+        # TODO "ref" removed from end of data string here so not sent to emoncms
+        data = data[:-1]
 
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
