@@ -71,10 +71,6 @@ class EmonHubListener(object):
         
         Return data as a list: [NodeID, val1, val2]
 
-        # Assign a "Packet" reference number
-        self._packet_counter +=1
-        ref = self._packet_counter
-
         """
 
         # Assign a "Packet" reference number
