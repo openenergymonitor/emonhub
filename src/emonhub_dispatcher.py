@@ -105,9 +105,14 @@ class EmonHubDispatcher(threading.Thread):
 
         """
 
-        self._log.debug("Append to '" + self.name +
+        self._log.debug(str(data[-1]) + " Append to '" + self.name +
                         "' buffer => time: " + str(data[0])
-                        + ", data: " + str(data[1:]))
+                        + ", data: " + str(data[1:-1])
+                        # TODO "ref" temporarily left on end of data string for info
+                        + ", ref: " + str(data[-1]))
+        # TODO "ref" removed from end of data string here so not sent to emoncms
+        data = data[:-1]
+
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 3450 ...]]
