@@ -129,6 +129,10 @@ class EmonHub(object):
         
         # Dispatchers
         for name in self._dispatchers.keys():
+            # check init_settings against the file copy
+            if self._dispatchers[name].init_settings != settings['dispatchers'][name]['init_settings']:
+                # delete name from settings if different to cause a rebuild
+                del settings['dispatchers'][name]
             # If dispatcher is not in the settings anymore or if 'type' is omitted, delete it
             # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
             if name not in settings['dispatchers'] or 'type' not in settings['dispatchers'][name]:
@@ -146,6 +150,7 @@ class EmonHub(object):
                     self._queue[name] = Queue.Queue(0)
                     # This gets the class from the 'type' string
                     dispatcher = getattr(ehd, dis['type'])(name, self._queue[name], **dis['init_settings'])
+                    dispatcher.init_settings = dis['init_settings']
                 except ehd.EmonHubDispatcherInitError as e:
                     # If dispatcher can't be created, log error and skip to next
                     self._log.error("Failed to create '" + name + "' dispatcher: " + str(e))
@@ -157,6 +162,10 @@ class EmonHub(object):
 
         # Listeners
         for name in self._listeners.keys():
+            # check init_settings against the file copy
+            if self._listeners[name].init_settings != settings['listeners'][name]['init_settings']:
+                # delete name from settings if different to cause a rebuild
+                del settings['listeners'][name]
             # If listener is not in the settings anymore or if 'type' is omitted, delete it
             # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
             if name not in settings['listeners'] or 'type' not in settings['listeners'][name]:
@@ -172,6 +181,7 @@ class EmonHub(object):
                     self._log.info("Creating " + lis['type'] + " '%s' ", name)
                     # This gets the class from the 'type' string
                     listener = getattr(ehl, lis['type'])(**lis['init_settings'])
+                    listener.init_settings = lis['init_settings']
                 except ehl.EmonHubListenerInitError as e:
                     # If listener can't be created, log error and skip to next
                     self._log.error("Failed to create '" + name + "' listener: " + str(e))

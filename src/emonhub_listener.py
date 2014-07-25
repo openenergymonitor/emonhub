@@ -35,6 +35,7 @@ class EmonHubListener(object):
 
         # Initialise settings
         self.name = ''
+        self.init_settings = {}
         self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
         self._settings = {}
         self._packet_counter = 0
