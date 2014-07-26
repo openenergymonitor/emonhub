@@ -40,6 +40,7 @@ class EmonHubDispatcher(threading.Thread):
 
         # Initialise settings
         self.name = dispatcherName
+        self.init_settings = {}
         self._defaults = {'pause': 0, 'interval': 0, 'maxItemsPerPost': 1}
         self._settings = {}
         self._queue = queue

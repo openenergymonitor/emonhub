@@ -126,15 +126,24 @@ class EmonHub(object):
         
         # EmonHub Logging level
         self._set_logging_level(settings['hub']['loglevel'])
+
+        # Create a place to hold buffer contents whilst a deletion & rebuild occurs
+        self.temp_buffer = {}
         
         # Dispatchers
         for name in self._dispatchers.keys():
-            # If dispatcher is not in the settings anymore or if 'type' is omitted, delete it
-            # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
-            if name not in settings['dispatchers'] or 'type' not in settings['dispatchers'][name]:
-                self._log.info("Deleting dispatcher '%s'", name)
-                self._dispatchers[name].stop = True
-                del(self._dispatchers[name])
+            # check init_settings against the file copy, if they are different create a back-up of buffer
+            if self._dispatchers[name].init_settings != settings['dispatchers'][name]['init_settings']:
+                if self._dispatchers[name].buffer._data_buffer:
+                    self.temp_buffer[name]= self._dispatchers[name].buffer._data_buffer
+            # Or if dispatcher is still in the settings and has a 'type' just move on to the next one
+            # (This provides an ability to delete & rebuild by commenting 'type' in conf)
+            elif name in settings['dispatchers'] and 'type' in settings['dispatchers'][name]:
+                continue
+            # Delete dispatchers if setting changed or name is unlisted or type is missing
+            self._log.info("Deleting dispatcher '%s'", name)
+            self._dispatchers[name].stop = True
+            del(self._dispatchers[name])
         for name, dis in settings['dispatchers'].iteritems():
             # If dispatcher does not exist, create it
             if name not in self._dispatchers:
@@ -146,6 +155,11 @@ class EmonHub(object):
                     self._queue[name] = Queue.Queue(0)
                     # This gets the class from the 'type' string
                     dispatcher = getattr(ehd, dis['type'])(name, self._queue[name], **dis['init_settings'])
+                    dispatcher.init_settings = dis['init_settings']
+                    # If a memory buffer back-up exists copy it over and remove the back-up
+                    if name in self.temp_buffer:
+                        dispatcher.buffer._data_buffer = self.temp_buffer[name]
+                        del self.temp_buffer[name]
                 except ehd.EmonHubDispatcherInitError as e:
                     # If dispatcher can't be created, log error and skip to next
                     self._log.error("Failed to create '" + name + "' dispatcher: " + str(e))
@@ -157,12 +171,16 @@ class EmonHub(object):
 
         # Listeners
         for name in self._listeners.keys():
-            # If listener is not in the settings anymore or if 'type' is omitted, delete it
-            # This adds tha ability to skip creation or delete/rebuild by commenting 'type' in conf
-            if name not in settings['listeners'] or 'type' not in settings['listeners'][name]:
-                self._listeners[name].close()
-                self._log.info("Deleting listener '%s' ", name)
-                del(self._listeners[name])
+            # check init_settings against the file copy, if they are different pass for deletion
+            if self._listeners[name].init_settings != settings['listeners'][name]['init_settings']:
+                pass
+            # Or if listener is still in the settings and has a 'type' just move on to the next one
+            # (This provides an ability to delete & rebuild by commenting 'type' in conf)
+            elif name in settings['listeners'] and 'type' in settings['listeners'][name]:
+                continue
+            self._listeners[name].close()
+            self._log.info("Deleting listener '%s' ", name)
+            del(self._listeners[name])
         for name, lis in settings['listeners'].iteritems():
             # If listener does not exist, create it
             if name not in self._listeners:
@@ -172,6 +190,7 @@ class EmonHub(object):
                     self._log.info("Creating " + lis['type'] + " '%s' ", name)
                     # This gets the class from the 'type' string
                     listener = getattr(ehl, lis['type'])(**lis['init_settings'])
+                    listener.init_settings = lis['init_settings']
                 except ehl.EmonHubListenerInitError as e:
                     # If listener can't be created, log error and skip to next
                     self._log.error("Failed to create '" + name + "' listener: " + str(e))
