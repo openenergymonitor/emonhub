@@ -219,13 +219,13 @@ Stores server parameters and buffers the data between two HTTP requests
 
 class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
 
-    def __init__(self, dispatcherName, bufferMethod="memory", **kwargs):
+    def __init__(self, dispatcherName, queue, **kwargs):
         """Initialize dispatcher
 
         """
 
         # Initialization
-        super(EmonHubEmoncmsDispatcher, self).__init__(dispatcherName, bufferMethod, **kwargs)
+        super(EmonHubEmoncmsDispatcher, self).__init__(dispatcherName, queue, **kwargs)
 
         # add or alter any default settings for this dispatcher
         self._defaults.update({'maxItemsPerPost': 100, 'url': 'http://emoncms.org'})
