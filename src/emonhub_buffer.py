@@ -45,6 +45,7 @@ class InMemoryBuffer(AbstractBuffer):
   
     def __init__(self, bufferName, bufferSize):
         self._bufferName = str(bufferName)
+        self._buffer_type = "memory"
         self._maximumEntriesInBuffer = int(bufferSize)
         self._data_buffer = []
         self._log = logging.getLogger("EmonHub")
