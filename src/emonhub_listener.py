@@ -36,7 +36,7 @@ class EmonHubListener(object):
         # Initialise settings
         self.name = ''
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
+        self._defaults = {'pause': 0, 'interval': 0, 'datacode': 0}
         self._settings = {}
         self._packet_counter = 0
 
@@ -178,7 +178,7 @@ class EmonHubListener(object):
                 datacode = ehc.nodelist[node]['datacode']
             else:
             # when node not listed or has no datacode(s) use the listeners default if specified
-                datacode = self._settings['defaultdatacode']
+                datacode = self._settings['datacode']
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
@@ -378,8 +378,8 @@ class EmonHubJeeListener(EmonHubSerialListener):
         super(EmonHubJeeListener, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
-        self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
+        self._defaults.update({'pause': 0, 'interval': 0, 'datacode': 'h'})
+        self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -428,20 +428,20 @@ class EmonHubJeeListener(EmonHubSerialListener):
         """Send configuration parameters to the "Jee" type device through COM port
 
         **kwargs (dict): settings to be modified. Available settings are
-        'baseid', 'frequency', 'sgroup'. Example: 
-        {'baseid': '15', 'frequency': '4', 'sgroup': '210'}
+        'baseid', 'frequency', 'group'. Example:
+        {'baseid': '15', 'frequency': '4', 'group': '210'}
         
         """
 
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
-            if key in ['baseid', 'frequency', 'sgroup']:
+            if key in ['baseid', 'frequency', 'group']:
                 if value != self._settings[key]:
                     if key == 'baseid' and int(value) >=1 and int(value) <=26:
                         string = value + 'i'
                     elif key == 'frequency' and value in {'433','868','915'}:
                         string = value[:1] + 'b'
-                    elif key == 'sgroup'and int(value) >=0 and int(value) <=212:
+                    elif key == 'group'and int(value) >=0 and int(value) <=212:
                         string = value + 'g'
                     else:
                         continue

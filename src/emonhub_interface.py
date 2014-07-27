@@ -28,7 +28,7 @@ dictionary with the following keys:
         Listeners and dispatchers are dictionaries with the following keys:
         'type': class name
         'init_settings': dictionary with initialization settings
-        'runtime_settings': dictionary with runtime settings
+        'runtimesettings': dictionary with runtime settings
         Initialization and runtime settings depend on the listener and
         dispatcher type.
 

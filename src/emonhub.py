@@ -167,7 +167,7 @@ class EmonHub(object):
                 else:
                     self._dispatchers[name] = dispatcher
             # Set runtime settings
-            self._dispatchers[name].set(**dis['runtime_settings'])
+            self._dispatchers[name].set(**dis['runtimesettings'])
 
         # Listeners
         for name in self._listeners.keys():
@@ -199,7 +199,7 @@ class EmonHub(object):
                     self._listeners[name] = listener
                 setattr(listener, 'name', name)
             # Set runtime settings
-            self._listeners[name].set(**lis['runtime_settings'])
+            self._listeners[name].set(**lis['runtimesettings'])
 
         if 'nodes' in settings:
             ehc.nodelist = settings['nodes']

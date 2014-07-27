@@ -29,7 +29,7 @@ destination server.
 
 class EmonHubDispatcher(threading.Thread):
 
-    def __init__(self, dispatcherName, queue, bufferMethod="memory", bufferSize=1000, **kwargs):
+    def __init__(self, dispatcherName, queue, buffer_type="memory", buffer_size=1000, **kwargs):
         """Create a server data buffer initialized with server settings."""
 
         # Initialize logger
@@ -41,7 +41,7 @@ class EmonHubDispatcher(threading.Thread):
         # Initialise settings
         self.name = dispatcherName
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'maxItemsPerPost': 1}
+        self._defaults = {'pause': 0, 'interval': 0, 'batchsize': 1}
         self._settings = {}
         self._queue = queue
 
@@ -54,15 +54,15 @@ class EmonHubDispatcher(threading.Thread):
         self._interval_timestamp = 0
 
         # Create underlying buffer implementation
-        self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, bufferSize, **kwargs)
+        self.buffer = ehb.getBuffer(buffer_type)(dispatcherName, buffer_size, **kwargs)
 
         # set an absolute upper limit for number of items to process per post
-        # number of items posted is the lower of this item limit, buffersize, or the
-        # maxItemsPerPost, as set in dispatcher settings or by the default value.
-        self._item_limit = bufferSize
+        # number of items posted is the lower of this item limit, buffer_size, or the
+        # batchsize, as set in dispatcher settings or by the default value.
+        self._item_limit = buffer_size
         
         self._log.info("Set up dispatcher '%s' (buffer: %s | size: %s)"
-                       % (dispatcherName, bufferMethod, bufferSize))
+                       % (dispatcherName, buffer_type, buffer_size))
 
         # Initialise a thread and start the dispatcher
         self.stop = False
@@ -152,7 +152,7 @@ class EmonHubDispatcher(threading.Thread):
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
-            max_items = int(self._settings['maxItemsPerPost'])
+            max_items = int(self._settings['batchsize'])
             if max_items > self._item_limit:
                 max_items = self._item_limit
             elif max_items <= 0:
@@ -229,7 +229,7 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         super(EmonHubEmoncmsDispatcher, self).__init__(dispatcherName, queue, **kwargs)
 
         # add or alter any default settings for this dispatcher
-        self._defaults.update({'maxItemsPerPost': 100, 'url': 'http://emoncms.org'})
+        self._defaults.update({'batchsize': 100, 'url': 'http://emoncms.org'})
         self._settings.update({'apikey': ''})
 
         # This line will stop the default values printing to logfile at start-up
