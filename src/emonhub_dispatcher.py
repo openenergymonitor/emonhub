@@ -133,11 +133,14 @@ class EmonHubDispatcher(threading.Thread):
                 self.add(frame)
             # Don't loop to fast
             time.sleep(0.1)
-            # Then attempt to flush the buffer
-            self.flush()
-            
-    def flush(self):
-        """Send oldest data in buffer, if any."""
+            # Action dispatcher tasks
+            self.action()
+
+    def action(self):
+        """
+
+        :return:
+        """
 
         # pause output if 'pause' set to true or to pause output only
         if 'pause' in self._settings and self._settings['pause'] in \
@@ -146,8 +149,12 @@ class EmonHubDispatcher(threading.Thread):
 
         # If an interval is set, check if that time has passed since last post
         if int(self._settings['interval']):
-            if time.time() - self._interval_timestamp < int(self._settings['interval']):
-                return
+            if time.time() - self._interval_timestamp > int(self._settings['interval']):
+                # Then attempt to flush the buffer
+                self.flush()
+
+    def flush(self):
+        """Send oldest data in buffer, if any."""
         
         # Buffer management
         # If data buffer not empty, send a set of values
