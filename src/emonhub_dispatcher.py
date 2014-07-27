@@ -148,10 +148,11 @@ class EmonHubDispatcher(threading.Thread):
             return
 
         # If an interval is set, check if that time has passed since last post
-        if int(self._settings['interval']):
-            if time.time() - self._interval_timestamp > int(self._settings['interval']):
-                # Then attempt to flush the buffer
-                self.flush()
+        if int(self._settings['interval']) and time.time() - self._interval_timestamp < int(self._settings['interval']):
+            return
+        else:
+            # Then attempt to flush the buffer
+            self.flush()
 
     def flush(self):
         """Send oldest data in buffer, if any."""
