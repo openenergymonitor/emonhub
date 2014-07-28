@@ -11,9 +11,9 @@ import time
 import logging
 from configobj import ConfigObj
 
-"""class EmonHubInterface
+"""class EmonHubSetup
 
-User interface to communicate with the hub.
+User interface to setup the hub.
 
 The settings attribute stores the settings of the hub. It is a
 dictionary with the following keys:
@@ -39,12 +39,12 @@ The check_settings() method is run regularly as well. It checks the settings
 and returns True is settings were changed.
 
 This almost empty class is meant to be inherited by subclasses specific to
-each user interface.
+each setup.
 
 """
 
 
-class EmonHubInterface(object):
+class EmonHubSetup(object):
 
     def __init__(self):
         
@@ -72,12 +72,12 @@ class EmonHubInterface(object):
         """
     
 
-class EmonHubFileInterface(EmonHubInterface):
+class EmonHubFileSetup(EmonHubSetup):
 
     def __init__(self, filename):
         
         # Initialization
-        super(EmonHubFileInterface, self).__init__()
+        super(EmonHubFileSetup, self).__init__()
 
         # Initialize update timestamp
         self._settings_update_timestamp = 0
@@ -87,9 +87,9 @@ class EmonHubFileInterface(EmonHubInterface):
         try:
             self.settings = ConfigObj(filename, file_error=True)
         except IOError as e:
-            raise EmonHubInterfaceInitError(e)
+            raise EmonHubSetupInitError(e)
         except SyntaxError as e:
-            raise EmonHubInterfaceInitError(
+            raise EmonHubSetupInitError(
                 'Error parsing config file \"%s\": ' % filename + str(e))
 
     def check_settings(self):
@@ -131,12 +131,12 @@ class EmonHubFileInterface(EmonHubInterface):
         if self.settings != settings:
             return True
 
-"""class EmonHubInterfaceInitError
+"""class EmonHubSetupInitError
 
 Raise this when init fails.
 
 """
 
 
-class EmonHubInterfaceInitError(Exception):
+class EmonHubSetupInitError(Exception):
     pass

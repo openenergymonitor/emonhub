@@ -18,7 +18,7 @@ import argparse
 import pprint
 import Queue
 
-import emonhub_interface as ehi
+import emonhub_interface as ehs
 import emonhub_dispatcher as ehd
 import emonhub_listener as ehl
 import emonhub_coder as ehc
@@ -28,7 +28,7 @@ import emonhub_coder as ehc
 Monitors data inputs through EmonHubListener instances, and sends data to
 target servers through EmonHubEmoncmsDispatcher instances.
 
-Communicates with the user through an EmonHubInterface
+Communicates with the user through an EmonHubSetup
 
 """
 
@@ -37,19 +37,19 @@ class EmonHub(object):
     
     __version__ = 'Pre-Release Development Version'
     
-    def __init__(self, interface):
+    def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
         
-        interface (EmonHubInterface): User interface to the hub.
+        Interface (EmonHubSetup): User interface to the hub.
         
         """
 
         # Initialize exit request flag
         self._exit = False
 
-        # Initialize interface and get settings
-        self._interface = interface
-        settings = self._interface.settings
+        # Initialize setup and get settings
+        self._setup = setup
+        settings = self._setup.settings
         
         # Initialize logging
         self._log = logging.getLogger("EmonHub")
@@ -77,10 +77,10 @@ class EmonHub(object):
         # Until asked to stop
         while not self._exit:
             
-            # Run interface and update settings if modified
-            self._interface.run()
-            if self._interface.check_settings():
-                self._update_settings(self._interface.settings)
+            # Run setup and update settings if modified
+            self._setup.run()
+            if self._setup.check_settings():
+                self._update_settings(self._setup.settings)
             
             # For all listeners
             for l in self._listeners.itervalues():
@@ -267,22 +267,22 @@ if __name__ == "__main__":
             '%(asctime)s %(levelname)s %(message)s'))
     logger.addHandler(loghandler)
 
-    # Initialize hub interface
+    # Initialize hub setup
     try:
-        interface = ehi.EmonHubFileInterface(args.config_file)
-    except ehi.EmonHubInterfaceInitError as e:
+        setup = ehs.EmonHubFileSetup(args.config_file)
+    except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
         sys.exit("Configuration file not found: " + args.config_file)
  
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
-        interface.check_settings()
-        pprint.pprint(interface.settings)
+        setup.check_settings()
+        pprint.pprint(setup.settings)
     
     # Otherwise, create, run, and close EmonHub instance
     else:
         try:
-            hub = EmonHub(interface)
+            hub = EmonHub(setup)
         except Exception as e:
             sys.exit("Could not start EmonHub: " + str(e))
         else:
