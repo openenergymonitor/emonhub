@@ -20,7 +20,7 @@ import Queue
 
 import emonhub_setup as ehs
 import emonhub_dispatcher as ehd
-import emonhub_listener as ehi
+import emonhub_interfacer as ehi
 import emonhub_coder as ehc
 
 """class EmonHub
