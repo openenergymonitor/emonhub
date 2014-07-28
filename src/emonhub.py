@@ -19,7 +19,7 @@ import pprint
 import Queue
 
 import emonhub_setup as ehs
-import emonhub_dispatcher as ehr
+import emonhub_reporter as ehr
 import emonhub_interfacer as ehi
 import emonhub_coder as ehc
 
