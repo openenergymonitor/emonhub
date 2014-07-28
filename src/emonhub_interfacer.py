@@ -228,7 +228,7 @@ class EmonHubInterfacer(object):
             'pause' = i/I/in/In/IN to pause the input only, no input read performed
             'pause' = o/O/out/Out/OUT to pause output only, input is read, processed but not posted to buffer
             'pause' = t/T/true/True/TRUE full pause, nothing read or posted.
-            'pause' = anything else, commented out or omitted then dispatcher is fully operational
+            'pause' = anything else, commented out or omitted then Interfacer is fully operational
         
         """
 
