@@ -18,7 +18,7 @@ import argparse
 import pprint
 import Queue
 
-import emonhub_interface as ehs
+import emonhub_setup as ehs
 import emonhub_dispatcher as ehd
 import emonhub_listener as ehl
 import emonhub_coder as ehc
