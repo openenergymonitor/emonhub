@@ -19,17 +19,17 @@ The settings attribute stores the settings of the hub. It is a
 dictionary with the following keys:
 
         'hub': a dictionary containing the hub settings
-        'listeners': a dictionary containing the listeners
+        'interfacers': a dictionary containing the interfacers
         'dispatchers': a dictionary containing the dispatchers
 
         The hub settings are:
         'loglevel': the logging level
         
-        Listeners and dispatchers are dictionaries with the following keys:
+        interfacers and dispatchers are dictionaries with the following keys:
         'type': class name
         'init_settings': dictionary with initialization settings
         'runtimesettings': dictionary with runtime settings
-        Initialization and runtime settings depend on the listener and
+        Initialization and runtime settings depend on the interfacer and
         dispatcher type.
 
 The run() method is supposed to be run regularly by the instantiater, to

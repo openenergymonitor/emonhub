@@ -20,12 +20,12 @@ import Queue
 
 import emonhub_setup as ehs
 import emonhub_dispatcher as ehd
-import emonhub_listener as ehl
+import emonhub_listener as ehi
 import emonhub_coder as ehc
 
 """class EmonHub
 
-Monitors data inputs through EmonHubListener instances, and sends data to
+Monitors data inputs through EmonHubInterfacer instances, and sends data to
 target servers through EmonHubEmoncmsDispatcher instances.
 
 Communicates with the user through an EmonHubSetup
@@ -57,9 +57,9 @@ class EmonHub(object):
         self._log.info("EmonHub %s" % self.__version__)
         self._log.info("Opening hub...")
         
-        # Initialize dispatchers and listeners
+        # Initialize dispatchers and Interfacers
         self._dispatchers = {}
-        self._listeners = {}
+        self._interfacers = {}
         self._queue = {}
         self._update_settings(settings)
         
@@ -82,12 +82,12 @@ class EmonHub(object):
             if self._setup.check_settings():
                 self._update_settings(self._setup.settings)
             
-            # For all listeners
-            for l in self._listeners.itervalues():
+            # For all Interfacers
+            for I in self._interfacers.itervalues():
                 # Execute run method
-                l.run()
+                I.run()
                 # Read socket
-                values = l.read()
+                values = I.read()
                 # If complete and valid data was received
                 if values is not None:
                     # Place a copy of the values in a queue for each dispatcher
@@ -105,8 +105,8 @@ class EmonHub(object):
     def close(self):
         """Close hub. Do some cleanup before leaving."""
         
-        for l in self._listeners.itervalues():
-            l.close()
+        for I in self._interfacers.itervalues():
+            I.close()
 
         for d in self._dispatchers.itervalues():
             d.stop = True
@@ -169,37 +169,37 @@ class EmonHub(object):
             # Set runtime settings
             self._dispatchers[name].set(**dis['runtimesettings'])
 
-        # Listeners
-        for name in self._listeners.keys():
+        # Interfacers
+        for name in self._interfacers.keys():
             # check init_settings against the file copy, if they are different pass for deletion
-            if self._listeners[name].init_settings != settings['listeners'][name]['init_settings']:
+            if self._interfacers[name].init_settings != settings['interfacers'][name]['init_settings']:
                 pass
-            # Or if listener is still in the settings and has a 'type' just move on to the next one
+            # Or if Interfacer is still in the settings and has a 'type' just move on to the next one
             # (This provides an ability to delete & rebuild by commenting 'type' in conf)
-            elif name in settings['listeners'] and 'type' in settings['listeners'][name]:
+            elif name in settings['interfacers'] and 'type' in settings['interfacers'][name]:
                 continue
-            self._listeners[name].close()
-            self._log.info("Deleting listener '%s' ", name)
-            del(self._listeners[name])
-        for name, lis in settings['listeners'].iteritems():
-            # If listener does not exist, create it
-            if name not in self._listeners:
+            self._interfacers[name].close()
+            self._log.info("Deleting interfacer '%s' ", name)
+            del(self._interfacers[name])
+        for name, I in settings['interfacers'].iteritems():
+            # If interfacer does not exist, create it
+            if name not in self._interfacers:
                 try:
-                    if not 'type' in lis:
+                    if not 'type' in I:
                         continue
-                    self._log.info("Creating " + lis['type'] + " '%s' ", name)
+                    self._log.info("Creating " + I['type'] + " '%s' ", name)
                     # This gets the class from the 'type' string
-                    listener = getattr(ehl, lis['type'])(**lis['init_settings'])
-                    listener.init_settings = lis['init_settings']
-                except ehl.EmonHubListenerInitError as e:
-                    # If listener can't be created, log error and skip to next
-                    self._log.error("Failed to create '" + name + "' listener: " + str(e))
+                    interfacer = getattr(ehi, I['type'])(**I['init_settings'])
+                    interfacer.init_settings = I['init_settings']
+                except ehi.EmonHubInterfacerInitError as e:
+                    # If interfacer can't be created, log error and skip to next
+                    self._log.error("Failed to create '" + name + "' interfacer: " + str(e))
                     continue
                 else:
-                    self._listeners[name] = listener
-                setattr(listener, 'name', name)
+                    self._interfacers[name] = interfacer
+                setattr(interfacer, 'name', name)
             # Set runtime settings
-            self._listeners[name].set(**lis['runtimesettings'])
+            self._interfacers[name].set(**I['runtimesettings'])
 
         if 'nodes' in settings:
             ehc.nodelist = settings['nodes']
