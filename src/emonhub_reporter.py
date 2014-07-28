@@ -17,7 +17,7 @@ import Queue
 
 import emonhub_buffer as ehb
   
-"""class EmonHubDispatcher
+"""class EmonHubReporter
 
 Stores server parameters and buffers the data between two HTTP requests
 
@@ -27,9 +27,9 @@ destination server.
 """
 
 
-class EmonHubDispatcher(threading.Thread):
+class EmonHubReporter(threading.Thread):
 
-    def __init__(self, dispatcherName, queue, bufferMethod="memory", bufferSize=1000, **kwargs):
+    def __init__(self, reporterName, queue, buffer_type="memory", buffer_size=1000, **kwargs):
         """Create a server data buffer initialized with server settings."""
 
         # Initialize logger
@@ -39,9 +39,9 @@ class EmonHubDispatcher(threading.Thread):
         threading.Thread.__init__(self)
 
         # Initialise settings
-        self.name = dispatcherName
+        self.name = reporterName
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'maxItemsPerPost': 1}
+        self._defaults = {'pause': 0, 'interval': 0, 'batchsize': 1}
         self._settings = {}
         self._queue = queue
 
@@ -54,17 +54,17 @@ class EmonHubDispatcher(threading.Thread):
         self._interval_timestamp = 0
 
         # Create underlying buffer implementation
-        self.buffer = ehb.getBuffer(bufferMethod)(dispatcherName, bufferSize, **kwargs)
+        self.buffer = ehb.getBuffer(buffer_type)(reporterName, buffer_size, **kwargs)
 
         # set an absolute upper limit for number of items to process per post
-        # number of items posted is the lower of this item limit, buffersize, or the
-        # maxItemsPerPost, as set in dispatcher settings or by the default value.
-        self._item_limit = bufferSize
+        # number of items posted is the lower of this item limit, buffer_size, or the
+        # batchsize, as set in reporter settings or by the default value.
+        self._item_limit = buffer_size
         
-        self._log.info("Set up dispatcher '%s' (buffer: %s | size: %s)"
-                       % (dispatcherName, bufferMethod, bufferSize))
+        self._log.info("Set up reporter '%s' (buffer: %s | size: %s)"
+                       % (reporterName, buffer_type, buffer_size))
 
-        # Initialise a thread and start the dispatcher
+        # Initialise a thread and start the reporter
         self.stop = False
         self.start()
         
@@ -79,7 +79,7 @@ class EmonHubDispatcher(threading.Thread):
             'pause' = i/I/in/In/IN to pause the input only, no add to buffer but flush still functional
             'pause' = o/O/out/Out/OUT to pause output only, no flush but data can accumulate in buffer
             'pause' = t/T/true/True/TRUE nothing gets posted to buffer or sent by url (buffer retained)
-            'pause' = anything else, commented out or omitted then dispatcher is fully operational
+            'pause' = anything else, commented out or omitted then reporter is fully operational
         
         """
 
@@ -121,7 +121,7 @@ class EmonHubDispatcher(threading.Thread):
 
     def run(self):
         """
-        Run the dispatcher thread.
+        Run the reporter thread.
         Any regularly performed tasks actioned here along with flushing the buffer
 
         """
@@ -160,7 +160,7 @@ class EmonHubDispatcher(threading.Thread):
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
-            max_items = int(self._settings['maxItemsPerPost'])
+            max_items = int(self._settings['batchsize'])
             if max_items > self._item_limit:
                 max_items = self._item_limit
             elif max_items <= 0:
@@ -219,25 +219,25 @@ class EmonHubDispatcher(threading.Thread):
         finally:
             return reply
 
-"""class EmonHubEmoncmsDispatcher
+"""class EmonHubEmoncmsReporter
 
 Stores server parameters and buffers the data between two HTTP requests
 
 """
 
 
-class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
+class EmonHubEmoncmsReporter(EmonHubReporter):
 
-    def __init__(self, dispatcherName, queue, **kwargs):
-        """Initialize dispatcher
+    def __init__(self, reporterName, queue, **kwargs):
+        """Initialize reporter
 
         """
 
         # Initialization
-        super(EmonHubEmoncmsDispatcher, self).__init__(dispatcherName, queue, **kwargs)
+        super(EmonHubEmoncmsReporter, self).__init__(reporterName, queue, **kwargs)
 
-        # add or alter any default settings for this dispatcher
-        self._defaults.update({'maxItemsPerPost': 100, 'url': 'http://emoncms.org'})
+        # add or alter any default settings for this reporter
+        self._defaults.update({'batchsize': 100, 'url': 'http://emoncms.org'})
         self._settings.update({'apikey': ''})
 
         # This line will stop the default values printing to logfile at start-up
@@ -287,12 +287,12 @@ class EmonHubEmoncmsDispatcher(EmonHubDispatcher):
         else:
             self._log.warning("Send failure: wanted 'ok' but got "+reply)
 
-"""class EmonHubDispatcherInitError
+"""class EmonHubReporterInitError
 
 Raise this when init fails.
 
 """
 
 
-class EmonHubDispatcherInitError(Exception):
+class EmonHubReporterInitError(Exception):
     pass

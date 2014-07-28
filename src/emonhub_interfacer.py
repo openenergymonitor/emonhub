@@ -16,7 +16,7 @@ import select
 
 import emonhub_coder as ehc
 
-"""class EmonHubListener
+"""class EmonHubInterfacer
 
 Monitors a data source. 
 
@@ -26,7 +26,7 @@ their data source.
 """
 
 
-class EmonHubListener(object):
+class EmonHubInterfacer(object):
 
     def __init__(self):
         
@@ -36,7 +36,7 @@ class EmonHubListener(object):
         # Initialise settings
         self.name = ''
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
+        self._defaults = {'pause': 0, 'interval': 0, 'datacode': 0}
         self._settings = {}
         self._packet_counter = 0
 
@@ -177,8 +177,8 @@ class EmonHubListener(object):
             if node in ehc.nodelist and 'datacode' in ehc.nodelist[node]:
                 datacode = ehc.nodelist[node]['datacode']
             else:
-            # when node not listed or has no datacode(s) use the listeners default if specified
-                datacode = self._settings['defaultdatacode']
+            # when node not listed or has no datacode(s) use the interfacers default if specified
+                datacode = self._settings['datacode']
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
@@ -228,7 +228,7 @@ class EmonHubListener(object):
             'pause' = i/I/in/In/IN to pause the input only, no input read performed
             'pause' = o/O/out/Out/OUT to pause output only, input is read, processed but not posted to buffer
             'pause' = t/T/true/True/TRUE full pause, nothing read or posted.
-            'pause' = anything else, commented out or omitted then dispatcher is fully operational
+            'pause' = anything else, commented out or omitted then Interfacer is fully operational
         
         """
 
@@ -270,7 +270,7 @@ class EmonHubListener(object):
             self._log.info("Opened serial port: " + str(com_port) + " "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
-            raise EmonHubListenerInitError('Could not open COM port %s' %
+            raise EmonHubInterfacerInitError('Could not open COM port %s' %
                                            com_port)
         else:
             return s
@@ -290,29 +290,29 @@ class EmonHubListener(object):
             s.listen(1)
         except socket.error as e:
             self._log.error(e)
-            raise EmonHubListenerInitError('Could not open port %s' %
+            raise EmonHubInterfacerInitError('Could not open port %s' %
                                            port_nb)
         else:
             return s
 
-"""class EmonhubSerialListener
+"""class EmonhubSerialInterfacer
 
 Monitors the serial port for data
 
 """
 
 
-class EmonHubSerialListener(EmonHubListener):
+class EmonHubSerialInterfacer(EmonHubInterfacer):
 
     def __init__(self, com_port, com_baud=9600):
-        """Initialize listener
+        """Initialize interfacer
 
         com_port (string): path to COM port
 
         """
         
         # Initialization
-        super(EmonHubSerialListener, self).__init__()
+        super(EmonHubSerialInterfacer, self).__init__()
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -358,28 +358,28 @@ class EmonHubSerialListener(EmonHubListener):
         # Process data frame
         return self._process_frame(t, f)
 
-"""class EmonHubJeeListener
+"""class EmonHubJeeInterfacer
 
 Monitors the serial port for data from "Jee" type device
 
 """
 
 
-class EmonHubJeeListener(EmonHubSerialListener):
+class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
     def __init__(self, com_port, com_baud=9600):
-        """Initialize listener
+        """Initialize Interfacer
 
         com_port (string): path to COM port
 
         """
         
         # Initialization
-        super(EmonHubJeeListener, self).__init__(com_port, com_baud)
+        super(EmonHubJeeInterfacer, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
-        self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
+        self._defaults.update({'pause': 0, 'interval': 0, 'datacode': 'h'})
+        self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -419,7 +419,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
             self.rssi = False
 
         # include checks from parent
-        if not super(EmonHubJeeListener, self)._validate_frame(ref, received):
+        if not super(EmonHubJeeInterfacer, self)._validate_frame(ref, received):
             return False
 
         return received
@@ -428,20 +428,20 @@ class EmonHubJeeListener(EmonHubSerialListener):
         """Send configuration parameters to the "Jee" type device through COM port
 
         **kwargs (dict): settings to be modified. Available settings are
-        'baseid', 'frequency', 'sgroup'. Example: 
-        {'baseid': '15', 'frequency': '4', 'sgroup': '210'}
+        'baseid', 'frequency', 'group'. Example:
+        {'baseid': '15', 'frequency': '4', 'group': '210'}
         
         """
 
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
-            if key in ['baseid', 'frequency', 'sgroup']:
+            if key in ['baseid', 'frequency', 'group']:
                 if value != self._settings[key]:
                     if key == 'baseid' and int(value) >=1 and int(value) <=26:
                         string = value + 'i'
                     elif key == 'frequency' and value in {'433','868','915'}:
                         string = value[:1] + 'b'
-                    elif key == 'sgroup'and int(value) >=0 and int(value) <=212:
+                    elif key == 'group'and int(value) >=0 and int(value) <=212:
                         string = value + 'g'
                     else:
                         continue
@@ -452,7 +452,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
                     time.sleep(1)
 
         # include kwargs from parent
-        super(EmonHubJeeListener, self).set(**kwargs)
+        super(EmonHubJeeInterfacer, self).set(**kwargs)
 
     def run(self):
         """Actions that need to be done on a regular basis. 
@@ -487,24 +487,24 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
-"""class EmonHubSocketListener
+"""class EmonHubSocketInterfacer
 
 Monitors a socket for data, typically from ethernet link
 
 """
 
 
-class EmonHubSocketListener(EmonHubListener):
+class EmonHubSocketInterfacer(EmonHubInterfacer):
 
     def __init__(self, port_nb):
-        """Initialize listener
+        """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
 
         """
  
         # Initialization
-        super(EmonHubSocketListener, self).__init__()
+        super(EmonHubSocketInterfacer, self).__init__()
 
         # Open socket
         self._socket = self._open_socket(port_nb)
@@ -558,12 +558,12 @@ class EmonHubSocketListener(EmonHubListener):
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
             return self._process_frame(t, f)
 
-"""class EmonHubListenerInitError
+"""class EmonHubInterfacerInitError
 
 Raise this when init fails.
 
 """
 
 
-class EmonHubListenerInitError(Exception):
+class EmonHubInterfacerInitError(Exception):
     pass

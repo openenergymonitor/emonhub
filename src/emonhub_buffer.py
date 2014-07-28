@@ -43,10 +43,10 @@ It's basically identical to the previous (inline) buffer.
 
 class InMemoryBuffer(AbstractBuffer):
   
-    def __init__(self, bufferName, bufferSize):
+    def __init__(self, bufferName, buffer_size):
         self._bufferName = str(bufferName)
         self._buffer_type = "memory"
-        self._maximumEntriesInBuffer = int(bufferSize)
+        self._maximumEntriesInBuffer = int(buffer_size)
         self._data_buffer = []
         self._log = logging.getLogger("EmonHub")
 
