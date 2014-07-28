@@ -136,11 +136,11 @@ class EmonHub(object):
             if self._reporters[name].init_settings != settings['reporters'][name]['init_settings']:
                 if self._reporters[name].buffer._data_buffer:
                     self.temp_buffer[name]= self._reporters[name].buffer._data_buffer
-            # Or if reporter is still in the settings and has a 'type' just move on to the next one
-            # (This provides an ability to delete & rebuild by commenting 'type' in conf)
-            elif name in settings['reporters'] and 'type' in settings['reporters'][name]:
+            # Or if reporter is still in the settings and has a 'Type' just move on to the next one
+            # (This provides an ability to delete & rebuild by commenting 'Type' in conf)
+            elif name in settings['reporters'] and 'Type' in settings['reporters'][name]:
                 continue
-            # Delete reporters if setting changed or name is unlisted or type is missing
+            # Delete reporters if setting changed or name is unlisted or Type is missing
             self._log.info("Deleting reporter '%s'", name)
             self._reporters[name].stop = True
             del(self._reporters[name])
@@ -148,13 +148,13 @@ class EmonHub(object):
             # If reporter does not exist, create it
             if name not in self._reporters:
                 try:
-                    if not 'type' in R:
+                    if not 'Type' in R:
                         continue
-                    self._log.info("Creating " + R['type'] + " '%s' ", name)
+                    self._log.info("Creating " + R['Type'] + " '%s' ", name)
                     # Create the queue for this reporter
                     self._queue[name] = Queue.Queue(0)
-                    # This gets the class from the 'type' string
-                    reporter = getattr(ehr, R['type'])(name, self._queue[name], **R['init_settings'])
+                    # This gets the class from the 'Type' string
+                    reporter = getattr(ehr, R['Type'])(name, self._queue[name], **R['init_settings'])
                     reporter.init_settings = R['init_settings']
                     # If a memory buffer back-up exists copy it over and remove the back-up
                     if name in self.temp_buffer:
@@ -174,9 +174,9 @@ class EmonHub(object):
             # check init_settings against the file copy, if they are different pass for deletion
             if self._interfacers[name].init_settings != settings['interfacers'][name]['init_settings']:
                 pass
-            # Or if Interfacer is still in the settings and has a 'type' just move on to the next one
-            # (This provides an ability to delete & rebuild by commenting 'type' in conf)
-            elif name in settings['interfacers'] and 'type' in settings['interfacers'][name]:
+            # Or if Interfacer is still in the settings and has a 'Type' just move on to the next one
+            # (This provides an ability to delete & rebuild by commenting 'Type' in conf)
+            elif name in settings['interfacers'] and 'Type' in settings['interfacers'][name]:
                 continue
             self._interfacers[name].close()
             self._log.info("Deleting interfacer '%s' ", name)
@@ -185,11 +185,11 @@ class EmonHub(object):
             # If interfacer does not exist, create it
             if name not in self._interfacers:
                 try:
-                    if not 'type' in I:
+                    if not 'Type' in I:
                         continue
-                    self._log.info("Creating " + I['type'] + " '%s' ", name)
-                    # This gets the class from the 'type' string
-                    interfacer = getattr(ehi, I['type'])(**I['init_settings'])
+                    self._log.info("Creating " + I['Type'] + " '%s' ", name)
+                    # This gets the class from the 'Type' string
+                    interfacer = getattr(ehi, I['Type'])(**I['init_settings'])
                     interfacer.init_settings = I['init_settings']
                 except ehi.EmonHubInterfacerInitError as e:
                     # If interfacer can't be created, log error and skip to next

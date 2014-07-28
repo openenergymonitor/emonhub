@@ -20,17 +20,17 @@ dictionary with the following keys:
 
         'hub': a dictionary containing the hub settings
         'interfacers': a dictionary containing the interfacers
-        'dispatchers': a dictionary containing the dispatchers
+        'reporters': a dictionary containing the reporters
 
         The hub settings are:
         'loglevel': the logging level
         
-        interfacers and dispatchers are dictionaries with the following keys:
-        'type': class name
+        interfacers and reporters are dictionaries with the following keys:
+        'Type': class name
         'init_settings': dictionary with initialization settings
         'runtimesettings': dictionary with runtime settings
         Initialization and runtime settings depend on the interfacer and
-        dispatcher type.
+        reporter type.
 
 The run() method is supposed to be run regularly by the instantiater, to
 perform regular communication tasks.

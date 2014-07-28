@@ -133,7 +133,7 @@ class EmonHubReporter(threading.Thread):
                 self.add(frame)
             # Don't loop to fast
             time.sleep(0.1)
-            # Action dispatcher tasks
+            # Action reporter tasks
             self.action()
 
     def action(self):
