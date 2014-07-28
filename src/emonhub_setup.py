@@ -86,11 +86,18 @@ class EmonHubFileSetup(EmonHubSetup):
         # Initialize attribute settings as a ConfigObj instance
         try:
             self.settings = ConfigObj(filename, file_error=True)
+            # Check the settings file sections
+            self.settings['hub']
+            self.settings['interfacers']
+            self.settings['reporters']
         except IOError as e:
             raise EmonHubSetupInitError(e)
         except SyntaxError as e:
             raise EmonHubSetupInitError(
                 'Error parsing config file \"%s\": ' % filename + str(e))
+        except KeyError as e:
+            raise EmonHubSetupInitError(
+                'Configuration file error - section: ' + str(e))
 
     def check_settings(self):
         """Check settings
@@ -129,7 +136,15 @@ class EmonHubFileSetup(EmonHubSetup):
             return
         
         if self.settings != settings:
-            return True
+            # Check the settings file sections
+            try:
+                self.settings['hub']
+                self.settings['interfacers']
+                self.settings['reporters']
+            except KeyError as e:
+                self._log.warning("Configuration file missing section: " + str(e))
+            else:
+                 return True
 
 """class EmonHubSetupInitError
 
