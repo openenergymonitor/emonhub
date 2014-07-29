@@ -53,7 +53,7 @@ class EmonHub(object):
         
         # Initialize logging
         self._log = logging.getLogger("EmonHub")
-        self._set_logging_level(settings['hub']['loglevel'])
+        self._set_logging_level('INFO', False)
         self._log.info("EmonHub %s" % self.__version__)
         self._log.info("Opening hub...")
         
@@ -123,9 +123,12 @@ class EmonHub(object):
 
     def _update_settings(self, settings):
         """Check settings and update if needed."""
-        
+
         # EmonHub Logging level
-        self._set_logging_level(settings['hub']['loglevel'])
+        if 'loglevel' in settings['hub']:
+            self._set_logging_level(settings['hub']['loglevel'])
+        else:
+            self._set_logging_level()
 
         # Create a place to hold buffer contents whilst a deletion & rebuild occurs
         self.temp_buffer = {}
@@ -240,13 +243,16 @@ class EmonHub(object):
         if 'nodes' in settings:
             ehc.nodelist = settings['nodes']
 
-    def _set_logging_level(self, level):
+    def _set_logging_level(self, level='WARNING', log=True):
         """Set logging level.
         
         level (string): log level name in 
         ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
         
         """
+
+        # Ensure "level" is all upper case
+        level = level.upper()
         
         # Check level argument is valid
         try:
@@ -254,11 +260,16 @@ class EmonHub(object):
         except AttributeError:
             self._log.error('Logging level %s invalid' % level)
             return False
+        except Exception as e:
+            self._log.error('Logging level %s ' % str(e))
+            return False
         
         # Change level if different from current level
         if loglevel != self._log.getEffectiveLevel():
             self._log.setLevel(level)
-            self._log.info('Logging level set to %s' % level)
+            if log:
+                self._log.info('Logging level set to %s' % level)
+
         
 if __name__ == "__main__":
 
