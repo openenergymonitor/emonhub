@@ -496,10 +496,10 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, port_nbr=50011):
+    def __init__(self, port_nb=50011):
         """Initialize Interfacer
 
-        port_nbr (string): port number on which to open the socket
+        port_nb (string): port number on which to open the socket
 
         """
  
@@ -507,7 +507,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         super(EmonHubSocketInterfacer, self).__init__()
 
         # Open socket
-        self._socket = self._open_socket(port_nbr)
+        self._socket = self._open_socket(port_nb)
 
         # Initialize RX buffer for socket
         self._sock_rx_buf = ''
