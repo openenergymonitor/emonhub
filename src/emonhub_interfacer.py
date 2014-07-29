@@ -304,7 +304,7 @@ Monitors the serial port for data
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, com_port, com_baud=9600):
+    def __init__(self, com_port='', com_baud=9600):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -367,7 +367,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, com_port, com_baud=9600):
+    def __init__(self, com_port='/dev/ttyAMA0', com_baud=9600):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -496,10 +496,10 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, port_nb):
+    def __init__(self, port_nbr=50011):
         """Initialize Interfacer
 
-        port_nb (string): port number on which to open the socket
+        port_nbr (string): port number on which to open the socket
 
         """
  
@@ -507,7 +507,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         super(EmonHubSocketInterfacer, self).__init__()
 
         # Open socket
-        self._socket = self._open_socket(port_nb)
+        self._socket = self._open_socket(port_nbr)
 
         # Initialize RX buffer for socket
         self._sock_rx_buf = ''
