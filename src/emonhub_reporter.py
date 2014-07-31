@@ -253,7 +253,8 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 250 ...]]
 
-        if not 'apikey' in self._settings.keys() or str.lower(self._settings['apikey'][:4]) == 'xxxx':
+        if not 'apikey' in self._settings.keys() or str.__len__(self._settings['apikey']) != 32 \
+                or str.lower(self._settings['apikey']) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
 
         data_string = json.dumps(databuffer, separators=(',', ':'))
