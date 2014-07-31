@@ -94,8 +94,8 @@ class EmonHub(object):
                     for name in self._reporters:
                         # discard if 'pause' set to true or to pause input only
                         if 'pause' in self._reporters[name]._settings \
-                                and self._reporters[name]._settings['pause'] in \
-                                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
+                                and str(self._reporters[name]._settings['pause']).lower() in \
+                                ['on', 'in']:
                             continue
                         self._queue[name].put(values)
 
