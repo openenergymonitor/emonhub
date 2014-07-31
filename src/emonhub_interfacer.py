@@ -36,7 +36,7 @@ class EmonHubInterfacer(object):
         # Initialise settings
         self.name = ''
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'datacode': 0}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': 0}
         self._settings = {}
         self._packet_counter = 0
 
@@ -109,8 +109,8 @@ class EmonHubInterfacer(object):
             return
 
         # pause output if 'pause' set to true or to pause output only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
+        if 'pause' in self._settings \
+                and str(self._settings['pause']).lower() in ['on', 'out']:
             return
         
         return frame
@@ -225,10 +225,10 @@ class EmonHubInterfacer(object):
         {'setting_1': 'value_1', 'setting_2': 'value_2'}
 
         pause (string): pause status
-            'pause' = i/I/in/In/IN to pause the input only, no input read performed
-            'pause' = o/O/out/Out/OUT to pause output only, input is read, processed but not posted to buffer
-            'pause' = t/T/true/True/TRUE full pause, nothing read or posted.
-            'pause' = anything else, commented out or omitted then Interfacer is fully operational
+            'pause' = in   pauses the input only, no input read performed
+            'pause' = out  pauses output only, input is read, processed but not posted to buffer
+            'pause' = on   pause Interfacer fully, nothing read, processed or posted.
+            'pause' = off  pause is off and Interfacer is fully operational (default)
         
         """
 
@@ -238,6 +238,9 @@ class EmonHubInterfacer(object):
             else:
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
+                pass
+            elif key == 'pause' and not str(setting).lower() in ['on', 'in', 'out', 'off']:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
                 pass
             else:
                 self._settings[key] = setting
@@ -335,8 +338,8 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         
         """
         # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
+        if 'pause' in self._settings and \
+                        str.lower(self._settings['pause']) in ['on', 'in']:
             return
         
         # Read serial RX
@@ -378,7 +381,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         super(EmonHubJeeInterfacer, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._defaults.update({'pause': 0, 'interval': 0, 'datacode': 'h'})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h'})
         self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
 
         # This line will stop the default values printing to logfile at start-up
@@ -444,6 +447,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                     elif key == 'group'and int(value) >=0 and int(value) <=212:
                         string = value + 'g'
                     else:
+                        self._log.warning("'%s' is not a valid setting for %s: %s" % (value, self.name, key))
                         continue
                     self._settings[key] = value
                     self._log.debug("Setting " + self.name + " %s: %s" % (key, value) + " (" + string + ")")
@@ -532,8 +536,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             select.select([self._socket], [], [], 0)
 
         # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
+        if 'pause' in self._settings \
+                        and str(self._settings['pause']).lower() in ['on', 'in']:
+            #TODO when pause on/in is taken off a stray frame gets passed through:
             return
 
         # If data received, add it to socket RX buffer

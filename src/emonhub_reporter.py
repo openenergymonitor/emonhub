@@ -41,7 +41,7 @@ class EmonHubReporter(threading.Thread):
         # Initialise settings
         self.name = reporterName
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'batchsize': 1}
+        self._defaults = {'pause': 'off', 'interval': 0, 'batchsize': 1}
         self._settings = {}
         self._queue = queue
 
@@ -76,10 +76,10 @@ class EmonHubReporter(threading.Thread):
         url (string): eg: 'http://localhost/emoncms' or 'http://emoncms.org' (trailing slash optional)
         apikey (string): API key with write access
         pause (string): pause status
-            'pause' = i/I/in/In/IN to pause the input only, no add to buffer but flush still functional
-            'pause' = o/O/out/Out/OUT to pause output only, no flush but data can accumulate in buffer
-            'pause' = t/T/true/True/TRUE nothing gets posted to buffer or sent by url (buffer retained)
-            'pause' = anything else, commented out or omitted then reporter is fully operational
+            'pause' = in   pauses the input only, no add to buffer but flush still functional
+            'pause' = out  pauses output only, no flush but data can accumulate in buffer
+            'pause' = on   pause fully, nothing posted to buffer or sent (buffer retained)
+            'pause' = off  pause is off and reporter is fully operational
         
         """
 
@@ -89,6 +89,9 @@ class EmonHubReporter(threading.Thread):
             else:
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
+                pass
+            elif key == 'pause' and not str(setting).lower() in ['on', 'in', 'out', 'off']:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
                 pass
             else:
                 self._settings[key] = setting
@@ -143,12 +146,13 @@ class EmonHubReporter(threading.Thread):
         """
 
         # pause output if 'pause' set to true or to pause output only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
+        if 'pause' in self._settings \
+                and str(self._settings['pause']).lower() in ['on', 'out']:
             return
 
         # If an interval is set, check if that time has passed since last post
-        if int(self._settings['interval']) and time.time() - self._interval_timestamp < int(self._settings['interval']):
+        if int(self._settings['interval']) \
+                and time.time() - self._interval_timestamp < int(self._settings['interval']):
             return
         else:
             # Then attempt to flush the buffer
@@ -253,7 +257,8 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 250 ...]]
 
-        if not 'apikey' in self._settings.keys() or str.lower(self._settings['apikey'][:4]) == 'xxxx':
+        if not 'apikey' in self._settings.keys() or str.__len__(self._settings['apikey']) != 32 \
+                or str.lower(self._settings['apikey']) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
 
         data_string = json.dumps(databuffer, separators=(',', ':'))
