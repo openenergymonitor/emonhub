@@ -381,7 +381,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         super(EmonHubJeeInterfacer, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h'})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'quiet': 'True'})
         self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
 
         # This line will stop the default values printing to logfile at start-up
@@ -438,7 +438,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
-            if key in ['baseid', 'frequency', 'group']:
+            if key in ['baseid', 'frequency', 'group', 'quiet']:
                 if value != self._settings[key]:
                     if key == 'baseid' and int(value) >=1 and int(value) <=26:
                         string = value + 'i'
@@ -446,6 +446,13 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                         string = value[:1] + 'b'
                     elif key == 'group'and int(value) >=0 and int(value) <=212:
                         string = value + 'g'
+                    #elif key == 'quiet' and str.capitalize(value) in {'True', 'False'}:
+                        #string = str(int(bool(str.capitalize(value)))) + 'q'
+                    elif key == 'quiet' and str.lower(value) in {'true', 'false'}:
+                        if str.lower(value) == 'true':
+                            string = '1q'
+                        else:
+                            string = '0q'
                     else:
                         self._log.warning("'%s' is not a valid setting for %s: %s" % (value, self.name, key))
                         continue
