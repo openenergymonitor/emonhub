@@ -74,6 +74,11 @@ class EmonHubInterfacer(object):
 
         """
 
+        # Discard the frame if 'pause' set to 'all' or 'in'
+        if 'pause' in self._settings and \
+                        str.lower(self._settings['pause']) in ['all', 'in']:
+            return
+
         # Assign a "Packet" reference number
         self._packet_counter +=1
         ref = self._packet_counter
@@ -345,13 +350,6 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         if '\r\n' not in self._rx_buf:
             return
 
-        # pause input if 'pause' set to 'all' or 'in'
-        if 'pause' in self._settings and \
-                        str.lower(self._settings['pause']) in ['all', 'in']:
-            # Reset buffer
-            self._rx_buf = ''
-            return
-
         # Remove CR,LF
         f = self._rx_buf[:-2]
 
@@ -559,18 +557,11 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
-
-            # pause input if 'pause' set to 'all' or 'in'
-            if 'pause' in self._settings \
-                            and str(self._settings['pause']).lower() in ['all', 'in']:
-                self._sock_rx_buf = ''
-                return
-            else:
-                # timestamp
-                t = round(time.time(), 2)
-                # Process and return first frame in buffer:
-                f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-                return self._process_frame(t, f)
+            # timestamp
+            t = round(time.time(), 2)
+            # Process and return first frame in buffer:
+            f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
+            return self._process_frame(t, f)
 
 """class EmonHubInterfacerInitError
 
