@@ -337,16 +337,19 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
         
         """
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and \
-                        str.lower(self._settings['pause']) in ['on', 'in']:
-            return
-        
+
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
         
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
+            return
+
+        # pause input if 'pause' set to true or to pause input only
+        if 'pause' in self._settings and \
+                        str.lower(self._settings['pause']) in ['on', 'in']:
+            # Reset buffer
+            self._rx_buf = ''
             return
 
         # Remove CR,LF
@@ -542,12 +545,6 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         ready_to_read, ready_to_write, in_error = \
             select.select([self._socket], [], [], 0)
 
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings \
-                        and str(self._settings['pause']).lower() in ['on', 'in']:
-            #TODO when pause on/in is taken off a stray frame gets passed through:
-            return
-
         # If data received, add it to socket RX buffer
         if self._socket in ready_to_read:
 
@@ -563,12 +560,17 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
 
-            # timestamp
-            t = round(time.time(), 2)
-            
-            # Process and return first frame in buffer:
-            f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(t, f)
+            # pause input if 'pause' set to true or to pause input only
+            if 'pause' in self._settings \
+                            and str(self._settings['pause']).lower() in ['on', 'in']:
+                self._sock_rx_buf = ''
+                return
+            else:
+                # timestamp
+                t = round(time.time(), 2)
+                # Process and return first frame in buffer:
+                f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
+                return self._process_frame(t, f)
 
 """class EmonHubInterfacerInitError
 
