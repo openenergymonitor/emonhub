@@ -60,7 +60,7 @@ class EmonHubInterfacer(object):
         """
         pass
 
-    def _process_frame(self, timestamp, frame):
+    def _process_frame(self, frame, timestamp=0.0):
         """Process a frame of data
 
         f (string): 'NodeID val1 val2 ...'
@@ -73,6 +73,16 @@ class EmonHubInterfacer(object):
         Return data as a list: [NodeID, val1, val2]
 
         """
+
+        # Discard the frame if 'pause' set to 'all' or 'in'
+        if 'pause' in self._settings and \
+                        str.lower(self._settings['pause']) in ['all', 'in']:
+            return
+
+        # Add timestamp if not done already
+
+        if not timestamp:
+            timestamp = round(time.time(), 2)
 
         # Assign a "Packet" reference number
         self._packet_counter +=1
@@ -108,9 +118,9 @@ class EmonHubInterfacer(object):
         else:
             return
 
-        # pause output if 'pause' set to true or to pause output only
+        # pause output if 'pause' set to 'all' or 'out'
         if 'pause' in self._settings \
-                and str(self._settings['pause']).lower() in ['on', 'out']:
+                and str(self._settings['pause']).lower() in ['all', 'out']:
             return
         
         return frame
@@ -225,9 +235,9 @@ class EmonHubInterfacer(object):
         {'setting_1': 'value_1', 'setting_2': 'value_2'}
 
         pause (string): pause status
+            'pause' = all  pause Interfacer fully, nothing read, processed or posted.
             'pause' = in   pauses the input only, no input read performed
             'pause' = out  pauses output only, input is read, processed but not posted to buffer
-            'pause' = on   pause Interfacer fully, nothing read, processed or posted.
             'pause' = off  pause is off and Interfacer is fully operational (default)
         
         """
@@ -239,7 +249,7 @@ class EmonHubInterfacer(object):
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
                 pass
-            elif key == 'pause' and not str(setting).lower() in ['on', 'in', 'out', 'off']:
+            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
                 pass
             else:
@@ -337,11 +347,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
         
         """
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and \
-                        str.lower(self._settings['pause']) in ['on', 'in']:
-            return
-        
+
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
         
@@ -359,7 +365,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         t = round(time.time(), 2)
 
         # Process data frame
-        return self._process_frame(t, f)
+        return self._process_frame(f, t)
 
 """class EmonHubJeeInterfacer
 
@@ -542,12 +548,6 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         ready_to_read, ready_to_write, in_error = \
             select.select([self._socket], [], [], 0)
 
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings \
-                        and str(self._settings['pause']).lower() in ['on', 'in']:
-            #TODO when pause on/in is taken off a stray frame gets passed through:
-            return
-
         # If data received, add it to socket RX buffer
         if self._socket in ready_to_read:
 
@@ -562,13 +562,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
-
-            # timestamp
-            t = round(time.time(), 2)
-            
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(t, f)
+            return self._process_frame(f)
 
 """class EmonHubInterfacerInitError
 

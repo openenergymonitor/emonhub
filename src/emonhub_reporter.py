@@ -76,9 +76,9 @@ class EmonHubReporter(threading.Thread):
         url (string): eg: 'http://localhost/emoncms' or 'http://emoncms.org' (trailing slash optional)
         apikey (string): API key with write access
         pause (string): pause status
+            'pause' = all  pause fully, nothing posted to buffer or sent (buffer retained)
             'pause' = in   pauses the input only, no add to buffer but flush still functional
             'pause' = out  pauses output only, no flush but data can accumulate in buffer
-            'pause' = on   pause fully, nothing posted to buffer or sent (buffer retained)
             'pause' = off  pause is off and reporter is fully operational
         
         """
@@ -90,7 +90,7 @@ class EmonHubReporter(threading.Thread):
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
                 pass
-            elif key == 'pause' and not str(setting).lower() in ['on', 'in', 'out', 'off']:
+            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
                 pass
             else:
@@ -145,9 +145,9 @@ class EmonHubReporter(threading.Thread):
         :return:
         """
 
-        # pause output if 'pause' set to true or to pause output only
+        # pause output if 'pause' set to 'all' or 'out'
         if 'pause' in self._settings \
-                and str(self._settings['pause']).lower() in ['on', 'out']:
+                and str(self._settings['pause']).lower() in ['all', 'out']:
             return
 
         # If an interval is set, check if that time has passed since last post
