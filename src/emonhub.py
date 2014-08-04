@@ -92,10 +92,10 @@ class EmonHub(object):
                 if values is not None:
                     # Place a copy of the values in a queue for each reporter
                     for name in self._reporters:
-                        # discard if 'pause' set to true or to pause input only
+                        # discard if reporter 'pause' set to 'all' or 'in'
                         if 'pause' in self._reporters[name]._settings \
                                 and str(self._reporters[name]._settings['pause']).lower() in \
-                                ['on', 'in']:
+                                ['all', 'in']:
                             continue
                         self._queue[name].put(values)
 

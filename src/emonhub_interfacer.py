@@ -108,9 +108,9 @@ class EmonHubInterfacer(object):
         else:
             return
 
-        # pause output if 'pause' set to true or to pause output only
+        # pause output if 'pause' set to 'all' or 'out'
         if 'pause' in self._settings \
-                and str(self._settings['pause']).lower() in ['on', 'out']:
+                and str(self._settings['pause']).lower() in ['all', 'out']:
             return
         
         return frame
@@ -225,9 +225,9 @@ class EmonHubInterfacer(object):
         {'setting_1': 'value_1', 'setting_2': 'value_2'}
 
         pause (string): pause status
+            'pause' = all  pause Interfacer fully, nothing read, processed or posted.
             'pause' = in   pauses the input only, no input read performed
             'pause' = out  pauses output only, input is read, processed but not posted to buffer
-            'pause' = on   pause Interfacer fully, nothing read, processed or posted.
             'pause' = off  pause is off and Interfacer is fully operational (default)
         
         """
@@ -239,7 +239,7 @@ class EmonHubInterfacer(object):
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
                 pass
-            elif key == 'pause' and not str(setting).lower() in ['on', 'in', 'out', 'off']:
+            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
                 pass
             else:
@@ -345,9 +345,9 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         if '\r\n' not in self._rx_buf:
             return
 
-        # pause input if 'pause' set to true or to pause input only
+        # pause input if 'pause' set to 'all' or 'in'
         if 'pause' in self._settings and \
-                        str.lower(self._settings['pause']) in ['on', 'in']:
+                        str.lower(self._settings['pause']) in ['all', 'in']:
             # Reset buffer
             self._rx_buf = ''
             return
@@ -560,9 +560,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
 
-            # pause input if 'pause' set to true or to pause input only
+            # pause input if 'pause' set to 'all' or 'in'
             if 'pause' in self._settings \
-                            and str(self._settings['pause']).lower() in ['on', 'in']:
+                            and str(self._settings['pause']).lower() in ['all', 'in']:
                 self._sock_rx_buf = ''
                 return
             else:
