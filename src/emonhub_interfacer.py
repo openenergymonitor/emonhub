@@ -60,7 +60,7 @@ class EmonHubInterfacer(object):
         """
         pass
 
-    def _process_frame(self, timestamp, frame):
+    def _process_frame(self, frame, timestamp=0.0):
         """Process a frame of data
 
         f (string): 'NodeID val1 val2 ...'
@@ -78,6 +78,11 @@ class EmonHubInterfacer(object):
         if 'pause' in self._settings and \
                         str.lower(self._settings['pause']) in ['all', 'in']:
             return
+
+        # Add timestamp if not done already
+
+        if not timestamp:
+            timestamp = round(time.time(), 2)
 
         # Assign a "Packet" reference number
         self._packet_counter +=1
@@ -360,7 +365,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         t = round(time.time(), 2)
 
         # Process data frame
-        return self._process_frame(t, f)
+        return self._process_frame(f, t)
 
 """class EmonHubJeeInterfacer
 
@@ -557,11 +562,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
-            # timestamp
-            t = round(time.time(), 2)
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(t, f)
+            return self._process_frame(f)
 
 """class EmonHubInterfacerInitError
 
