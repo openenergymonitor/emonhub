@@ -16,7 +16,7 @@ import select
 
 import emonhub_coder as ehc
 
-"""class EmonHubListener
+"""class EmonHubInterfacer
 
 Monitors a data source. 
 
@@ -26,7 +26,7 @@ their data source.
 """
 
 
-class EmonHubListener(object):
+class EmonHubInterfacer(object):
 
     def __init__(self):
         
@@ -36,7 +36,7 @@ class EmonHubListener(object):
         # Initialise settings
         self.name = ''
         self.init_settings = {}
-        self._defaults = {'pause': 0, 'interval': 0, 'defaultdatacode': 0}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': 0}
         self._settings = {}
         self._packet_counter = 0
 
@@ -60,7 +60,7 @@ class EmonHubListener(object):
         """
         pass
 
-    def _process_frame(self, timestamp, frame):
+    def _process_frame(self, frame, timestamp=0.0):
         """Process a frame of data
 
         f (string): 'NodeID val1 val2 ...'
@@ -73,6 +73,16 @@ class EmonHubListener(object):
         Return data as a list: [NodeID, val1, val2]
 
         """
+
+        # Discard the frame if 'pause' set to 'all' or 'in'
+        if 'pause' in self._settings and \
+                        str.lower(self._settings['pause']) in ['all', 'in']:
+            return
+
+        # Add timestamp if not done already
+
+        if not timestamp:
+            timestamp = round(time.time(), 2)
 
         # Assign a "Packet" reference number
         self._packet_counter +=1
@@ -108,9 +118,9 @@ class EmonHubListener(object):
         else:
             return
 
-        # pause output if 'pause' set to true or to pause output only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['o', 'O', 'out', 'Out', 'OUT', 't', 'T', 'true', 'True', 'TRUE']:
+        # pause output if 'pause' set to 'all' or 'out'
+        if 'pause' in self._settings \
+                and str(self._settings['pause']).lower() in ['all', 'out']:
             return
         
         return frame
@@ -177,8 +187,8 @@ class EmonHubListener(object):
             if node in ehc.nodelist and 'datacode' in ehc.nodelist[node]:
                 datacode = ehc.nodelist[node]['datacode']
             else:
-            # when node not listed or has no datacode(s) use the listeners default if specified
-                datacode = self._settings['defaultdatacode']
+            # when node not listed or has no datacode(s) use the interfacers default if specified
+                datacode = self._settings['datacode']
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
@@ -225,10 +235,10 @@ class EmonHubListener(object):
         {'setting_1': 'value_1', 'setting_2': 'value_2'}
 
         pause (string): pause status
-            'pause' = i/I/in/In/IN to pause the input only, no input read performed
-            'pause' = o/O/out/Out/OUT to pause output only, input is read, processed but not posted to buffer
-            'pause' = t/T/true/True/TRUE full pause, nothing read or posted.
-            'pause' = anything else, commented out or omitted then dispatcher is fully operational
+            'pause' = all  pause Interfacer fully, nothing read, processed or posted.
+            'pause' = in   pauses the input only, no input read performed
+            'pause' = out  pauses output only, input is read, processed but not posted to buffer
+            'pause' = off  pause is off and Interfacer is fully operational (default)
         
         """
 
@@ -238,6 +248,9 @@ class EmonHubListener(object):
             else:
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
+                pass
+            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
                 pass
             else:
                 self._settings[key] = setting
@@ -270,7 +283,7 @@ class EmonHubListener(object):
             self._log.info("Opened serial port: " + str(com_port) + " "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
-            raise EmonHubListenerInitError('Could not open COM port %s' %
+            raise EmonHubInterfacerInitError('Could not open COM port %s' %
                                            com_port)
         else:
             return s
@@ -290,29 +303,29 @@ class EmonHubListener(object):
             s.listen(1)
         except socket.error as e:
             self._log.error(e)
-            raise EmonHubListenerInitError('Could not open port %s' %
+            raise EmonHubInterfacerInitError('Could not open port %s' %
                                            port_nb)
         else:
             return s
 
-"""class EmonhubSerialListener
+"""class EmonhubSerialInterfacer
 
 Monitors the serial port for data
 
 """
 
 
-class EmonHubSerialListener(EmonHubListener):
+class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, com_port, com_baud=9600):
-        """Initialize listener
+    def __init__(self, com_port='', com_baud=9600):
+        """Initialize interfacer
 
         com_port (string): path to COM port
 
         """
         
         # Initialization
-        super(EmonHubSerialListener, self).__init__()
+        super(EmonHubSerialInterfacer, self).__init__()
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -334,11 +347,7 @@ class EmonHubSerialListener(EmonHubListener):
         Return data as a list: [NodeID, val1, val2]
         
         """
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
-            return
-        
+
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
         
@@ -356,30 +365,30 @@ class EmonHubSerialListener(EmonHubListener):
         t = round(time.time(), 2)
 
         # Process data frame
-        return self._process_frame(t, f)
+        return self._process_frame(f, t)
 
-"""class EmonHubJeeListener
+"""class EmonHubJeeInterfacer
 
 Monitors the serial port for data from "Jee" type device
 
 """
 
 
-class EmonHubJeeListener(EmonHubSerialListener):
+class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, com_port, com_baud=9600):
-        """Initialize listener
+    def __init__(self, com_port='/dev/ttyAMA0', com_baud=9600):
+        """Initialize Interfacer
 
         com_port (string): path to COM port
 
         """
         
         # Initialization
-        super(EmonHubJeeListener, self).__init__(com_port, com_baud)
+        super(EmonHubJeeInterfacer, self).__init__(com_port, com_baud)
 
         # Initialize settings
-        self._defaults.update({'pause': 0, 'interval': 0, 'defaultdatacode': 'h'})
-        self._settings.update({'baseid': '', 'frequency': '', 'sgroup': ''})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'quiet': 'True'})
+        self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -419,7 +428,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
             self.rssi = False
 
         # include checks from parent
-        if not super(EmonHubJeeListener, self)._validate_frame(ref, received):
+        if not super(EmonHubJeeInterfacer, self)._validate_frame(ref, received):
             return False
 
         return received
@@ -428,22 +437,30 @@ class EmonHubJeeListener(EmonHubSerialListener):
         """Send configuration parameters to the "Jee" type device through COM port
 
         **kwargs (dict): settings to be modified. Available settings are
-        'baseid', 'frequency', 'sgroup'. Example: 
-        {'baseid': '15', 'frequency': '4', 'sgroup': '210'}
+        'baseid', 'frequency', 'group'. Example:
+        {'baseid': '15', 'frequency': '4', 'group': '210'}
         
         """
 
         for key, value in kwargs.iteritems():
             # If radio setting modified, transmit on serial link
-            if key in ['baseid', 'frequency', 'sgroup']:
+            if key in ['baseid', 'frequency', 'group', 'quiet']:
                 if value != self._settings[key]:
                     if key == 'baseid' and int(value) >=1 and int(value) <=26:
                         string = value + 'i'
                     elif key == 'frequency' and value in {'433','868','915'}:
                         string = value[:1] + 'b'
-                    elif key == 'sgroup'and int(value) >=0 and int(value) <=212:
+                    elif key == 'group'and int(value) >=0 and int(value) <=212:
                         string = value + 'g'
+                    #elif key == 'quiet' and str.capitalize(value) in {'True', 'False'}:
+                        #string = str(int(bool(str.capitalize(value)))) + 'q'
+                    elif key == 'quiet' and str.lower(value) in {'true', 'false'}:
+                        if str.lower(value) == 'true':
+                            string = '1q'
+                        else:
+                            string = '0q'
                     else:
+                        self._log.warning("'%s' is not a valid setting for %s: %s" % (value, self.name, key))
                         continue
                     self._settings[key] = value
                     self._log.debug("Setting " + self.name + " %s: %s" % (key, value) + " (" + string + ")")
@@ -452,7 +469,7 @@ class EmonHubJeeListener(EmonHubSerialListener):
                     time.sleep(1)
 
         # include kwargs from parent
-        super(EmonHubJeeListener, self).set(**kwargs)
+        super(EmonHubJeeInterfacer, self).set(**kwargs)
 
     def run(self):
         """Actions that need to be done on a regular basis. 
@@ -487,24 +504,24 @@ class EmonHubJeeListener(EmonHubSerialListener):
 
         self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
-"""class EmonHubSocketListener
+"""class EmonHubSocketInterfacer
 
 Monitors a socket for data, typically from ethernet link
 
 """
 
 
-class EmonHubSocketListener(EmonHubListener):
+class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, port_nb):
-        """Initialize listener
+    def __init__(self, port_nb=50011):
+        """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
 
         """
  
         # Initialization
-        super(EmonHubSocketListener, self).__init__()
+        super(EmonHubSocketInterfacer, self).__init__()
 
         # Open socket
         self._socket = self._open_socket(port_nb)
@@ -531,11 +548,6 @@ class EmonHubSocketListener(EmonHubListener):
         ready_to_read, ready_to_write, in_error = \
             select.select([self._socket], [], [], 0)
 
-        # pause input if 'pause' set to true or to pause input only
-        if 'pause' in self._settings and self._settings['pause'] in \
-                ['i', 'I', 'in', 'In', 'IN', 't', 'T', 'true', 'True', 'TRUE']:
-            return
-
         # If data received, add it to socket RX buffer
         if self._socket in ready_to_read:
 
@@ -550,20 +562,16 @@ class EmonHubSocketListener(EmonHubListener):
 
         # If there is at least one complete frame in the buffer
         if '\r\n' in self._sock_rx_buf:
-
-            # timestamp
-            t = round(time.time(), 2)
-            
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(t, f)
+            return self._process_frame(f)
 
-"""class EmonHubListenerInitError
+"""class EmonHubInterfacerInitError
 
 Raise this when init fails.
 
 """
 
 
-class EmonHubListenerInitError(Exception):
+class EmonHubInterfacerInitError(Exception):
     pass

@@ -11,26 +11,26 @@ import time
 import logging
 from configobj import ConfigObj
 
-"""class EmonHubInterface
+"""class EmonHubSetup
 
-User interface to communicate with the hub.
+User interface to setup the hub.
 
 The settings attribute stores the settings of the hub. It is a
 dictionary with the following keys:
 
         'hub': a dictionary containing the hub settings
-        'listeners': a dictionary containing the listeners
-        'dispatchers': a dictionary containing the dispatchers
+        'interfacers': a dictionary containing the interfacers
+        'reporters': a dictionary containing the reporters
 
         The hub settings are:
         'loglevel': the logging level
         
-        Listeners and dispatchers are dictionaries with the following keys:
-        'type': class name
+        interfacers and reporters are dictionaries with the following keys:
+        'Type': class name
         'init_settings': dictionary with initialization settings
-        'runtime_settings': dictionary with runtime settings
-        Initialization and runtime settings depend on the listener and
-        dispatcher type.
+        'runtimesettings': dictionary with runtime settings
+        Initialization and runtime settings depend on the interfacer and
+        reporter type.
 
 The run() method is supposed to be run regularly by the instantiater, to
 perform regular communication tasks.
@@ -39,12 +39,12 @@ The check_settings() method is run regularly as well. It checks the settings
 and returns True is settings were changed.
 
 This almost empty class is meant to be inherited by subclasses specific to
-each user interface.
+each setup.
 
 """
 
 
-class EmonHubInterface(object):
+class EmonHubSetup(object):
 
     def __init__(self):
         
@@ -72,12 +72,12 @@ class EmonHubInterface(object):
         """
     
 
-class EmonHubFileInterface(EmonHubInterface):
+class EmonHubFileSetup(EmonHubSetup):
 
     def __init__(self, filename):
         
         # Initialization
-        super(EmonHubFileInterface, self).__init__()
+        super(EmonHubFileSetup, self).__init__()
 
         # Initialize update timestamp
         self._settings_update_timestamp = 0
@@ -86,11 +86,18 @@ class EmonHubFileInterface(EmonHubInterface):
         # Initialize attribute settings as a ConfigObj instance
         try:
             self.settings = ConfigObj(filename, file_error=True)
+            # Check the settings file sections
+            self.settings['hub']
+            self.settings['interfacers']
+            self.settings['reporters']
         except IOError as e:
-            raise EmonHubInterfaceInitError(e)
+            raise EmonHubSetupInitError(e)
         except SyntaxError as e:
-            raise EmonHubInterfaceInitError(
+            raise EmonHubSetupInitError(
                 'Error parsing config file \"%s\": ' % filename + str(e))
+        except KeyError as e:
+            raise EmonHubSetupInitError(
+                'Configuration file error - section: ' + str(e))
 
     def check_settings(self):
         """Check settings
@@ -129,14 +136,22 @@ class EmonHubFileInterface(EmonHubInterface):
             return
         
         if self.settings != settings:
-            return True
+            # Check the settings file sections
+            try:
+                self.settings['hub']
+                self.settings['interfacers']
+                self.settings['reporters']
+            except KeyError as e:
+                self._log.warning("Configuration file missing section: " + str(e))
+            else:
+                 return True
 
-"""class EmonHubInterfaceInitError
+"""class EmonHubSetupInitError
 
 Raise this when init fails.
 
 """
 
 
-class EmonHubInterfaceInitError(Exception):
+class EmonHubSetupInitError(Exception):
     pass
