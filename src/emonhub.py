@@ -35,7 +35,7 @@ Communicates with the user through an EmonHubSetup
 
 class EmonHub(object):
     
-    __version__ = 'Pre-Release Development Version'
+    __version__ = 'Pre-Release Development Version (rc1.1)'
     
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
@@ -221,8 +221,7 @@ class EmonHub(object):
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(**I['init_settings'])
-                    interfacer.name = name
+                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                 except ehi.EmonHubInterfacerInitError as e:

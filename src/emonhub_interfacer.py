@@ -28,13 +28,13 @@ their data source.
 
 class EmonHubInterfacer(object):
 
-    def __init__(self):
+    def __init__(self, name):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
         # Initialise settings
-        self.name = ''
+        self.name = name
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': 0}
         self._settings = {}
@@ -271,16 +271,14 @@ class EmonHubInterfacer(object):
         com_port (string): path to COM port
 
         """
-        
-        self._log.debug('Opening serial port: %s', com_port)
-        
-        if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
-            self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
-            com_baud = 9600
+
+        #if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+        #    self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
+        #    com_baud = 9600
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.info("Opened serial port: " + str(com_port) + " "+ str(com_baud) + " bits/s")
+            self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             raise EmonHubInterfacerInitError('Could not open COM port %s' %
@@ -317,7 +315,7 @@ Monitors the serial port for data
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, com_port='', com_baud=9600):
+    def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -325,7 +323,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
         
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__()
+        super(EmonHubSerialInterfacer, self).__init__(name)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -376,7 +374,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, com_port='/dev/ttyAMA0', com_baud=9600):
+    def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=0):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -384,7 +382,40 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         """
         
         # Initialization
-        super(EmonHubJeeInterfacer, self).__init__(com_port, com_baud)
+        if com_baud != 0:
+            super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
+        else:
+            for com_baud in (57600, 9600):
+                super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
+                self._ser.write("?")
+                time.sleep(1)
+                self._rx_buf = self._rx_buf + self._ser.readline()
+                if '\r\n' in self._rx_buf:
+                    self._ser.flushInput()
+                    self._rx_buf=""
+                    break
+                elif self._ser is not None:
+                    self._ser.close()
+                continue
+
+        # Display device firmware version and current settings
+        if self._ser is not None:
+            self._ser.write("v")
+            time.sleep(1)
+            self._rx_buf = self._rx_buf + self._ser.readline()
+            if '\r\n' in self._rx_buf:
+                #if  self._rx_buf[:4] == "> 0v":
+                self._rx_buf=""
+                self.info = self._rx_buf + self._ser.readline()[:-2]
+                if self.info == "":
+                    self.info = "not available"
+                    # since "v" command only v11> recommend firmware update ?
+                    #self._log.info( self.name + " device firmware is pre-version RFM12demo.11")
+                self._log.info( self.name + " device firmware version & settings: " + self.info)
+            else:
+                self._log.warning("Device communication error - check settings")
+        self._rx_buf=""
+        self._ser.flushInput()
 
         # Initialize settings
         self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'quiet': 'True'})
@@ -513,7 +544,7 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, port_nb=50011):
+    def __init__(self, name, port_nb=50011):
         """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
@@ -521,7 +552,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """
  
         # Initialization
-        super(EmonHubSocketInterfacer, self).__init__()
+        super(EmonHubSocketInterfacer, self).__init__(name)
 
         # Open socket
         self._socket = self._open_socket(port_nb)
