@@ -390,7 +390,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                 self._ser.write("?")
                 time.sleep(1)
                 self._rx_buf = self._rx_buf + self._ser.readline()
-                if '\r\n' in self._rx_buf:
+                if '\r\n' in self._rx_buf or '\x00' in self._rx_buf:
                     self._ser.flushInput()
                     self._rx_buf=""
                     break
