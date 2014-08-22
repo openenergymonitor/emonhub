@@ -434,6 +434,50 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         # comment out if diagnosing a startup value issue
         self._settings.update(self._defaults)
 
+    def read(self):
+        """Read data from serial port and process if complete line received.
+
+        Return data as a list: [NodeID, val1, val2]
+
+        """
+
+        # Read serial RX
+        self._rx_buf = self._rx_buf + self._ser.readline()
+
+        # If line incomplete, exit
+        if '\r\n' not in self._rx_buf:
+            return
+
+        # Remove CR,LF
+        f = self._rx_buf[:-2]
+
+        # Reset buffer
+        self._rx_buf = ''
+
+        # Discard information messages
+        if (f[0] == '>'):
+            self._log.debug(self.name + " acknowledged command: " + str(f))
+            return
+
+        if (f[0:3] == ' ->'):
+            self._log.debug(self.name + " confirmed sent packet size: " + str(f))
+            return
+
+        if f[0] == '\x01':
+            #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
+            return
+
+        if " i" and " g" and " q" and " @ " and " MHz " in f:
+            self.info[1] = f
+            self._log.debug( self.name + " device settings updated: " + str(self.info[1]))
+            return
+
+        # unix timestamp
+        t = round(time.time(), 2)
+
+        # Process data frame
+        return self._process_frame(f, t)
+
     def _validate_frame(self, ref, received):
         """Validate a frame of data
 
@@ -443,15 +487,6 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         Returns True if data frame passes tests.
 
         """
-
-        # Discard information messages
-        if (received[0] == '>') or (received[0] == '->'):
-            self._log.warning(str(ref) + " Discard RX frame 'information' : " + str(received))
-            return False
-            
-        if received[0] == '\x01':
-            self._log.info(str(ref) + " Ignoring frame consisting of SOH character")
-            return False
 
         if received[0] == '?'and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
             self._log.info(str(ref) + " Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
