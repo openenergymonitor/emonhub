@@ -290,7 +290,7 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
             self._log.debug(self.name + " acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
         else:
-            self._log.warning(self.name + " send failure: wanted 'ok' but got "+reply)
+            self._log.warning(self.name + " send failure: wanted 'ok' but got '" +reply+ "'")
 
 """class EmonHubReporterInitError
 
