@@ -36,7 +36,7 @@ class EmonHubInterfacer(object):
         # Initialise settings
         self.name = name
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': 0}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0'}
         self._settings = {}
         self._packet_counter = 0
 
@@ -245,18 +245,23 @@ class EmonHubInterfacer(object):
         """
 
         for key, setting in self._defaults.iteritems():
-            if not key in kwargs.keys():
-                setting = self._defaults[key]
-            else:
+            if key in kwargs.keys():
                 setting = kwargs[key]
+            else:
+                setting = self._defaults[key]
             if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'pause' and str(setting).lower() in ['all', 'in', 'out', 'off']:
                 pass
-            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
+            elif key == 'interval' and str(setting).isdigit():
+                pass
+            elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l']:
                 pass
             else:
-                self._settings[key] = setting
-                self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                continue
+            self._settings[key] = setting
+            self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
     def run(self):
         """Placeholder for background tasks. 
