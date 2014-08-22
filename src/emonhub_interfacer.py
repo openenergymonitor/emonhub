@@ -399,6 +399,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                 continue
 
         # Display device firmware version and current settings
+        self.info = {}
         if self._ser is not None:
             self._ser.write("v")
             time.sleep(1)
@@ -406,12 +407,17 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             if '\r\n' in self._rx_buf:
                 #if  self._rx_buf[:4] == "> 0v":
                 self._rx_buf=""
-                self.info = self._rx_buf + self._ser.readline()[:-2]
-                if self.info == "":
-                    self.info = "not available"
+                info = self._rx_buf + self._ser.readline()[:-2]
+                if info == "":
                     # since "v" command only v11> recommend firmware update ?
                     #self._log.info( self.name + " device firmware is pre-version RFM12demo.11")
-                self._log.info( self.name + " device firmware version & settings: " + self.info)
+                    self._log.info( self.name + " device firmware version & settings: not available")
+                else:
+                    # Split the returned "info" string into firmware version & current settings
+                    self.info[0] = info.strip().split(' ')[0]
+                    self.info[1] = info.replace(str(self.info[0]), "")
+                    self._log.info( self.name + " device firmware version: " + self.info[0])
+                    self._log.info( self.name + " device current settings: " + str(self.info[1]))
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
