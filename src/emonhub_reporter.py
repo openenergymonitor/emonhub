@@ -207,16 +207,16 @@ class EmonHubReporter(threading.Thread):
         try:
             response = urllib2.urlopen(request, timeout=60)
         except urllib2.HTTPError as e:
-            self._log.warning("Couldn't send to server, HTTPError: " +
+            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
                               str(e.code))
         except urllib2.URLError as e:
-            self._log.warning("Couldn't send to server, URLError: " +
+            self._log.warning(self.name + " couldn't send to server, URLError: " +
                               str(e.reason))
         except httplib.HTTPException:
-            self._log.warning("Couldn't send to server, HTTPException")
+            self._log.warning(self.name + " couldn't send to server, HTTPException")
         except Exception:
             import traceback
-            self._log.warning("Couldn't send to server, Exception: " +
+            self._log.warning(self.name + " couldn't send to server, Exception: " +
                               traceback.format_exc())
         else:
             reply = response.read()
@@ -276,7 +276,7 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         post_body = "data="+data_string+"&sentat="+str(sentat)
 
         # logged before apikey added for security
-        self._log.info("Sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
+        self._log.info(self.name + " sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
 
         # Add apikey to post_url
         post_url = post_url + self._settings['apikey']
@@ -287,10 +287,10 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
 
         reply = self._send_post(post_url, post_body)
         if reply == 'ok':
-            self._log.debug("Receipt acknowledged with '" + reply + "' from " + self._settings['url'])
+            self._log.debug(self.name + " acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
         else:
-            self._log.warning("Send failure: wanted 'ok' but got "+reply)
+            self._log.warning(self.name + " send failure: wanted 'ok' but got "+reply)
 
 """class EmonHubReporterInitError
 
