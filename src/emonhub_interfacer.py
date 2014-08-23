@@ -431,13 +431,20 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         self._ser.flushInput()
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'quiet': 'True'})
-        self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h'})
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
         self._settings.update(self._defaults)
+
+        # Jee specific settings to be picked up as changes not defaults to initialise "Jee" device
+        self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True'})
+        self._jee_prefix = ({'baseid': 'i', 'frequency': '@ ', 'group': 'g', 'quiet': 'q'})
+
+        # Pre-load Jee settings only if info string available for checks
+        if " i" and " g" and " @ " and " MHz" in self.info[1]:
+            self._settings.update(self._jee_settings)
 
     def read(self):
         """Read data from serial port and process if complete line received.
@@ -472,7 +479,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
             return
 
-        if " i" and " g" and " q" and " @ " and " MHz " in f:
+        if " i" and " g" and " @ " and " MHz" in f:
             self.info[1] = f
             self._log.debug( self.name + " device settings updated: " + str(self.info[1]))
             return
@@ -521,31 +528,47 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         
         """
 
-        for key, value in kwargs.iteritems():
-            # If radio setting modified, transmit on serial link
-            if key in ['baseid', 'frequency', 'group', 'quiet']:
-                if value != self._settings[key]:
-                    if key == 'baseid' and int(value) >=1 and int(value) <=26:
-                        string = value + 'i'
-                    elif key == 'frequency' and value in {'433','868','915'}:
-                        string = value[:1] + 'b'
-                    elif key == 'group'and int(value) >=0 and int(value) <=212:
-                        string = value + 'g'
-                    #elif key == 'quiet' and str.capitalize(value) in {'True', 'False'}:
-                        #string = str(int(bool(str.capitalize(value)))) + 'q'
-                    elif key == 'quiet' and str.lower(value) in {'true', 'false'}:
-                        if str.lower(value) == 'true':
-                            string = '1q'
-                        else:
-                            string = '0q'
-                    else:
-                        self._log.warning("'%s' is not a valid setting for %s: %s" % (value, self.name, key))
+        for key, setting in self._jee_settings.iteritems():
+            # Decide which setting value to use
+            if key in kwargs.keys():
+                setting = kwargs[key]
+            else:
+                setting = self._jee_settings[key]
+            # Create a flag for additional checks for for non-mandatory Jee settings
+            # as the confirmation string from Jee device does not include all settings
+            chk_info = False
+            # When "info" not available the jee_settings will not be of been pre-loaded
+            # this is so that the initial changes are detected to load as defaults.
+            if key in self._settings and self._settings[key] == setting:
+                # confirmation string always contains baseid, group anf freq
+                if " i" and " g" and " @ " and " MHz" in self.info[1]:
+                    # If setting confirmed as already set, continue without changing
+                    if (self._jee_prefix[key] + str(setting)) in self.info[1]:
                         continue
-                    self._settings[key] = value
-                    self._log.debug("Setting " + self.name + " %s: %s" % (key, value) + " (" + string + ")")
-                    self._ser.write(string)
-                    # Wait a sec between two settings
-                    time.sleep(1)
+                    # or flag to check later if unconfirmed
+                    chk_info = True
+                else:
+                    continue
+            if key == 'baseid' and int(setting) >=1 and int(setting) <=26:
+                command = setting + 'i'
+            elif key == 'frequency' and setting in ['433','868','915']:
+                command = setting[:1] + 'b'
+            elif key == 'group'and int(setting) >=0 and int(setting) <=212:
+                command = setting + 'g'
+            elif key == 'quiet' and str.capitalize(str(setting)) in ['True', 'False']:
+                setting = str.capitalize(str(setting))
+                val = str(int(setting == "True"))
+                if chk_info and (self._jee_prefix[key] + val) in self.info[1]:
+                    continue
+                command =  val + 'q'
+            else:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                continue
+            self._settings[key] = setting
+            self._log.info("Setting " + self.name + " %s: %s" % (key, setting) + " (" + command + ")")
+            self._ser.write(command)
+            # Wait a sec between two settings
+            time.sleep(1)
 
         # include kwargs from parent
         super(EmonHubJeeInterfacer, self).set(**kwargs)
