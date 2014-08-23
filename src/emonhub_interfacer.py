@@ -189,8 +189,9 @@ class EmonHubInterfacer(object):
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
-                if datacode == '0':
-                    datacode = 0
+            # Ensure only int 0 is passed not str 0
+            if datacode == '0':
+                datacode = 0
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
