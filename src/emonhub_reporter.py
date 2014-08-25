@@ -41,7 +41,7 @@ class EmonHubReporter(threading.Thread):
         # Initialise settings
         self.name = reporterName
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': 0, 'batchsize': 1}
+        self._defaults = {'pause': 'off', 'interval': '0', 'batchsize': '1'}
         self._settings = {}
         self._queue = queue
 
@@ -84,23 +84,42 @@ class EmonHubReporter(threading.Thread):
         """
 
         for key, setting in self._defaults.iteritems():
-            if not key in kwargs.keys():
-                setting = self._defaults[key]
-            else:
+            if key in kwargs.keys():
                 setting = kwargs[key]
+            else:
+                setting = self._defaults[key]
             if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'pause' and str(setting).lower() in ['all', 'in', 'out', 'off']:
                 pass
-            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
+            elif key in ['interval', 'batchsize'] and setting.isdigit():
                 pass
             else:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
+            self._settings[key] = setting
+            self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+
+        for key, setting in self._defaults.iteritems():
+            valid = False
+            if key in kwargs.keys():
+                setting = kwargs[key]
+            else:
+                setting = self._defaults[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'pause':
+                if str(setting).lower() in ['all', 'in', 'out', 'off']:
+                    valid = True
+            elif key == 'interval' or 'batchsize':
+                if setting.isdigit():
+                    valid = True
+            else:
+                continue
+            if valid:
                 self._settings[key] = setting
                 self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
-
-        # apply any changes to non-default settings (eg apikey)
-        for key, setting in kwargs.iteritems():
-            if key in self._settings and setting != self._settings[key]:
-                self._settings[key] = setting
+            else:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
 
     def add(self, data):
         """Append data to buffer.
@@ -207,16 +226,16 @@ class EmonHubReporter(threading.Thread):
         try:
             response = urllib2.urlopen(request, timeout=60)
         except urllib2.HTTPError as e:
-            self._log.warning("Couldn't send to server, HTTPError: " +
+            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
                               str(e.code))
         except urllib2.URLError as e:
-            self._log.warning("Couldn't send to server, URLError: " +
+            self._log.warning(self.name + " couldn't send to server, URLError: " +
                               str(e.reason))
         except httplib.HTTPException:
-            self._log.warning("Couldn't send to server, HTTPException")
+            self._log.warning(self.name + " couldn't send to server, HTTPException")
         except Exception:
             import traceback
-            self._log.warning("Couldn't send to server, Exception: " +
+            self._log.warning(self.name + " couldn't send to server, Exception: " +
                               traceback.format_exc())
         else:
             reply = response.read()
@@ -241,14 +260,55 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         super(EmonHubEmoncmsReporter, self).__init__(reporterName, queue, **kwargs)
 
         # add or alter any default settings for this reporter
-        self._defaults.update({'batchsize': 100, 'url': 'http://emoncms.org'})
-        self._settings.update({'apikey': ''})
+        self._defaults.update({'batchsize': 100})
+        self._cms_settings = {'apikey': "", 'url': 'http://emoncms.org'}
 
         # This line will stop the default values printing to logfile at start-up
         self._settings.update(self._defaults)
 
         # set an absolute upper limit for number of items to process per post
         self._item_limit = 250
+
+    def set(self, **kwargs):
+        """
+
+        :param kwargs:
+        :return:
+        """
+
+        super (EmonHubEmoncmsReporter, self).set(**kwargs)
+
+        for key, setting in self._cms_settings.iteritems():
+            #valid = False
+            if not key in kwargs.keys():
+                setting = self._cms_settings[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'apikey':
+                if str.lower(setting[:4]) == 'xxxx':
+                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    pass
+                elif str.__len__(setting) == 32 :
+                    self._log.info("Setting " + self.name + " apikey: set")
+                    pass
+                elif setting == "":
+                    self._log.info("Setting " + self.name + " apikey: null")
+                    pass
+                else:
+                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    continue
+                self._settings[key] = setting
+                # Next line will log apikey if uncommented (privacy ?)
+                #self._log.debug(self.name + " apikey: " + str(setting))
+                continue
+            elif key == 'url' and setting[:4] == "http":
+                self._log.info("Setting " + self.name + " url: " + setting)
+                self._settings[key] = setting
+                continue
+            else:
+                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
 
     def _process_post(self, databuffer):
         """Send data to server."""
@@ -276,7 +336,7 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         post_body = "data="+data_string+"&sentat="+str(sentat)
 
         # logged before apikey added for security
-        self._log.info("Sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
+        self._log.info(self.name + " sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
 
         # Add apikey to post_url
         post_url = post_url + self._settings['apikey']
@@ -287,10 +347,10 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
 
         reply = self._send_post(post_url, post_body)
         if reply == 'ok':
-            self._log.debug("Receipt acknowledged with '" + reply + "' from " + self._settings['url'])
+            self._log.debug(self.name + " acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
         else:
-            self._log.warning("Send failure: wanted 'ok' but got "+reply)
+            self._log.warning(self.name + " send failure: wanted 'ok' but got '" +reply+ "'")
 
 """class EmonHubReporterInitError
 

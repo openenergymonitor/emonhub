@@ -318,7 +318,7 @@ if __name__ == "__main__":
         setup = ehs.EmonHubFileSetup(args.config_file)
     except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
-        sys.exit("Configuration file not found: " + args.config_file)
+        sys.exit("Unable to load configuration file: " + args.config_file)
  
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
