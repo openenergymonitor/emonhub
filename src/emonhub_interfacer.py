@@ -396,7 +396,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             for com_baud in (57600, 9600):
                 super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
                 self._ser.write("?")
-                time.sleep(1)
+                time.sleep(2)
                 self._rx_buf = self._rx_buf + self._ser.readline()
                 if '\r\n' in self._rx_buf or '\x00' in self._rx_buf:
                     self._ser.flushInput()
@@ -410,7 +410,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         self.info = {}
         if self._ser is not None:
             self._ser.write("v")
-            time.sleep(1)
+            time.sleep(2)
             self._rx_buf = self._rx_buf + self._ser.readline()
             if '\r\n' in self._rx_buf:
                 #if  self._rx_buf[:4] == "> 0v":
