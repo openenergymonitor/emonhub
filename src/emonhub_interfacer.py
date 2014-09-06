@@ -396,7 +396,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             for com_baud in (57600, 9600):
                 super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
                 self._ser.write("?")
-                time.sleep(1)
+                time.sleep(2)
                 self._rx_buf = self._rx_buf + self._ser.readline()
                 if '\r\n' in self._rx_buf or '\x00' in self._rx_buf:
                     self._ser.flushInput()
@@ -407,25 +407,24 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                 continue
 
         # Display device firmware version and current settings
-        self.info = {}
+        self.info = ["",""]
         if self._ser is not None:
             self._ser.write("v")
-            time.sleep(1)
+            time.sleep(2)
             self._rx_buf = self._rx_buf + self._ser.readline()
             if '\r\n' in self._rx_buf:
-                #if  self._rx_buf[:4] == "> 0v":
                 self._rx_buf=""
                 info = self._rx_buf + self._ser.readline()[:-2]
-                if info == "":
-                    # since "v" command only v11> recommend firmware update ?
-                    #self._log.info( self.name + " device firmware is pre-version RFM12demo.11")
-                    self._log.info( self.name + " device firmware version & settings: not available")
-                else:
+                if info != "":
                     # Split the returned "info" string into firmware version & current settings
                     self.info[0] = info.strip().split(' ')[0]
                     self.info[1] = info.replace(str(self.info[0]), "")
                     self._log.info( self.name + " device firmware version: " + self.info[0])
                     self._log.info( self.name + " device current settings: " + str(self.info[1]))
+                else:
+                    # since "v" command only v11> recommend firmware update ?
+                    #self._log.info( self.name + " device firmware is pre-version RFM12demo.11")
+                    self._log.info( self.name + " device firmware version & configuration: not available")
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
@@ -444,7 +443,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         self._jee_prefix = ({'baseid': 'i', 'frequency': '@ ', 'group': 'g', 'quiet': 'q'})
 
         # Pre-load Jee settings only if info string available for checks
-        if " i" and " g" and " @ " and " MHz" in self.info[1]:
+        if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
 
     def read(self):
@@ -505,10 +504,14 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             self._log.info(str(ref) + " Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
             return False
 
-        # Strip 'OK' and extract RSSI if packet is from RFM69 type Jee Device
-        if received[0]=='OK' and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
+        # Strip 'OK' from frame if needed
+        if received[0]=='OK':
+            received = received[1:]
+
+        # extract RSSI if packet is from RFM69 type Jee Device
+        if str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
             self.rssi = int(received[-1][1:-1])
-            received = received[1:-1]
+            received = received[:-1]
             return received
         else:
             # set RSSI false for standard frames so RSSI is not re-appended later
