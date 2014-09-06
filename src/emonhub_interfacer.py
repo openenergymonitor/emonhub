@@ -505,10 +505,14 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             self._log.info(str(ref) + " Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
             return False
 
-        # Strip 'OK' and extract RSSI if packet is from RFM69 type Jee Device
-        if received[0]=='OK' and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
+        # Strip 'OK' from frame if needed
+        if received[0]=='OK':
+            received = received[1:]
+
+        # extract RSSI if packet is from RFM69 type Jee Device
+        if str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
             self.rssi = int(received[-1][1:-1])
-            received = received[1:-1]
+            received = received[:-1]
             return received
         else:
             # set RSSI false for standard frames so RSSI is not re-appended later
