@@ -256,7 +256,7 @@ class EmonHubInterfacer(object):
                 pass
             elif key == 'interval' and str(setting).isdigit():
                 pass
-            elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l']:
+            elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
                 pass
             else:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
