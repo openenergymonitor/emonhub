@@ -105,13 +105,16 @@ class EmonHub(object):
     def close(self):
         """Close hub. Do some cleanup before leaving."""
         
+        self._log.info("Exiting hub...")
+        
         for I in self._interfacers.itervalues():
             I.close()
 
         for R in self._reporters.itervalues():
             R.stop = True
+            R.join()
         
-        self._log.info("Exiting hub...")
+        self._log.info("Exit completed")
         logging.shutdown()
 
     def _sigint_handler(self, signal, frame):
