@@ -36,7 +36,7 @@ class EmonHubInterfacer(object):
         # Initialise settings
         self.name = name
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0'}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
         self._settings = {}
         self._packet_counter = 0
 
@@ -257,6 +257,8 @@ class EmonHubInterfacer(object):
             elif key == 'interval' and str(setting).isdigit():
                 pass
             elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
+                pass
+            elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
                 pass
             else:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
@@ -670,7 +672,13 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         if '\r\n' in self._sock_rx_buf:
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(f)
+            if str(self._settings['timestamped']).lower() == "true":
+                f = f.split(" ")
+                t = float(f[0])
+                f = ' '.join(map(str, f[1:]))
+                return self._process_frame(f, t)
+            else:
+                return self._process_frame(f)
 
 """class EmonHubInterfacerInitError
 
