@@ -28,13 +28,14 @@ their data source.
 
 class EmonHubInterfacer(object):
 
-    def __init__(self, name):
+    def __init__(self, name, queue):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
         # Initialise settings
         self.name = name
+        self._queue = queue
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
         self._settings = {}
@@ -59,6 +60,18 @@ class EmonHubInterfacer(object):
         
         """
         pass
+
+    def run(self):
+        """
+        Run the interfacer.
+        Any regularly performed tasks actioned here along with passing received values
+
+        """
+
+        values = self.read()
+        if values is not None:
+            # Add each frame to the queue
+            self._queue.put(values)
 
     def _process_frame(self, frame, timestamp=0.0):
         """Process a frame of data
@@ -266,15 +279,6 @@ class EmonHubInterfacer(object):
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
-    def run(self):
-        """Placeholder for background tasks. 
-        
-        Allows subclasses to specify actions that need to be done on a 
-        regular basis. This should be called in main loop by instantiater.
-        
-        """
-        pass
-
     def _open_serial_port(self, com_port, com_baud):
         """Open serial port
 
@@ -325,7 +329,7 @@ Monitors the serial port for data
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, com_port='', com_baud=9600):
+    def __init__(self, name, queue, com_port='', com_baud=9600):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -333,7 +337,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
         
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__(name)
+        super(EmonHubSerialInterfacer, self).__init__(name, queue)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -384,7 +388,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=0):
+    def __init__(self, name, queue, com_port='/dev/ttyAMA0', com_baud=0):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -393,10 +397,10 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         
         # Initialization
         if com_baud != 0:
-            super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
+            super(EmonHubJeeInterfacer, self).__init__(name, queue, com_port, com_baud)
         else:
             for com_baud in (57600, 9600):
-                super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
+                super(EmonHubJeeInterfacer, self).__init__(name, queue, com_port, com_baud)
                 self._ser.write("?")
                 time.sleep(2)
                 self._rx_buf = self._rx_buf + self._ser.readline()
@@ -586,6 +590,8 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         
         """
 
+        super(EmonHubJeeInterfacer, self).run()
+
         now = time.time()
 
         # Broadcast time to synchronize emonGLCD
@@ -621,7 +627,7 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, port_nb=50011):
+    def __init__(self, name, queue, port_nb=50011):
         """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
@@ -629,7 +635,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """
  
         # Initialization
-        super(EmonHubSocketInterfacer, self).__init__(name)
+        super(EmonHubSocketInterfacer, self).__init__(name, queue)
 
         # Open socket
         self._socket = self._open_socket(port_nb)

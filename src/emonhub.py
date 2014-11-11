@@ -86,10 +86,8 @@ class EmonHub(object):
             for I in self._interfacers.itervalues():
                 # Execute run method
                 I.run()
-                # Read socket
-                values = I.read()
-                # If complete and valid data was received
-                if values is not None:
+                if not self._queue[I.name].empty():
+                    values = self._queue[I.name].get()
                     # Place a copy of the values in a queue for each reporter
                     for name in self._reporters:
                         # discard if reporter 'pause' set to 'all' or 'in'
@@ -223,8 +221,10 @@ class EmonHub(object):
                     if not 'Type' in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
+                    # Create the queue for this interfacer
+                    self._queue[name] = Queue.Queue(0)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name, self._queue[name], **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                 except ehi.EmonHubInterfacerInitError as e:
