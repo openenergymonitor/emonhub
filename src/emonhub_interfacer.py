@@ -605,31 +605,31 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         
         """
 
-        now = time.time()
+        t = time.time()
 
         # Broadcast time to synchronize emonGLCD
         interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if now - self._interval_timestamp > interval:
-                self._send_time()
-                self._interval_timestamp = now
-    
-    def _send_time(self):
-        """Send time over radio link to synchronize emonGLCD
+            if (t - self._interval_timestamp < interval):
+                return
+            now = datetime.datetime.now()
+            hh = now.hour
+            mm = now.minute
+            self._log.debug(self.name + " broadcast time: %02d:%02d" % (hh, mm))
+            self._interval_timestamp = t
+            packet = [0,hh,mm,0]
+            self.send_packet(packet)
 
-        The radio module can be used to broadcast time, which is useful
-        to synchronize emonGLCD in particular.
-        Beware, this is know to garble the serial link on RFM2Piv1
-        sendtimeinterval defines the interval in seconds between two time
-        broadcasts. 0 means never.
-
+    def send_packet(self, packet, id=0, cmd="s"):
         """
 
-        now = datetime.datetime.now()
+        """
+        payload = ""
+        for i in packet:
+            payload += str(i)+","
+        payload += str(id)+cmd
+        self._ser.write(payload)
 
-        self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
-
-        self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
 """class EmonHubSocketInterfacer
 
