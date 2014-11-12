@@ -84,8 +84,6 @@ class EmonHub(object):
             
             # For all Interfacers
             for I in self._interfacers.itervalues():
-                # Execute run method
-                I.run()
                 if not self._queue[I.name].empty():
                     values = self._queue[I.name].get()
                     # Place a copy of the values in a queue for each reporter
@@ -106,7 +104,8 @@ class EmonHub(object):
         self._log.info("Exiting hub...")
         
         for I in self._interfacers.itervalues():
-            I.close()
+            I.stop = True
+            I.join()
 
         for R in self._reporters.itervalues():
             R.stop = True
@@ -211,8 +210,9 @@ class EmonHub(object):
                     # check init_settings against the file copy, if they are the same move on to the next
                     if self._interfacers[name].init_settings == settings['interfacers'][name]['init_settings']:
                         continue
-            self._interfacers[name].close()
+            # Delete interfacers if setting changed or name is unlisted or Type is missing
             self._log.info("Deleting interfacer '%s' ", name)
+            self._interfacers[name].stop = True
             del(self._interfacers[name])
         for name, I in settings['interfacers'].iteritems():
             # If interfacer does not exist, create it
@@ -227,6 +227,7 @@ class EmonHub(object):
                     interfacer = getattr(ehi, I['Type'])(name, self._queue[name], **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
+                    interfacer.start()
                 except ehi.EmonHubInterfacerInitError as e:
                     # If interfacer can't be created, log error and skip to next
                     self._log.error("Failed to create '" + name + "' interfacer: " + str(e))

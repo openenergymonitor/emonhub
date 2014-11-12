@@ -13,6 +13,7 @@ import datetime
 import logging
 import socket
 import select
+import threading
 
 import emonhub_coder as ehc
 
@@ -26,16 +27,19 @@ their data source.
 """
 
 
-class EmonHubInterfacer(object):
+class EmonHubInterfacer(threading.Thread):
 
     def __init__(self, name, queue):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
+        # Initialise thread
+        threading.Thread.__init__(self)
+
         # Initialise settings
         self.name = name
-        self._queue = queue
+        self._rxq = queue
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
         self._settings = {}
@@ -48,10 +52,9 @@ class EmonHubInterfacer(object):
 
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
-        
-    def close(self):
-        """Close socket."""
-        pass
+
+        # create a stop
+        self.stop = False
 
     def read(self):
         """Read data from socket and process if complete line received.
@@ -68,10 +71,22 @@ class EmonHubInterfacer(object):
 
         """
 
-        values = self.read()
-        if values is not None:
-            # Add each frame to the queue
-            self._queue.put(values)
+        while not self.stop:
+            values = self.read()
+            if values is not None:
+                # Add each frame to the queue
+                self._rxq.put(values)
+            # Don't loop to fast
+            time.sleep(0.1)
+            # Action reporter tasks
+            self.action()
+
+    def action(self):
+        """
+
+        :return:
+        """
+        pass
 
     def _process_frame(self, frame, timestamp=0.0):
         """Process a frame of data
@@ -335,7 +350,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         com_port (string): path to COM port
 
         """
-        
+
         # Initialization
         super(EmonHubSerialInterfacer, self).__init__(name, queue)
 
@@ -394,7 +409,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         com_port (string): path to COM port
 
         """
-        
+
         # Initialization
         if com_baud != 0:
             super(EmonHubJeeInterfacer, self).__init__(name, queue, com_port, com_baud)
@@ -583,14 +598,12 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         # include kwargs from parent
         super(EmonHubJeeInterfacer, self).set(**kwargs)
 
-    def run(self):
+    def action(self):
         """Actions that need to be done on a regular basis. 
         
         This should be called in main loop by instantiater.
         
         """
-
-        super(EmonHubJeeInterfacer, self).run()
 
         now = time.time()
 
@@ -633,7 +646,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         port_nb (string): port number on which to open the socket
 
         """
- 
+
         # Initialization
         super(EmonHubSocketInterfacer, self).__init__(name, queue)
 
@@ -657,7 +670,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
         
         """
-        
+
         # Check if data received
         ready_to_read, ready_to_write, in_error = \
             select.select([self._socket], [], [], 0)
