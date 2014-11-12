@@ -81,9 +81,19 @@ class EmonHub(object):
             self._setup.run()
             if self._setup.check_settings():
                 self._update_settings(self._setup.settings)
+
+            # check all reporter threads are still running
+            for R in self._reporters.itervalues():
+                if not R.isAlive():
+                    R.start()
+                    self._log.warning(R.name + " thread had to be restarted")
             
             # For all Interfacers
             for I in self._interfacers.itervalues():
+                # Check thread is still running
+                if not I.isAlive():
+                    I.start()
+                    self._log.warning(I.name + " thread had to be restarted")
                 if not self._queue[I.name].empty():
                     values = self._queue[I.name].get()
                     # Place a copy of the values in a queue for each reporter
