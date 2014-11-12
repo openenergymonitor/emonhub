@@ -72,10 +72,7 @@ class EmonHubInterfacer(threading.Thread):
         """
 
         while not self.stop:
-            values = self.read()
-            if values is not None:
-                # Add each frame to the queue
-                self._rxq.put(values)
+            self.read()
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
@@ -392,7 +389,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         t = round(time.time(), 2)
 
         # Process data frame
-        return self._process_frame(f, t)
+        self._rxq.put(self._process_frame(f, t))
 
 """class EmonHubJeeInterfacer
 
@@ -509,7 +506,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         t = round(time.time(), 2)
 
         # Process data frame
-        return self._process_frame(f, t)
+        self._rxq.put(self._process_frame(f, t))
 
     def _validate_frame(self, ref, received):
         """Validate a frame of data
@@ -695,9 +692,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
                 f = f.split(" ")
                 t = float(f[0])
                 f = ' '.join(map(str, f[1:]))
-                return self._process_frame(f, t)
+                self._rxq.put( self._process_frame(f, t))
             else:
-                return self._process_frame(f)
+                self._rxq.put(self._process_frame(f))
 
 """class EmonHubInterfacerInitError
 
