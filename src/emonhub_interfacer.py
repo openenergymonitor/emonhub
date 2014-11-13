@@ -29,7 +29,7 @@ their data source.
 
 class EmonHubInterfacer(threading.Thread):
 
-    def __init__(self, name, queue):
+    def __init__(self, name, rxq, txq):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
@@ -39,7 +39,8 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialise settings
         self.name = name
-        self._rxq = queue
+        self._rxq = rxq
+        self._txq = txq
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
         self._settings = {}
@@ -64,6 +65,14 @@ class EmonHubInterfacer(threading.Thread):
         """
         pass
 
+    def send(self, payload):
+        """Read data from socket and process if complete line received.
+
+        Return data as a list: [NodeID, val1, val2]
+
+        """
+        pass
+
     def run(self):
         """
         Run the interfacer.
@@ -77,6 +86,9 @@ class EmonHubInterfacer(threading.Thread):
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
+            if not self._txq.empty():
+                self.send(self._txq.get())
+
 
     def action(self):
         """
@@ -341,7 +353,7 @@ Monitors the serial port for data
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, queue, com_port='', com_baud=9600):
+    def __init__(self, name, rxq, txq, com_port='', com_baud=9600):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -349,7 +361,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__(name, queue)
+        super(EmonHubSerialInterfacer, self).__init__(name, rxq, txq)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -400,7 +412,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, name, queue, com_port='/dev/ttyAMA0', com_baud=0):
+    def __init__(self, name, rxq, txq, com_port='/dev/ttyAMA0', com_baud=0):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -409,10 +421,10 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
         # Initialization
         if com_baud != 0:
-            super(EmonHubJeeInterfacer, self).__init__(name, queue, com_port, com_baud)
+            super(EmonHubJeeInterfacer, self).__init__(name, rxq, txq, com_port, com_baud)
         else:
             for com_baud in (57600, 9600):
-                super(EmonHubJeeInterfacer, self).__init__(name, queue, com_port, com_baud)
+                super(EmonHubJeeInterfacer, self).__init__(name, rxq, txq, com_port, com_baud)
                 self._ser.write("?")
                 time.sleep(2)
                 self._rx_buf = self._rx_buf + self._ser.readline()
@@ -617,6 +629,12 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             packet = [0,hh,mm,0]
             self.send_packet(packet)
 
+    def send (self, f, t=0, dest=0):
+        """
+        """
+        self.send_packet(f, dest)
+
+
     def send_packet(self, packet, id=0, cmd="s"):
         """
 
@@ -637,7 +655,7 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, queue, port_nb=50011):
+    def __init__(self, name, rxq, txq, port_nb=50011):
         """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
@@ -645,7 +663,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSocketInterfacer, self).__init__(name, queue)
+        super(EmonHubSocketInterfacer, self).__init__(name, rxq, txq)
 
         # Open socket
         self._socket = self._open_socket(port_nb)

@@ -61,6 +61,8 @@ class EmonHub(object):
         self._reporters = {}
         self._interfacers = {}
         self._queue = {}
+        self._rxq = {}
+        self._txq = {}
         self._update_settings(settings)
         
     def run(self):
@@ -94,8 +96,8 @@ class EmonHub(object):
                 if not I.isAlive():
                     I.start()
                     self._log.warning(I.name + " thread had to be restarted")
-                if not self._queue[I.name].empty():
-                    values = self._queue[I.name].get()
+                if not self._rxq[I.name].empty():
+                    values = self._rxq[I.name].get()
                     # Place a copy of the values in a queue for each reporter
                     for name in self._reporters:
                         # discard if reporter 'pause' set to 'all' or 'in'
@@ -231,10 +233,11 @@ class EmonHub(object):
                     if not 'Type' in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
-                    # Create the queue for this interfacer
-                    self._queue[name] = Queue.Queue(0)
+                    # Create the rx & tx queues for this interfacer
+                    self._rxq[name] = Queue.Queue(0)
+                    self._txq[name] = Queue.Queue(0)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name, self._queue[name], **I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name, self._rxq[name], self._txq[name], **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                     interfacer.start()
