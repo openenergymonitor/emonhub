@@ -442,7 +442,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
         # Jee specific settings to be picked up as changes not defaults to initialise "Jee" device
         self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True'})
-        self._jee_prefix = ({'baseid': 'i', 'frequency': '@ ', 'group': 'g', 'quiet': 'q'})
+        self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q'})
 
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
@@ -546,7 +546,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             # confirmation string always contains baseid, group anf freq
             if " i" and " g" and " @ " and " MHz" in self.info[1]:
                 # If setting confirmed as already set, continue without changing
-                if (self._jee_prefix[key] + str(setting)) in self.info[1]:
+                if (self._jee_prefix[key] + str(setting)) in self.info[1].split():
                     continue
             elif key in self._settings and self._settings[key] == setting:
                 continue
