@@ -540,33 +540,24 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                 setting = kwargs[key]
             else:
                 setting = self._jee_settings[key]
-            # Create a flag for additional checks for for non-mandatory Jee settings
-            # as the confirmation string from Jee device does not include all settings
-            chk_info = False
-            # When "info" not available the jee_settings will not be of been pre-loaded
-            # this is so that the initial changes are detected to load as defaults.
-            if key in self._settings and self._settings[key] == setting:
-                # confirmation string always contains baseid, group anf freq
-                if " i" and " g" and " @ " and " MHz" in self.info[1]:
-                    # If setting confirmed as already set, continue without changing
-                    if (self._jee_prefix[key] + str(setting)) in self.info[1]:
-                        continue
-                    # or flag to check later if unconfirmed
-                    chk_info = True
-                else:
+            # convert bools to ints
+            if str.capitalize(str(setting)) in ['True', 'False']:
+                setting = int(setting == "True")
+            # confirmation string always contains baseid, group anf freq
+            if " i" and " g" and " @ " and " MHz" in self.info[1]:
+                # If setting confirmed as already set, continue without changing
+                if (self._jee_prefix[key] + str(setting)) in self.info[1]:
                     continue
+            elif key in self._settings and self._settings[key] == setting:
+                continue
             if key == 'baseid' and int(setting) >=1 and int(setting) <=26:
                 command = setting + 'i'
             elif key == 'frequency' and setting in ['433','868','915']:
                 command = setting[:1] + 'b'
             elif key == 'group'and int(setting) >=0 and int(setting) <=212:
                 command = setting + 'g'
-            elif key == 'quiet' and str.capitalize(str(setting)) in ['True', 'False']:
-                setting = str.capitalize(str(setting))
-                val = str(int(setting == "True"))
-                if chk_info and (self._jee_prefix[key] + val) in self.info[1]:
-                    continue
-                command =  val + 'q'
+            elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
+                command = str(setting) + 'q'
             else:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
