@@ -28,15 +28,15 @@ their data source.
 
 class EmonHubInterfacer(object):
 
-    def __init__(self):
+    def __init__(self, name):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
         # Initialise settings
-        self.name = ''
+        self.name = name
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': 0}
+        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0', 'timestamped': 'False'}
         self._settings = {}
         self._packet_counter = 0
 
@@ -147,6 +147,11 @@ class EmonHubInterfacer(object):
         except Exception:
             self._log.warning(str(ref) + " Discarded RX frame 'non-numerical content' : " + str(received))
             return False
+            
+        # Discard if first value is not a valid node id
+        if received[0] % 1 != 0 or received[0] < 0 or received[0] > 31:
+            self._log.warning(str(ref) + " Discarded RX frame 'node id outside scope' : " + str(received))
+            return False
 
         # If it passes all the checks return
         return received
@@ -189,6 +194,9 @@ class EmonHubInterfacer(object):
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
+            # Ensure only int 0 is passed not str 0
+            if datacode == '0':
+                datacode = 0
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 for val in data:
@@ -243,18 +251,25 @@ class EmonHubInterfacer(object):
         """
 
         for key, setting in self._defaults.iteritems():
-            if not key in kwargs.keys():
-                setting = self._defaults[key]
-            else:
+            if key in kwargs.keys():
                 setting = kwargs[key]
+            else:
+                setting = self._defaults[key]
             if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'pause' and str(setting).lower() in ['all', 'in', 'out', 'off']:
                 pass
-            elif key == 'pause' and not str(setting).lower() in ['all', 'in', 'out', 'off']:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
+            elif key == 'interval' and str(setting).isdigit():
+                pass
+            elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
+                pass
+            elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
                 pass
             else:
-                self._settings[key] = setting
-                self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                continue
+            self._settings[key] = setting
+            self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
     def run(self):
         """Placeholder for background tasks. 
@@ -271,16 +286,14 @@ class EmonHubInterfacer(object):
         com_port (string): path to COM port
 
         """
-        
-        self._log.debug('Opening serial port: %s', com_port)
-        
-        if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
-            self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
-            com_baud = 9600
+
+        #if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
+        #    self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
+        #    com_baud = 9600
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.info("Opened serial port: " + str(com_port) + " "+ str(com_baud) + " bits/s")
+            self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             raise EmonHubInterfacerInitError('Could not open COM port %s' %
@@ -317,7 +330,7 @@ Monitors the serial port for data
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, com_port='', com_baud=9600):
+    def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -325,7 +338,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
         
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__()
+        super(EmonHubSerialInterfacer, self).__init__(name)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -376,7 +389,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, com_port='/dev/ttyAMA0', com_baud=9600):
+    def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=0):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -384,16 +397,105 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         """
         
         # Initialization
-        super(EmonHubJeeInterfacer, self).__init__(com_port, com_baud)
+        if com_baud != 0:
+            super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
+        else:
+            for com_baud in (57600, 9600):
+                super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
+                self._ser.write("?")
+                time.sleep(2)
+                self._rx_buf = self._rx_buf + self._ser.readline()
+                if '\r\n' in self._rx_buf or '\x00' in self._rx_buf:
+                    self._ser.flushInput()
+                    self._rx_buf=""
+                    break
+                elif self._ser is not None:
+                    self._ser.close()
+                continue
+
+        # Display device firmware version and current settings
+        self.info = ["",""]
+        if self._ser is not None:
+            self._ser.write("v")
+            time.sleep(2)
+            self._rx_buf = self._rx_buf + self._ser.readline()
+            if '\r\n' in self._rx_buf:
+                self._rx_buf=""
+                info = self._rx_buf + self._ser.readline()[:-2]
+                if info != "":
+                    # Split the returned "info" string into firmware version & current settings
+                    self.info[0] = info.strip().split(' ')[0]
+                    self.info[1] = info.replace(str(self.info[0]), "")
+                    self._log.info( self.name + " device firmware version: " + self.info[0])
+                    self._log.info( self.name + " device current settings: " + str(self.info[1]))
+                else:
+                    # since "v" command only v11> recommend firmware update ?
+                    #self._log.info( self.name + " device firmware is pre-version RFM12demo.11")
+                    self._log.info( self.name + " device firmware version & configuration: not available")
+            else:
+                self._log.warning("Device communication error - check settings")
+        self._rx_buf=""
+        self._ser.flushInput()
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'quiet': 'True'})
-        self._settings.update({'baseid': '', 'frequency': '', 'group': ''})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h'})
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
         self._settings.update(self._defaults)
+
+        # Jee specific settings to be picked up as changes not defaults to initialise "Jee" device
+        self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True'})
+        self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q'})
+
+        # Pre-load Jee settings only if info string available for checks
+        if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
+            self._settings.update(self._jee_settings)
+
+    def read(self):
+        """Read data from serial port and process if complete line received.
+
+        Return data as a list: [NodeID, val1, val2]
+
+        """
+
+        # Read serial RX
+        self._rx_buf = self._rx_buf + self._ser.readline()
+
+        # If line incomplete, exit
+        if '\r\n' not in self._rx_buf:
+            return
+
+        # Remove CR,LF
+        f = self._rx_buf[:-2]
+
+        # Reset buffer
+        self._rx_buf = ''
+
+        # Discard information messages
+        if (f[0] == '>'):
+            self._log.debug(self.name + " acknowledged command: " + str(f))
+            return
+
+        if (f[0:3] == ' ->'):
+            self._log.debug(self.name + " confirmed sent packet size: " + str(f))
+            return
+
+        if f[0] == '\x01':
+            #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
+            return
+
+        if " i" and " g" and " @ " and " MHz" in f:
+            self.info[1] = f
+            self._log.debug( self.name + " device settings updated: " + str(self.info[1]))
+            return
+
+        # unix timestamp
+        t = round(time.time(), 2)
+
+        # Process data frame
+        return self._process_frame(f, t)
 
     def _validate_frame(self, ref, received):
         """Validate a frame of data
@@ -405,23 +507,18 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
         """
 
-        # Discard information messages
-        if (received[0] == '>') or (received[0] == '->'):
-            self._log.warning(str(ref) + " Discard RX frame 'information' : " + str(received))
-            return False
-            
-        if received[0] == '\x01':
-            self._log.info(str(ref) + " Ignoring frame consisting of SOH character")
-            return False
-
         if received[0] == '?'and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
             self._log.info(str(ref) + " Discard RX frame 'unreliable content' : RSSI " + str(received[-1]))
             return False
 
-        # Strip 'OK' and extract RSSI if packet is from RFM69 type Jee Device
-        if received[0]=='OK' and str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
+        # Strip 'OK' from frame if needed
+        if received[0]=='OK':
+            received = received[1:]
+
+        # extract RSSI if packet is from RFM69 type Jee Device
+        if str(received[-1])[0]=='(' and str(received[-1])[-1]==')':
             self.rssi = int(received[-1][1:-1])
-            received = received[1:-1]
+            received = received[:-1]
             return received
         else:
             # set RSSI false for standard frames so RSSI is not re-appended later
@@ -442,31 +539,38 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
         
         """
 
-        for key, value in kwargs.iteritems():
-            # If radio setting modified, transmit on serial link
-            if key in ['baseid', 'frequency', 'group', 'quiet']:
-                if value != self._settings[key]:
-                    if key == 'baseid' and int(value) >=1 and int(value) <=26:
-                        string = value + 'i'
-                    elif key == 'frequency' and value in {'433','868','915'}:
-                        string = value[:1] + 'b'
-                    elif key == 'group'and int(value) >=0 and int(value) <=212:
-                        string = value + 'g'
-                    #elif key == 'quiet' and str.capitalize(value) in {'True', 'False'}:
-                        #string = str(int(bool(str.capitalize(value)))) + 'q'
-                    elif key == 'quiet' and str.lower(value) in {'true', 'false'}:
-                        if str.lower(value) == 'true':
-                            string = '1q'
-                        else:
-                            string = '0q'
-                    else:
-                        self._log.warning("'%s' is not a valid setting for %s: %s" % (value, self.name, key))
-                        continue
-                    self._settings[key] = value
-                    self._log.debug("Setting " + self.name + " %s: %s" % (key, value) + " (" + string + ")")
-                    self._ser.write(string)
-                    # Wait a sec between two settings
-                    time.sleep(1)
+        for key, setting in self._jee_settings.iteritems():
+            # Decide which setting value to use
+            if key in kwargs.keys():
+                setting = kwargs[key]
+            else:
+                setting = self._jee_settings[key]
+            # convert bools to ints
+            if str.capitalize(str(setting)) in ['True', 'False']:
+                setting = int(setting == "True")
+            # confirmation string always contains baseid, group anf freq
+            if " i" and " g" and " @ " and " MHz" in self.info[1]:
+                # If setting confirmed as already set, continue without changing
+                if (self._jee_prefix[key] + str(setting)) in self.info[1].split():
+                    continue
+            elif key in self._settings and self._settings[key] == setting:
+                continue
+            if key == 'baseid' and int(setting) >=1 and int(setting) <=26:
+                command = setting + 'i'
+            elif key == 'frequency' and setting in ['433','868','915']:
+                command = setting[:1] + 'b'
+            elif key == 'group'and int(setting) >=0 and int(setting) <=212:
+                command = setting + 'g'
+            elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
+                command = str(setting) + 'q'
+            else:
+                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                continue
+            self._settings[key] = setting
+            self._log.info("Setting " + self.name + " %s: %s" % (key, setting) + " (" + command + ")")
+            self._ser.write(command)
+            # Wait a sec between two settings
+            time.sleep(1)
 
         # include kwargs from parent
         super(EmonHubJeeInterfacer, self).set(**kwargs)
@@ -513,7 +617,7 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, port_nb=50011):
+    def __init__(self, name, port_nb=50011):
         """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
@@ -521,7 +625,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """
  
         # Initialization
-        super(EmonHubSocketInterfacer, self).__init__()
+        super(EmonHubSocketInterfacer, self).__init__(name)
 
         # Open socket
         self._socket = self._open_socket(port_nb)
@@ -564,7 +668,13 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         if '\r\n' in self._sock_rx_buf:
             # Process and return first frame in buffer:
             f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
-            return self._process_frame(f)
+            if str(self._settings['timestamped']).lower() == "true":
+                f = f.split(" ")
+                t = float(f[0])
+                f = ' '.join(map(str, f[1:]))
+                return self._process_frame(f, t)
+            else:
+                return self._process_frame(f)
 
 """class EmonHubInterfacerInitError
 
