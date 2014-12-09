@@ -149,7 +149,7 @@ class EmonHubInterfacer(object):
             return False
             
         # Discard if first value is not a valid node id
-        if received[0] % 1 != 0 or received[0] < 0 or received[0] > 31
+        if received[0] % 1 != 0 or received[0] < 0 or received[0] > 31:
             self._log.warning(str(ref) + " Discarded RX frame 'node id outside scope' : " + str(received))
             return False
 
