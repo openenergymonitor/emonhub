@@ -37,6 +37,7 @@ class EmonHubReporter(threading.Thread):
 
         # Initialise thread
         threading.Thread.__init__(self)
+        self.setName(reporterName)
 
         # Initialise settings
         self.name = reporterName
@@ -121,25 +122,33 @@ class EmonHubReporter(threading.Thread):
             else:
                 self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
 
-    def add(self, data):
+    def add(self, cargo):
         """Append data to buffer.
 
         data (list): node and values (eg: '[node,val1,val2,...]')
 
         """
 
-        self._log.debug(str(data[-1]) + " Append to '" + self.name +
-                        "' buffer => time: " + str(data[0])
-                        + ", data: " + str(data[1:-1])
-                        # TODO "ref" temporarily left on end of data string for info
-                        + ", ref: " + str(data[-1]))
-        # TODO "ref" removed from end of data string here so not sent to emoncms
-        data = data[:-1]
+        # Create a frame of data in "emonCMS format"
+        f = []
+        f.append(cargo.timestamp)
+        f.append(cargo.nodeid)
+        for i in cargo.realdata:
+            f.append(i)
+        if cargo.rssi:
+            f.append(cargo.rssi)
+
+        self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
+
+        # self._log.debug(str(carg.ref) + " added to buffer =>"
+        #                 + " time: " + str(carg.timestamp)
+        #                 + ", node: " + str(carg.node)
+        #                 + ", data: " + str(carg.data))
 
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 3450 ...]]
-        self.buffer.storeItem(data)
+        self.buffer.storeItem(f)
 
     def run(self):
         """
@@ -321,6 +330,7 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
                 or str.lower(self._settings['apikey']) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
 
+
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
         # Prepare URL string of the form
@@ -336,7 +346,7 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
         post_body = "data="+data_string+"&sentat="+str(sentat)
 
         # logged before apikey added for security
-        self._log.info(self.name + " sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
+        self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
 
         # Add apikey to post_url
         post_url = post_url + self._settings['apikey']
@@ -347,10 +357,10 @@ class EmonHubEmoncmsReporter(EmonHubReporter):
 
         reply = self._send_post(post_url, post_body)
         if reply == 'ok':
-            self._log.debug(self.name + " acknowledged receipt with '" + reply + "' from " + self._settings['url'])
+            self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
         else:
-            self._log.warning(self.name + " send failure: wanted 'ok' but got '" +reply+ "'")
+            self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
 
 """class EmonHubReporterInitError
 
