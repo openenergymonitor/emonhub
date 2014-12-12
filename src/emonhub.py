@@ -36,7 +36,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub(object):
     
-    __version__ = 'Pre-Release Development Version (rc1.1)'
+    __version__ = 'Pre-Release Development Version (rc2.0?)'
     
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
