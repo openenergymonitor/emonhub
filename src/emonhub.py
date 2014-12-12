@@ -25,10 +25,11 @@ import emonhub_coder as ehc
 
 """class EmonHub
 
-Monitors data inputs through EmonHubInterfacer instances, and sends data to
+Monitors data inputs through EmonHubInterfacer instances,
+and (currently) sends data to
 target servers through EmonHubEmoncmsReporter instances.
 
-Communicates with the user through an EmonHubSetup
+Controlled by the user via EmonHubSetup
 
 """
 
@@ -61,14 +62,21 @@ class EmonHub(object):
         self._reporters = {}
         self._interfacers = {}
         self._queue = {}
+
+        # Create Queues
         self._rxq = {}
         self._txq = {}
+
+        # Maximum number of channels
+        self._channel_max = 8
+
+        # Update settings
         self._update_settings(settings)
         
     def run(self):
         """Launch the hub.
         
-        Monitor the COM port and process data.
+        Monitor the interfaces and process data.
         Check settings on a regular basis.
 
         """
@@ -89,23 +97,41 @@ class EmonHub(object):
                 if not R.isAlive():
                     #R.start()
                     self._log.warning(R.name + " thread is dead") #had to be restarted")
-            
+
             # For all Interfacers
             for I in self._interfacers.itervalues():
                 # Check thread is still running
                 if not I.isAlive():
                     #I.start()
                     self._log.warning(I.name + " thread is dead") # had to be restarted")
-                if not self._rxq[I.name].empty():
-                    values = self._rxq[I.name].get()
-                    # Place a copy of the values in a queue for each reporter
-                    for name in self._reporters:
-                        # discard if reporter 'pause' set to 'all' or 'in'
-                        if 'pause' in self._reporters[name]._settings \
-                                and str(self._reporters[name]._settings['pause']).lower() in \
-                                ['all', 'in']:
-                            continue
-                        self._queue[name].put(values)
+                if not I._rxq.empty(): # "if not" will pass just 1 frame "while not" will pass each frame
+                    # Fetch a string of values
+                    cargo = I._rxq.get()
+
+                    if int(I._settings['rxchannels']) == 0:
+                        continue
+                    else:
+                        # Loop through all "channels" and put values if in "rxchannels"
+                        for ch in range (1, int(setup.settings['hub']['channels']), 1):
+                           # if int(I._settings['rxchannels'][2:].zfill(self._channel_max)[-ch]):
+                            if int(I._settings['rxchannels'].zfill(self._channel_max)[-ch]):
+                          # '{:0"[self._channel_max]"d}'.format(I._settings['rxchannels'])
+                            #if int(bin(int(I._settings['rxchannels']))[-ch]):
+                                for txI in self._interfacers.itervalues():
+                                    if txI != I and int(txI._settings['txchannels'].zfill(self._channel_max)[-ch]):
+                                    #if txI != I and int(bin(int(txI._settings['txchannels']))[2:].zfill(self._channel_max)[-ch]):
+                                        self._log.debug(str(cargo.uri)+" " + I.name + " cargo passed to "+ txI.name)
+                                        txI._txq.put(cargo)
+
+                    # Retained support for reporters
+                    if int(I._settings['rxchannels']) == 1:
+                        for name in self._reporters:
+                            # discard if reporter 'pause' set to 'all' or 'in'
+                            if 'pause' in self._reporters[name]._settings \
+                                    and str(self._reporters[name]._settings['pause']).lower() in \
+                                    ['all', 'in']:
+                                continue
+                            self._queue[name].put(cargo)
 
             # Sleep until next iteration
             time.sleep(0.2)
@@ -259,6 +285,12 @@ class EmonHub(object):
         if 'nodes' in settings:
             ehc.nodelist = settings['nodes']
 
+        if 'channels' in settings['hub']:
+            if int(settings['hub']['channels']) > self._channel_max:
+                settings['hub']['channels'] = self._channel_max
+        else:
+            settings['hub']['channels'] = 1
+
     def _set_logging_level(self, level='WARNING', log=True):
         """Set logging level.
         
@@ -327,7 +359,7 @@ if __name__ == "__main__":
                                                        'a', 5000 * 1024, 1)
     # Format log strings
     loghandler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)s %(message)s'))
+            '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
     logger.addHandler(loghandler)
 
     # Initialize hub setup
