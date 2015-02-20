@@ -21,6 +21,8 @@ import uuid
 
 import emonhub_coder as ehc
 
+from pydispatch import dispatcher
+
 """class EmonHubInterfacer
 
 Monitors a data source. 
@@ -33,7 +35,7 @@ their data source.
 
 class EmonHubInterfacer(threading.Thread):
 
-    def __init__(self, name, rxq, txq):
+    def __init__(self, name):
         
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
@@ -43,12 +45,9 @@ class EmonHubInterfacer(threading.Thread):
         self.setName(name)
 
         # Initialise settings
-        self._rxq = rxq
-        self._txq = txq
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
-                          'scale':'1', 'timestamped': False, 'targeted': False,
-                          'rxchannels': '1', 'txchannels': '0', 'nodeoffset' : '0'}
+                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pub_channels':["ch1"],'sub_channels':["ch2"]}
         self._settings = {}
 
         # This line will stop the default values printing to logfile at start-up
@@ -58,7 +57,7 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
-
+        
         # create a stop
         self.stop = False
 
@@ -79,23 +78,20 @@ class EmonHubInterfacer(threading.Thread):
             if rxc:
                 rxc = self._process_rx(rxc)
                 if rxc:
-                 self._rxq.put(rxc)
+                    for channel in self._settings["pub_channels"]:
+                        dispatcher.send(channel, cargo=rxc)
+                        self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
+                  
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
-            # Process any queued TX data
-            if not self._txq.empty():
-                txc = self._process_tx(self._txq.get())
-                # if 'pause' in self._settings and \
-                #                 str(self._settings['pause']).lower() in ['all', 'out']:
-                #     pass
-                # else:
-                if txc:
-                    #ADD TO BUFFER OR SEND
-                    self.send(txc)
-
-
+   
+    # Subscribed channels entry                 
+    def receiver(self, cargo):
+        txc = self._process_tx(cargo)
+        self.send(txc)
+                            
     def read(self):
         """Read raw data from interface and pass for processing.
         Specific version to be created for each interfacer
@@ -154,10 +150,10 @@ class EmonHubInterfacer(threading.Thread):
             return False
             
         # Discard if first value is not a valid node id
-        n = float(received[0])
-        if n % 1 != 0 or n < 0 or n > 31:
-            self._log.warning(str(ref) + " Discarded RX frame 'node id outside scope' : " + str(received))
-            return False
+        # n = float(rxc.realdata[0])
+        # if n % 1 != 0 or n < 0 or n > 31:
+        #     self._log.warning(str(cargo.uri) + " Discarded RX frame 'node id outside scope' : " + str(rxc.realdata))
+        #     return False
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
@@ -433,19 +429,24 @@ class EmonHubInterfacer(threading.Thread):
                 pass
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
                 pass
-            elif key == 'rxchannels' and all(i in '01' for i in setting) and int(setting, 2) < 256:
+            elif key == 'pub_channels':
                 pass
-            elif key == 'txchannels' and all(i in '01' for i in setting) and int(setting, 2) < 256:
+            elif key == 'sub_channels':
                 pass
             # elif key == 'rxchannels' and int(setting) >= 0 and int(setting) < 256:
             #     pass
             # elif key == 'txchannels' and int(setting) >= 0 and int(setting) < 256:
             #     pass
             else:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+
+            # Is there a better place to put this?    
+            for channel in self._settings["sub_channels"]:
+                dispatcher.connect(self.receiver, channel)
+                self._log.debug("Interfacer: Subscribed to channel' : " + str(channel))
 
 """class EmonhubSerialInterfacer
 
@@ -456,7 +457,7 @@ Monitors the serial port for data
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, rxq, txq, com_port='', com_baud=9600):
+    def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -464,7 +465,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__(name, rxq, txq)
+        super(EmonHubSerialInterfacer, self).__init__(name)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -544,7 +545,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
-    def __init__(self, name, rxq, txq, com_port='/dev/ttyAMA0', com_baud=0):
+    def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=0):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -553,10 +554,10 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
 
         # Initialization
         if com_baud != 0:
-            super(EmonHubJeeInterfacer, self).__init__(name, rxq, txq, com_port, com_baud)
+            super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
         else:
             for com_baud in (57600, 9600):
-                super(EmonHubJeeInterfacer, self).__init__(name, rxq, txq, com_port, com_baud)
+                super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
                 self._ser.write("?")
                 time.sleep(2)
                 self._rx_buf = self._rx_buf + self._ser.readline()
@@ -568,6 +569,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
                     self._ser.close()
                 continue
 
+        
         # Display device firmware version and current settings
         self.info = ["",""]
         if self._ser is not None:
@@ -716,7 +718,7 @@ class EmonHubJeeInterfacer(EmonHubSerialInterfacer):
             elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
                 command = str(setting) + 'q'
             else:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
             self._settings[key] = setting
             self._log.info("Setting " + self.name + " %s: %s" % (key, setting) + " (" + command + ")")
@@ -805,7 +807,7 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, rxq, txq, port_nb=50011):
+    def __init__(self, name, port_nb=50011):
         """Initialize Interfacer
 
         port_nb (string): port number on which to open the socket
@@ -813,7 +815,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSocketInterfacer, self).__init__(name, rxq, txq)
+        super(EmonHubSocketInterfacer, self).__init__(name)
 
         # add an apikey setting
         self._skt_settings = {'apikey':""}
@@ -977,13 +979,13 @@ Monitors a socket for data, typically from ethernet link
 
 class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, rxq, txq):
+    def __init__(self, name):
         """Initialize interfacer
 
         """
 
         # Initialization
-        super(EmonHubPacketGenInterfacer, self).__init__(name, rxq, txq)
+        super(EmonHubPacketGenInterfacer, self).__init__(name)
 
         self._control_timestamp = 0
         self._control_interval = 5
@@ -1131,13 +1133,13 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, rxq, txq, mqtt_host="127.0.0.1", mqtt_port=1883):
+    def __init__(self, name, mqtt_host="127.0.0.1", mqtt_port=1883):
         """Initialize interfacer
 
         """
 
         # Initialization
-        super(EmonHubMqttInterfacer, self).__init__(name, rxq, txq)
+        super(EmonHubMqttInterfacer, self).__init__(name)
 
         # set the default setting values for this interfacer
         self._defaults.update({'datacode': '0'})
@@ -1249,7 +1251,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
                 pass
             else:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))

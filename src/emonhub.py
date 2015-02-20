@@ -16,7 +16,6 @@ import logging.handlers
 import signal
 import argparse
 import pprint
-import Queue
 
 import emonhub_setup as ehs
 import emonhub_reporter as ehr
@@ -61,14 +60,6 @@ class EmonHub(object):
         # Initialize Reporters and Interfacers
         self._reporters = {}
         self._interfacers = {}
-        self._queue = {}
-
-        # Create Queues
-        self._rxq = {}
-        self._txq = {}
-
-        # Maximum number of channels
-        self._channel_max = 8
 
         # Update settings
         self._update_settings(settings)
@@ -104,34 +95,6 @@ class EmonHub(object):
                 if not I.isAlive():
                     #I.start()
                     self._log.warning(I.name + " thread is dead") # had to be restarted")
-                if not I._rxq.empty(): # "if not" will pass just 1 frame "while not" will pass each frame
-                    # Fetch a string of values
-                    cargo = I._rxq.get()
-
-                    if int(I._settings['rxchannels']) == 0:
-                        continue
-                    else:
-                        # Loop through all "channels" and put values if in "rxchannels"
-                        for ch in range (1, int(setup.settings['hub']['channels']), 1):
-                           # if int(I._settings['rxchannels'][2:].zfill(self._channel_max)[-ch]):
-                            if int(I._settings['rxchannels'].zfill(self._channel_max)[-ch]):
-                          # '{:0"[self._channel_max]"d}'.format(I._settings['rxchannels'])
-                            #if int(bin(int(I._settings['rxchannels']))[-ch]):
-                                for txI in self._interfacers.itervalues():
-                                    if txI != I and int(txI._settings['txchannels'].zfill(self._channel_max)[-ch]):
-                                    #if txI != I and int(bin(int(txI._settings['txchannels']))[2:].zfill(self._channel_max)[-ch]):
-                                        self._log.debug(str(cargo.uri)+" " + I.name + " cargo passed to "+ txI.name)
-                                        txI._txq.put(cargo)
-
-                    # Retained support for reporters
-                    if int(I._settings['rxchannels']) == 1:
-                        for name in self._reporters:
-                            # discard if reporter 'pause' set to 'all' or 'in'
-                            if 'pause' in self._reporters[name]._settings \
-                                    and str(self._reporters[name]._settings['pause']).lower() in \
-                                    ['all', 'in']:
-                                continue
-                            self._queue[name].put(cargo)
 
             # Sleep until next iteration
             time.sleep(0.2)
@@ -204,10 +167,8 @@ class EmonHub(object):
                     if not 'Type' in R:
                         continue
                     self._log.info("Creating " + R['Type'] + " '%s' ", name)
-                    # Create the queue for this reporter
-                    self._queue[name] = Queue.Queue(0)
                     # This gets the class from the 'Type' string
-                    reporter = getattr(ehr, R['Type'])(name, self._queue[name], **R['init_settings'])
+                    reporter = getattr(ehr, R['Type'])(name, **R['init_settings'])
                     reporter.set(**R['runtimesettings'])
                     reporter.init_settings = R['init_settings']
                     # If a memory buffer back-up exists copy it over and remove the back-up
@@ -259,11 +220,8 @@ class EmonHub(object):
                     if not 'Type' in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
-                    # Create the rx & tx queues for this interfacer
-                    self._rxq[name] = Queue.Queue(0)
-                    self._txq[name] = Queue.Queue(0)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name, self._rxq[name], self._txq[name], **I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                     interfacer.start()
@@ -284,12 +242,6 @@ class EmonHub(object):
 
         if 'nodes' in settings:
             ehc.nodelist = settings['nodes']
-
-        if 'channels' in settings['hub']:
-            if int(settings['hub']['channels']) > self._channel_max:
-                settings['hub']['channels'] = self._channel_max
-        else:
-            settings['hub']['channels'] = 1
 
     def _set_logging_level(self, level='WARNING', log=True):
         """Set logging level.

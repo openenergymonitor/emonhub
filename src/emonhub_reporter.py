@@ -13,9 +13,10 @@ import time
 import logging
 import json
 import threading
-import Queue
 
 import emonhub_buffer as ehb
+
+from pydispatch import dispatcher
   
 """class EmonHubReporter
 
@@ -29,7 +30,7 @@ destination server.
 
 class EmonHubReporter(threading.Thread):
 
-    def __init__(self, reporterName, queue, buffer_type="memory", buffer_size=1000, **kwargs):
+    def __init__(self, reporterName, buffer_type="memory", buffer_size=1000, **kwargs):
         """Create a server data buffer initialized with server settings."""
 
         # Initialize logger
@@ -42,9 +43,8 @@ class EmonHubReporter(threading.Thread):
         # Initialise settings
         self.name = reporterName
         self.init_settings = {}
-        self._defaults = {'pause': 'off', 'interval': '0', 'batchsize': '1'}
+        self._defaults = {'pause': 'off', 'interval': '0', 'batchsize': '1','pub_channels':["ch2"],'sub_channels':["ch1"]}
         self._settings = {}
-        self._queue = queue
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -64,10 +64,12 @@ class EmonHubReporter(threading.Thread):
         
         self._log.info("Set up reporter '%s' (buffer: %s | size: %s)"
                        % (reporterName, buffer_type, buffer_size))
-
+                
         # Initialise a thread and start the reporter
         self.stop = False
         self.start()
+        
+        
         
     def set(self, **kwargs):
         """Update settings.
@@ -95,10 +97,17 @@ class EmonHubReporter(threading.Thread):
                 pass
             elif key in ['interval', 'batchsize'] and setting.isdigit():
                 pass
+            elif key == 'sub_channels' or 'pub_channels':
+                pass
             else:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
+                self._log.warning("In reporter:set '%s' is not a valid setting for %s: %s" % (setting, self.name, key))
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+        
+        # Is there a better place to put this?    
+        for channel in self._settings["sub_channels"]:
+            dispatcher.connect(self.receiver, channel)
+            self._log.debug("Reporter: Subscribed to channel' : " + str(channel))
 
         for key, setting in self._defaults.iteritems():
             valid = False
@@ -120,7 +129,7 @@ class EmonHubReporter(threading.Thread):
                 self._settings[key] = setting
                 self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
             else:
-                self._log.warning("'%s' is not a valid setting for %s: %s" % (setting, self.name, key))
+                self._log.warning("In reporter:set '%s' is not a valid setting for %s: %s" % (setting, self.name, key))
 
     def add(self, cargo):
         """Append data to buffer.
@@ -150,18 +159,17 @@ class EmonHubReporter(threading.Thread):
         # [[1399980731, 10, 150, 3450 ...]]
         self.buffer.storeItem(f)
 
+    def receiver(self, cargo):
+        self.add(cargo)
+    
     def run(self):
         """
         Run the reporter thread.
         Any regularly performed tasks actioned here along with flushing the buffer
 
         """
+        
         while not self.stop:
-            # If there are frames in the queue
-            while not self._queue.empty():
-                # Add each frame to the buffer
-                frame = self._queue.get()
-                self.add(frame)
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
@@ -260,13 +268,13 @@ Stores server parameters and buffers the data between two HTTP requests
 
 class EmonHubEmoncmsReporter(EmonHubReporter):
 
-    def __init__(self, reporterName, queue, **kwargs):
+    def __init__(self, reporterName, **kwargs):
         """Initialize reporter
 
         """
 
         # Initialization
-        super(EmonHubEmoncmsReporter, self).__init__(reporterName, queue, **kwargs)
+        super(EmonHubEmoncmsReporter, self).__init__(reporterName, **kwargs)
 
         # add or alter any default settings for this reporter
         self._defaults.update({'batchsize': 100})
