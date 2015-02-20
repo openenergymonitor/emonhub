@@ -249,11 +249,14 @@ class EmonHubInterfacer(threading.Thread):
                 x = scale
                 if not scale:
                     x = scales[i]
+                
                 if x != "1":
                     val = decoded[i] * float(x)
                     if val % 1 == 0:
                         decoded[i] = int(val)
-
+                    else:
+                        decoded[i] = float(val)
+                        
         rxc.realdata = decoded
 
         if not rxc:
@@ -1163,7 +1166,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._mqttc.connect(self._host, self._port, 60)
         self._mqttc.loop()
         
-    def on_connect(self, client, userdata, rc):
+    def on_connect(self, client, userdata, flags, rc):
         
         connack_string = {0:'Connection successful',
                           1:'Connection refused - incorrect protocol version',
