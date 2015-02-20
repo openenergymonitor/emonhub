@@ -16,8 +16,9 @@ import select
 import threading
 import urllib2
 import json
-import paho.mqtt.client as mqtt
 import uuid
+
+import paho.mqtt.client as mqtt
 
 import emonhub_coder as ehc
 
@@ -382,7 +383,8 @@ class EmonHubInterfacer(threading.Thread):
                 dc = datacode
                 if not datacode:
                     dc = datacodes[i]
-                for b in ehc.encode(dc,scaled[i]):
+                
+                for b in ehc.encode(dc,int(scaled[i])):
                     encoded.append(b)
 
         txc.encoded.update({self.getName():encoded})
@@ -1134,40 +1136,35 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, mqtt_host="127.0.0.1", mqtt_port=1883):
-        """Initialize interfacer
-
-        """
-
         # Initialization
         super(EmonHubMqttInterfacer, self).__init__(name)
+        
+        self._log.info(str(name)+" Init mqtt_host="+str(mqtt_host)+" mqtt_port="+str(mqtt_port))
+        self._name = name
+        self._host = mqtt_host
+        self._port = mqtt_port
+        self._connected = False
+        
+        self._settings = {
+            'sub_channels':['ch1'],
+            'pub_channels':['ch2'],
+            'basetopic': 'emonhub/'
+        };
 
-        # set the default setting values for this interfacer
-        self._defaults.update({'datacode': '0'})
-
-        # Add any MQTT specific settings
-        self._mqtt_settings = {'basetopic': 'emonhub/+', 'txtopics': 'tx/', 'rxtopics': 'rx/'}
-        self._settings.update(self._mqtt_settings)
-
-        self.init_settings.update({'mqtt_host':mqtt_host, 'mqtt_port':mqtt_port})
-
-        self._mqttc = mqtt.Client(protocol=3)
+        self._mqttc = mqtt.Client()
         self._mqttc.on_connect = self.on_connect
         self._mqttc.on_message = self.on_message
         self._mqttc.on_subscribe = self.on_subscribe
-
-        self.mqtt_rc = 256
-
+        
 
     def action(self):
-        if self.mqtt_rc:
-            self._mqttc.connect(self.init_settings['mqtt_host'], self.init_settings['mqtt_port'])
-        self._mqttc.loop()#_forever()
-
-
-    def on_connect(self, mqttc, userdata, flags, rc):
-
-        self.mqtt_rc = rc
-
+        if not self._connected:
+            self._log.info("Connecting to MQTT Server")
+            self._mqttc.connect(self._host, self._port, 60)
+        self._mqttc.loop()
+        
+    def on_connect(self, client, userdata, rc):
+        
         connack_string = {0:'Connection successful',
                           1:'Connection refused - incorrect protocol version',
                           2:'Connection refused - invalid client identifier',
@@ -1179,103 +1176,55 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.warning(connack_string[rc])
         else:
             self._log.info("connection status: "+connack_string[rc])
+            self._connected = True
+            # Subscribe to MQTT topics
+            self._mqttc.subscribe(self._settings["basetopic"]+"tx/#")
+            
         self._log.debug("CONACK => Return code: "+str(rc))
 
-        (set_subs) = self._settings['rxtopics']
-        self._set_topic_subs(set_subs)
-
     def on_subscribe(self, mqttc, obj, mid, granted_qos):
-        self._log.debug("SUBACK => MID:"+str(mid)+" QoS:"+str(granted_qos))
+        self._log.info("on_subscribe")
 
-    def on_message(self, mqttc, obj, msg):
+    def on_message(self, client, userdata, msg):
+        topic_parts = msg.topic.split("/")
+        
+        if topic_parts[0] == self._settings["basetopic"][:-1]:
+            if topic_parts[1] == "tx":
+                if topic_parts[3] == "values":
+                    nodeid = int(topic_parts[2])
+                    
+                    payload = str(nodeid)+","+msg.payload
+                    realdata = payload.split(",")
+                    self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
 
-        self._log.info("Got a message: "+msg.payload+" from: "+msg.topic)        #
-            #TODO prepare received package for processing
+                    rxc = new_cargo(realdata=realdata)
+                    rxc.nodeid = nodeid
 
+                    if rxc:
+                        rxc = self._process_tx(rxc)
+                        if rxc:
+                            for channel in self._settings["pub_channels"]:
+                                dispatcher.send(channel, cargo=rxc)
+                                self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
 
-    def send(self, cargo):
-
-        topics = [self._settings['txtopics']]
-        for topic in topics:
-            base = self._settings['basetopic']
-            if base[-1] != '/':
-                base += '/'
-            if topic[-1] == '/':
-                topic = topic[:-1]
-            #TODO sort the frame into a payload (per target ???)
-            payload = str(cargo.encoded[self.getName()])
-
-            self._log.info("publishing: "+str(payload)+" to " +base+topic)
-
-            self._mqttc.publish(base+topic, payload)
-
-
-
+    def receiver(self, cargo):
+        if self._connected:
+            topic = self._settings["basetopic"]+"rx/"+str(cargo.nodeid)+"/values"
+            payload = ",".join(map(str,cargo.realdata))
+            
+            self._log.info("Publishing: "+topic+" "+payload)
+            self._mqttc.publish(topic, payload=payload, qos=0, retain=False)
+    
     def set(self, **kwargs):
-        """
-
-        """
-        set_subs = []
-
-        for key, setting in self._mqtt_settings.iteritems():
-            # Decide which setting value to use
+        for key,setting in self._settings.iteritems():
             if key in kwargs.keys():
-                setting = kwargs[key]
-            else:
-                setting = self._mqtt_settings[key]
-            if key in self._settings and self._settings[key] == setting:
-                continue
-            elif key == 'txtopics':
-                # checks?
-                pass
-            elif key == 'rxtopics':
-                if isinstance(setting, basestring):
-                    setting = [setting]
-                for topic in self._settings[key]:
-                    if not topic in setting:
-                        if topic[-1] == '/':
-                            topic += '#'
-                        self._mqttc.unsubscribe(self._settings['basetopic'] + topic)
-                        self._log.info("unsubsribing from: "+topic)
-                for topic in setting:
-                    if not topic in self._settings[key]:
-                        set_subs.append(topic)
-                pass
-
-            elif key == 'basetopic':
-                for topic in self._settings['rxtopics']:
-                    self._mqttc.unsubscribe(self._settings['basetopic'] + topic+'#')
-                    for topic in [self._settings['rxtopics']]:
-                        set_subs.append(topic)
-
-
-                pass
-            else:
-                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
-                continue
-            self._settings[key] = setting
-            self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
-
-        if set_subs and not self.mqtt_rc:
-            self._set_topic_subs(set_subs)
-
-
-        # include kwargs from parent
-        super(EmonHubMqttInterfacer, self).set(**kwargs)
-
-
-    def _set_topic_subs(self, set_subs):
-
-        if isinstance(set_subs, basestring):
-            set_subs = [set_subs]
-        for topic in set_subs:
-            if topic[-1] == '/':
-                topic += '#'
-            basetopic = self._settings['basetopic']
-            if basetopic[-1] != '/':
-                basetopic += '/'
-            self._mqttc.subscribe(str(basetopic) + str(topic))
-            self._log.info("subscribing to: " + str(basetopic) + str(topic))
+                # replace default
+                self._settings[key] = kwargs[key]
+        
+        # Subscribe to internal channels   
+        for channel in self._settings["sub_channels"]:
+            dispatcher.connect(self.receiver, channel)
+            self._log.debug(self._name+" Subscribed to channel' : " + str(channel))
 
 
 """class EmonHubInterfacerInitError
@@ -1283,8 +1232,6 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 Raise this when init fails.
 
 """
-
-
 class EmonHubInterfacerInitError(Exception):
     pass
 
