@@ -96,8 +96,14 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
                     c.nodeid = int(self._settings['nodeoffset'])
                     c.realdata = f
                 else:
-                    c.nodeid = int(f[0])
-                    c.realdata = f[1:]
+                   try:
+                       c.nodeid = int(f[0])
+                       c.realdata = f[1:]
+                   except Exception,e:
+                       self._log.error("unable to decode packet skipping %e" %e)
+                       pass
+                       
+
 
         return c
 

@@ -22,7 +22,9 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0
+            'sendstatus': 0,
+            'data_send_interval':30,
+            'status_send_interval':60,
         }
         
         self.buffer = []
@@ -49,22 +51,22 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     
         now = time.time()
         
-        if (now-self.lastsent)>30:
+        if (now-self.lastsent) > int(self._settings['data_send_interval']):
             self.lastsent = now
             # print json.dumps(self.buffer)
             if int(self._settings['senddata']):
                 self.bulkpost(self.buffer)
             self.buffer = []
             
-        if (now-self.lastsentstatus)>60:
+        if (now-self.lastsentstatus) > int(self._settings['status_send_interval']):
             self.lastsentstatus = now
             if int(self._settings['sendstatus']):
                 self.sendstatus()
             
     def bulkpost(self,databuffer):
-    
-        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
-                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+        self._log.info("Prepping bulk post: " + str( databuffer ))
+    	#Removing length check fo apikey
+        if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
@@ -79,20 +81,21 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         # Construct post_url (without apikey)
         post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
-        post_body = "data="+data_string+"&sentat="+str(sentat)
+        post_body = "data="+data_string+"&time="+str(sentat)
 
-        # logged before apikey added for security
-        self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
 
         # Add apikey to post_url
         post_url = post_url + self._settings['apikey']
+
+        # logged before apikey added for security
+        self._log.info("sending: " + post_url + post_body)
 
         # The Develop branch of emoncms allows for the sending of the apikey in the post
         # body, this should be moved from the url to the body as soon as this is widely
         # adopted
 
         reply = self._send_post(post_url, post_body)
-        if reply == 'ok':
+        if reply.lower().strip() == 'ok':
             self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
         else:
@@ -136,8 +139,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return reply
             
     def sendstatus(self):
-        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
-                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+        if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
         
         # MYIP url
