@@ -25,6 +25,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'sendstatus': 0,
             'data_send_interval':30,
             'status_send_interval':60,
+	    'site_id':5
         }
         
         self.buffer = []
@@ -67,6 +68,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         self._log.info("Prepping bulk post: " + str( databuffer ))
     	#Removing length check fo apikey
         if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+            self._log.error("API key not found skipping: " + str( databuffer ))
             return
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
@@ -85,7 +87,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
 
         # Add apikey to post_url
-        post_url = post_url + self._settings['apikey']
+        post_url = post_url + self._settings['apikey'] + "&" + "siteid=" + self._settings['siteid'] + "&"
 
         # logged before apikey added for security
         self._log.info("sending: " + post_url + post_body)
