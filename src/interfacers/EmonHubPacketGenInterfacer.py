@@ -7,7 +7,6 @@ Monitors a socket for data, typically from ethernet link
 
 """
 
-
 class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
     def __init__(self, name):

@@ -9,6 +9,7 @@ Monitors the serial port for data
 
 """
 
+
 class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
 
     def __init__(self, name, com_port='', com_baud=9600):

@@ -18,13 +18,13 @@ class EmonHubCargo(object):
         self.realdata = realdata
         self.rssi = int(rssi)
 
-        self.datacodes = []
-        self.datacode = ""
-        self.scale = 0
-        self.scales = []
+        # self.datacodes = []
+        # self.datacode = ""
+        # self.scale = 0
+        # self.scales = []
         self.rawdata = rawdata
         self.encoded = {}
-        self.realdatacodes = []
+        # self.realdatacodes = []
 
 def new_cargo(rawdata="", realdata=[], nodeid=0, timestamp=0.0, target=0, rssi=0.0):
     """

@@ -51,7 +51,6 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
     def close(self):
         """Close socket."""
-        
         # Close socket
         if self._socket is not None:
             self._log.debug('Closing socket')

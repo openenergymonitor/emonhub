@@ -43,7 +43,6 @@ Controlled by the user via EmonHubSetup
 
 """
 
-
 class EmonHub(object):
     
     __version__ = 'Pre-Release Development Version (rc2.0?)'

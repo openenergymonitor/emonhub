@@ -1,7 +1,7 @@
 """class EmonHubMqttGenInterfacer
 
-
 """
+
 import paho.mqtt.client as mqtt
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer

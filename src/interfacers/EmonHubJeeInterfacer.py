@@ -11,7 +11,6 @@ Monitors the serial port for data from "Jee" type device
 
 """
 
-
 class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
     def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=0):
