@@ -33,7 +33,6 @@ their data source.
 
 """
 
-
 class EmonHubInterfacer(threading.Thread):
 
     def __init__(self, name):

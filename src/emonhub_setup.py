@@ -42,7 +42,6 @@ each setup.
 
 """
 
-
 class EmonHubSetup(object):
 
     def __init__(self):
