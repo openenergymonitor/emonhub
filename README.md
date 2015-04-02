@@ -51,7 +51,7 @@ Edit configuration in /home/pi/hub/conf/emonhub.json
 
     nano /home/pi/hub/conf/emonhub.json
 
-### Install MQTT
+### Install Dependencies
 
 Thanks to pb66: https://github.com/emonhub/emonhub/issues/134
 
@@ -62,4 +62,5 @@ Thanks to pb66: https://github.com/emonhub/emonhub/issues/134
     apt-get update
     
     sudo apt-get install mosquitto python-pip
-    sudo pip install python-paho
+    sudo pip install paho-mqtt
+    sudo pip install pydispatcher
