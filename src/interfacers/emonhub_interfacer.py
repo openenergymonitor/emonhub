@@ -157,16 +157,15 @@ class EmonHubInterfacer(threading.Thread):
         #     return False
 
         # check if node is listed and has individual datacodes for each value
-        if node in ehc.nodelist and 'datacodes' in ehc.nodelist[node]:
-            if rxc.realdatacodes :
-                datacodes = rxc.realdatacodes
-            else:
-                # fetch the string of datacodes
-                datacodes = ehc.nodelist[node]['datacodes']
+        if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacodes' in ehc.nodelist[node]['rx']:
+
+            # fetch the string of datacodes
+            datacodes = ehc.nodelist[node]['rx']['datacodes']
+            
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
-                datasizes.append(ehc.check_datacode(code))
+                datasizes.append(ehc.check_datacode(str(code)))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(rxc.realdata) != sum(datasizes):
                 self._log.warning(str(rxc.uri) + " RX data length: " + str(len(rxc.realdata)) +
@@ -179,8 +178,8 @@ class EmonHubInterfacer(threading.Thread):
                 datacode = False
         else:
             # if node is listed, but has only a single default datacode for all values
-            if node in ehc.nodelist and 'datacode' in ehc.nodelist[node]:
-                datacode = ehc.nodelist[node]['datacode']
+            if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacode' in ehc.nodelist[node]['rx']:
+                datacode = ehc.nodelist[node]['rx']['datacode']
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
@@ -209,9 +208,9 @@ class EmonHubInterfacer(threading.Thread):
             bytepos = int(0)
             for i in range(0, count, 1):
                 # Use single datacode unless datacode = False then use datacodes
-                dc = datacode
+                dc = str(datacode)
                 if not datacode:
-                    dc = datacodes[i]
+                    dc = str(datacodes[i])
                 # Determine the number of bytes to use for each value by it's datacode
                 size = int(ehc.check_datacode(dc))
                 try:
@@ -223,8 +222,8 @@ class EmonHubInterfacer(threading.Thread):
                 decoded.append(value)
 
         # check if node is listed and has individual scales for each value
-        if node in ehc.nodelist and 'scales' in ehc.nodelist[node]:
-            scales = ehc.nodelist[node]['scales']
+        if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scales' in ehc.nodelist[node]['rx']:
+            scales = ehc.nodelist[node]['rx']['scales']
             # Discard the frame & return 'False' if it doesn't match the number of scales
             if len(decoded) != len(scales):
                 self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " for RX data : " + str(rxc.realdata) +
@@ -237,8 +236,8 @@ class EmonHubInterfacer(threading.Thread):
                 scale = False
         else:
             # if node is listed, but has only a single default scale for all values
-            if node in ehc.nodelist and 'scale' in ehc.nodelist[node]:
-                scale = ehc.nodelist[node]['scale']
+            if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scale' in ehc.nodelist[node]['rx']:
+                scale = ehc.nodelist[node]['rx']['scale']
             else:
             # when node not listed or has no scale(s) use the interfacers default if specified
                 scale = self._settings['scale']
@@ -296,8 +295,8 @@ class EmonHubInterfacer(threading.Thread):
             dest = str(txc.nodeid)
 
         # check if node is listed and has individual scales for each value
-        if dest in ehc.nodelist and 'scales' in ehc.nodelist[dest]:
-            scales = ehc.nodelist[dest]['scales']
+        if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'scales' in ehc.nodelist[dest]['tx']:
+            scales = ehc.nodelist[dest]['tx']['scales']
             # Discard the frame & return 'False' if it doesn't match the number of scales
             if len(txc.realdata) != len(scales):
                 self._log.warning(str(txc.uri) + " Scales " + str(scales) + " for RX data : " + str(txc.realdata) +
@@ -310,8 +309,8 @@ class EmonHubInterfacer(threading.Thread):
                 scale = False
         else:
             # if node is listed, but has only a single default scale for all values
-            if dest in ehc.nodelist and 'scale' in ehc.nodelist[dest]:
-                scale = ehc.nodelist[dest]['scale']
+            if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'scale' in ehc.nodelist[dest]['tx']:
+                scale = ehc.nodelist[dest]['tx']['scale']
             else:
             # when node not listed or has no scale(s) use the interfacers default if specified
                 scale = self._settings['scale']
@@ -333,16 +332,15 @@ class EmonHubInterfacer(threading.Thread):
 
 
         # check if node is listed and has individual datacodes for each value
-        if (dest in ehc.nodelist and 'datacodes' in ehc.nodelist[dest]) or txc.realdatacodes:
-            if txc.realdatacodes:
-                datacodes = txc.realdatacodes
-            else:
-                # fetch the string of datacodes
-                datacodes = ehc.nodelist[dest]['datacodes']
+        if (dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']) or txc.realdatacodes:
+
+            # fetch the string of datacodes
+            datacodes = ehc.nodelist[dest]['tx']['datacodes']
+            
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
-                datasizes.append(ehc.check_datacode(code))
+                datasizes.append(ehc.check_datacode(str(code)))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(scaled) != len(datasizes):
                 self._log.warning(str(txc.uri) + " TX datacodes: " + str(datacodes) +
@@ -355,8 +353,8 @@ class EmonHubInterfacer(threading.Thread):
                 datacode = False
         else:
             # if node is listed, but has only a single default datacode for all values
-            if dest in ehc.nodelist and 'datacode' in ehc.nodelist[dest]:
-                datacode = ehc.nodelist[dest]['datacode']
+            if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacode' in ehc.nodelist[dest]['tx']:
+                datacode = ehc.nodelist[dest]['tx']['datacode']
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
@@ -383,9 +381,9 @@ class EmonHubInterfacer(threading.Thread):
         if not encoded:
             for i in range(0, count, 1):
                 # Use single datacode unless datacode = False then use datacodes
-                dc = datacode
+                dc = str(datacode)
                 if not datacode:
-                    dc = datacodes[i]
+                    dc = str(datacodes[i])
                 
                 for b in ehc.encode(dc,int(scaled[i])):
                     encoded.append(b)

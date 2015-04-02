@@ -51,7 +51,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.info("connection status: "+connack_string[rc])
             self._connected = True
             # Subscribe to MQTT topics
-            self._mqttc.subscribe(self._settings["basetopic"]+"tx/#")
+            self._mqttc.subscribe(str(self._settings["basetopic"])+"tx/#")
             
         self._log.debug("CONACK => Return code: "+str(rc))
 

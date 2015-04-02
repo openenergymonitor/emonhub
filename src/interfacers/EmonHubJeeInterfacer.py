@@ -179,13 +179,14 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             elif key in self._settings and self._settings[key] == setting:
                 continue
             if key == 'baseid' and int(setting) >=1 and int(setting) <=26:
-                command = setting + 'i'
+                command = str(setting) + 'i'
             elif key == 'frequency' and setting in ['433','868','915']:
                 command = setting[:1] + 'b'
             elif key == 'group'and int(setting) >=0 and int(setting) <=212:
-                command = setting + 'g'
+                command = str(setting) + 'g'
             elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
                 command = str(setting) + 'q'
+                
             else:
                 self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue

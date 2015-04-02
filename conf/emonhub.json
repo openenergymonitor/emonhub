@@ -1,0 +1,109 @@
+{
+    "hub":
+    {
+        "loglevel":"DEBUG"
+    },
+
+    "interfacers":
+    {
+        "RFM2Pi": 
+        {
+            "Type": "EmonHubJeeInterfacer",
+            
+            "init_settings":
+            {
+                "com_port": "/dev/ttyAMA0",
+                "com_baud": 9600
+            },
+            
+            "runtimesettings":
+            {
+                "pub_channels":["ToEmonCMS"],
+                "sub_channels":["ToRFM12"],
+                
+                "group":1,
+                "frequency":"868",
+                "baseid":15,
+                "quiet":0
+            }
+        },
+    
+        "MQTT":
+        {
+            "Type": "EmonHubMqttInterfacer",
+            
+            "init_settings":
+            {
+                "mqtt_host": "127.0.0.1",
+                "mqtt_port": 1883
+            },
+            
+            "runtimesettings":
+            {
+                "pub_channels":["ToRFM12"],
+                "sub_channels":["ToEmonCMS"],
+                "basetopic":"emonhub/"
+            }
+        },
+    
+        "EMONCMSORG":
+        {
+            "Type": "EmonHubEmoncmsHTTPInterfacer",
+            
+            "init_settings":
+            {
+            },
+            
+            "runtimesettings":
+            {
+                "pub_channels":["ToRFM12"],
+                "sub_channels":["ToEmonCMS"],
+                "apikey": "",
+                "url": "http://emoncms.org"
+            }
+        }
+    },
+
+    "nodes":
+    {
+        "4": {
+            "rx": {
+                "names": ["temperature","battery"],
+                "datacodes": ["h","h"],
+                "scales": [0.01,0.001],
+                "units": ["C","V"]
+             }
+        },
+    
+        "6": {
+            "rx": {
+                "datacodes": ["L","h","h","h","h","l","l","l","l"]
+             }
+        },
+        
+        "10": {
+            "rx": {
+                "datacode": "h",
+                "scales": [1,1,1,1,1,1,0.01,0.01,0.01,0.01,1]
+             }
+        },
+        
+        "16": {
+            "rx": {
+                "names": ["temperature"],
+                "datacode": "h",
+                "scale": 0.01,
+                "units": ["C"]
+             }
+        },
+
+        "19": {
+            "rx": {
+                "names": ["temperature","battery"],
+                "datacodes": ["h","h"],
+                "scales": [0.01,0.001],
+                "units": ["C","V"]
+             }
+        }
+    }
+}
