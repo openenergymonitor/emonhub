@@ -42,8 +42,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # Append to bulk post buffer
         self.buffer.append(f)
         
-        print len(self.buffer)
-        
     def action(self):
     
         now = time.time()
