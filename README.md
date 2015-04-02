@@ -1,6 +1,12 @@
 emonHub
 =======
+This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) experimental branch adding: 
 
-*very* Experimental branch
-------------------
-See [Experimental branch => rc2.0 ?](https://github.com/emonhub/emonhub/issues/131) in issue tracker.
+- Internal pub/sub message bus based on pydispatcher
+- Tested MQTT interfacer (integrated with new emoncms nodes module)
+- HTTP Emoncms interfacer (rather than reporter). 
+- Reporters have been removed. 
+- A multi-file implementation of interfacers.
+- Rx and tx modes for node decoding/encoding provides improved control support.
+- json based config file option so that emonhub.conf can be loaded by emoncms - intention is to provide config interface in emoncms.
+
