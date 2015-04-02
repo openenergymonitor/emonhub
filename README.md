@@ -19,7 +19,7 @@ Assuming that you have already got emonhub installed via the easy installer here
 
     git clone https://github.com/emonhub/dev-emonhub.git ~/dev-emonhub && ~/dev-emonhub/install
 
-To switch to this branch:
+To switch to this branch (installed alongside existing emonhub branch):
 
     git clone https://github.com/trystanlea/emonhub.git hub
     
