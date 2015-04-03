@@ -13,7 +13,7 @@
             "init_settings":
             {
                 "com_port": "/dev/ttyAMA0",
-                "com_baud": 9600
+                "com_baud": 38400
             },
             
             "runtimesettings":

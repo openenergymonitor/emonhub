@@ -131,26 +131,28 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         # Strip leading 'OK' from frame if needed
         if f[0]=='OK':
+        
             f = f[1:]
 
-        # Extract RSSI value if it's available
-        if str(f[-1])[0]=='(' and str(f[-1])[-1]==')':
-            c.rssi = int(f[-1][1:-1])
-            f = f[:-1]
+            # Extract RSSI value if it's available
+            if str(f[-1])[0]=='(' and str(f[-1])[-1]==')':
 
-        # Extract node id from frame
-        c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
+                c.rssi = int(f[-1][1:-1])
+                f = f[:-1]
 
-        # Store data as a list of integer values
-        c.realdata = [int(i) for i in f[1:]]
+                # Extract node id from frame
+                c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
 
-        return c
+                # Store data as a list of integer values
+                c.realdata = [int(i) for i in f[1:]]
+
+                return c
 
         # # unix timestamp
         # t = round(time.time(), 2)
         #
         # # Process data frame
-        # self._rxq.put(self._process_rx(f, t))
+        # self._r	xq.put(self._process_rx(f, t))
 
     def set(self, **kwargs):
         """Send configuration parameters to the "Jee" type device through COM port
