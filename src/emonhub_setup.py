@@ -77,7 +77,7 @@ class EmonHubFileSetup(EmonHubSetup):
         # Initialization
         super(EmonHubFileSetup, self).__init__()
 
-        self._fileformat = "json" # or "ConfigObj"
+        self._fileformat = "ConfigObj" # or "ConfigObj"
         
         self._filename = filename
         
