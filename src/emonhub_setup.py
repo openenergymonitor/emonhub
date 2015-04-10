@@ -10,6 +10,7 @@
 import time
 import logging
 from configobj import ConfigObj
+import json
 
 """class EmonHubSetup
 
@@ -76,6 +77,10 @@ class EmonHubFileSetup(EmonHubSetup):
         # Initialization
         super(EmonHubFileSetup, self).__init__()
 
+        self._fileformat = "json" # or "ConfigObj"
+        
+        self._filename = filename
+        
         # Initialize update timestamp
         self._settings_update_timestamp = 0
         self._retry_time_interval = 5
@@ -88,7 +93,13 @@ class EmonHubFileSetup(EmonHubSetup):
 
         # Initialize attribute settings as a ConfigObj instance
         try:
-            self.settings = ConfigObj(filename, file_error=True)
+        
+            if self._fileformat == "ConfigObj":
+                self.settings = ConfigObj(filename, file_error=True)
+            else:            
+                with open(filename) as f:
+                    self.settings = json.loads(f.read())
+            
             # Check the settings file sections
             self.settings['hub']
             self.settings['interfacers']
@@ -120,7 +131,12 @@ class EmonHubFileSetup(EmonHubSetup):
         
         # Get settings from file
         try:
-            self.settings.reload()
+            if self._fileformat == "ConfigObj":
+                self.settings.reload()
+            else:            
+                with open(self._filename) as f:
+                    self.settings = json.loads(f.read())
+                
         except IOError as e:
             self._log.warning('Could not get settings: ' + str(e) + self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval

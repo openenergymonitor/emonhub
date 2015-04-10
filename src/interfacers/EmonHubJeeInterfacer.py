@@ -131,26 +131,28 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         # Strip leading 'OK' from frame if needed
         if f[0]=='OK':
+        
             f = f[1:]
 
-        # Extract RSSI value if it's available
-        if str(f[-1])[0]=='(' and str(f[-1])[-1]==')':
-            c.rssi = int(f[-1][1:-1])
-            f = f[:-1]
+            # Extract RSSI value if it's available
+            if str(f[-1])[0]=='(' and str(f[-1])[-1]==')':
 
-        # Extract node id from frame
-        c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
+                c.rssi = int(f[-1][1:-1])
+                f = f[:-1]
 
-        # Store data as a list of integer values
-        c.realdata = [int(i) for i in f[1:]]
+                # Extract node id from frame
+                c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
 
-        return c
+                # Store data as a list of integer values
+                c.realdata = [int(i) for i in f[1:]]
+
+                return c
 
         # # unix timestamp
         # t = round(time.time(), 2)
         #
         # # Process data frame
-        # self._rxq.put(self._process_rx(f, t))
+        # self._r	xq.put(self._process_rx(f, t))
 
     def set(self, **kwargs):
         """Send configuration parameters to the "Jee" type device through COM port
@@ -178,13 +180,14 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             elif key in self._settings and self._settings[key] == setting:
                 continue
             if key == 'baseid' and int(setting) >=1 and int(setting) <=26:
-                command = setting + 'i'
+                command = str(setting) + 'i'
             elif key == 'frequency' and setting in ['433','868','915']:
                 command = setting[:1] + 'b'
             elif key == 'group'and int(setting) >=0 and int(setting) <=212:
-                command = setting + 'g'
+                command = str(setting) + 'g'
             elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
                 command = str(setting) + 'q'
+                
             else:
                 self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue

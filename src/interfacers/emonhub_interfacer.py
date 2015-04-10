@@ -164,7 +164,7 @@ class EmonHubInterfacer(threading.Thread):
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
-                datasizes.append(ehc.check_datacode(code))
+                datasizes.append(ehc.check_datacode(str(code)))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(rxc.realdata) != sum(datasizes):
                 self._log.warning(str(rxc.uri) + " RX data length: " + str(len(rxc.realdata)) +
@@ -207,9 +207,9 @@ class EmonHubInterfacer(threading.Thread):
             bytepos = int(0)
             for i in range(0, count, 1):
                 # Use single datacode unless datacode = False then use datacodes
-                dc = datacode
+                dc = str(datacode)
                 if not datacode:
-                    dc = datacodes[i]
+                    dc = str(datacodes[i])
                 # Determine the number of bytes to use for each value by it's datacode
                 size = int(ehc.check_datacode(dc))
                 try:
@@ -339,7 +339,7 @@ class EmonHubInterfacer(threading.Thread):
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
-                datasizes.append(ehc.check_datacode(code))
+                datasizes.append(ehc.check_datacode(str(code)))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(scaled) != len(datasizes):
                 self._log.warning(str(txc.uri) + " TX datacodes: " + str(datacodes) +
@@ -380,9 +380,9 @@ class EmonHubInterfacer(threading.Thread):
         if not encoded:
             for i in range(0, count, 1):
                 # Use single datacode unless datacode = False then use datacodes
-                dc = datacode
+                dc = str(datacode)
                 if not datacode:
-                    dc = datacodes[i]
+                    dc = str(datacodes[i])
                 
                 for b in ehc.encode(dc,int(scaled[i])):
                     encoded.append(b)
