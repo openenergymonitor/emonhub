@@ -27,7 +27,7 @@ import interfacers.EmonHubSocketInterfacer
 import interfacers.EmonHubPacketGenInterfacer
 import interfacers.EmonHubMqttInterfacer
 import interfacers.EmonHubTesterInterfacer
-import interfacers.EmonHubEmoncmsHTTPInterface
+import interfacers.EmonHubEmoncmsHTTPInterfacer
 
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
 ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
