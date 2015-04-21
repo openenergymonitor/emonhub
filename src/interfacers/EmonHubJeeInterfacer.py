@@ -138,8 +138,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             c.rssi = int(f[-1][1:-1])
             f = f[:-1]
 
-        # Extract node id from frame
-        c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
+        try:
+            # Extract node id from frame
+            c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
+        except ValueError:
+            return
 
         # Store data as a list of integer values
         c.realdata = [int(i) for i in f[1:]]
