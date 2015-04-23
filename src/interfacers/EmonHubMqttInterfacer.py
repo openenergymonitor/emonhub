@@ -5,6 +5,7 @@
 import paho.mqtt.client as mqtt
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
+import Cargo
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
@@ -70,7 +71,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     realdata = payload.split(",")
                     self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
 
-                    rxc = new_cargo(realdata=realdata)
+                    rxc = Cargo.new_cargo(realdata=realdata)
                     rxc.nodeid = nodeid
 
                     if rxc:

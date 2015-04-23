@@ -312,7 +312,10 @@ class EmonHubInterfacer(threading.Thread):
                 scale = ehc.nodelist[dest]['tx']['scale']
             else:
             # when node not listed or has no scale(s) use the interfacers default if specified
-                scale = self._settings['scale']
+                if 'scale' in self._settings:
+                    scale = self._settings['scale']
+                else: 
+                    scale = "1"
 
         if scale == "1":
             scaled = txc.realdata
@@ -331,7 +334,7 @@ class EmonHubInterfacer(threading.Thread):
 
 
         # check if node is listed and has individual datacodes for each value
-        if (dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']) or txc.realdatacodes:
+        if (dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']):
 
             # fetch the string of datacodes
             datacodes = ehc.nodelist[dest]['tx']['datacodes']
@@ -356,7 +359,11 @@ class EmonHubInterfacer(threading.Thread):
                 datacode = ehc.nodelist[dest]['tx']['datacode']
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
-                datacode = self._settings['datacode']
+                if 'datacode' in self._settings:
+                    datacode = self._settings['datacode']
+                else:
+                    datacode = "h"
+                    
             # Ensure only int 0 is passed not str 0
             if datacode == '0':
                 datacode = 0
