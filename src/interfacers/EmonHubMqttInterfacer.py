@@ -27,6 +27,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
         self._mqttc = mqtt.Client()
         self._mqttc.on_connect = self.on_connect
+        self._mqttc.on_disconnect = self.on_disconnect
         self._mqttc.on_message = self.on_message
         self._mqttc.on_subscribe = self.on_subscribe
         
@@ -34,7 +35,11 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     def action(self):
         if not self._connected:
             self._log.info("Connecting to MQTT Server")
-            self._mqttc.connect(self._host, self._port, 60)
+            try:
+                self._mqttc.connect(self._host, self._port, 60)
+            except:
+                self._log.info("Could not connect...")
+                time.sleep(1.0)
         self._mqttc.loop(0)
         
     def on_connect(self, client, userdata, flags, rc):
@@ -56,6 +61,11 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             
         self._log.debug("CONACK => Return code: "+str(rc))
 
+    def on_disconnect(self, client, userdata, rc):
+        if rc != 0:
+            self._log.info("Unexpected disconnection")
+            self._connected = False
+        
     def on_subscribe(self, mqttc, obj, mid, granted_qos):
         self._log.info("on_subscribe")
 
@@ -87,7 +97,10 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             payload = ",".join(map(str,cargo.realdata))
             
             self._log.info("Publishing: "+topic+" "+payload)
-            self._mqttc.publish(topic, payload=payload, qos=0, retain=False)
+            result =self._mqttc.publish(topic, payload=payload, qos=0, retain=False)
+            
+            if result[0]==4:
+                self._log.info("Publishing error? returned 4")
     
     def set(self, **kwargs):
         for key,setting in self._settings.iteritems():

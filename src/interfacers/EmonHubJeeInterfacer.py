@@ -144,8 +144,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         except ValueError:
             return
 
-        # Store data as a list of integer values
-        c.realdata = [int(i) for i in f[1:]]
+        try:
+            # Store data as a list of integer values
+            c.realdata = [int(i) for i in f[1:]]
+        except ValueError:
+            return
 
         return c
 
