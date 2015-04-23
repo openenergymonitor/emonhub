@@ -1,7 +1,7 @@
 """class EmonHubMqttGenInterfacer
 
 """
-
+import time
 import paho.mqtt.client as mqtt
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
@@ -35,7 +35,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if not self._connected:
             self._log.info("Connecting to MQTT Server")
             self._mqttc.connect(self._host, self._port, 60)
-        self._mqttc.loop()
+        self._mqttc.loop(0)
         
     def on_connect(self, client, userdata, flags, rc):
         
