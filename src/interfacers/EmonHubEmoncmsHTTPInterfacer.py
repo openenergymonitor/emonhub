@@ -20,11 +20,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'pub_channels':['ch2'],
             
             'apikey': "",
-            'url': "http://emoncms.org"
+            'url': "http://emoncms.org",
+            'senddata': 1,
+            'sendstatus': 0
         }
         
         self.buffer = []
         self.lastsent = time.time() 
+        self.lastsentstatus = time.time()
 
     def receiver(self, cargo):
     
@@ -46,11 +49,17 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     
         now = time.time()
         
-        if (now-self.lastsent)>10:
+        if (now-self.lastsent)>30:
             self.lastsent = now
             # print json.dumps(self.buffer)
-            self.bulkpost(self.buffer)
+            if int(self._settings['senddata']):
+                self.bulkpost(self.buffer)
             self.buffer = []
+            
+        if (now-self.lastsentstatus)>60:
+            self.lastsentstatus = now
+            if int(self._settings['sendstatus']):
+                self.sendstatus()
             
     def bulkpost(self,databuffer):
     
@@ -126,6 +135,15 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         finally:
             return reply
             
+    def sendstatus(self):
+        # MYIP url
+        post_url = self._settings['url']+'/myip/set.json?apikey='
+        # Print info log
+        self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
+        # add apikey
+        post_url = post_url + self._settings['apikey']
+        # send request
+        reply = self._send_post(post_url,None)
             
     def set(self, **kwargs):
         for key,setting in self._settings.iteritems():
