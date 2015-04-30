@@ -334,7 +334,7 @@ class EmonHubInterfacer(threading.Thread):
                 if x == "1":
                     val = txc.realdata[i]
                 else:
-                    val = txc.realdata[i] / float(x)
+                    val = float(txc.realdata[i]) / float(x)
                     if val % 1 == 0:
                         val = int(val)
                 scaled.append(val)
