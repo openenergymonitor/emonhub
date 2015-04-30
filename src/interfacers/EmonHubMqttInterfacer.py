@@ -77,7 +77,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 if topic_parts[3] == "values":
                     nodeid = int(topic_parts[2])
                     
-                    payload = str(nodeid)+","+msg.payload
+                    payload = msg.payload
                     realdata = payload.split(",")
                     self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
 
@@ -85,7 +85,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     rxc.nodeid = nodeid
 
                     if rxc:
-                        rxc = self._process_tx(rxc)
+                        # rxc = self._process_tx(rxc)
                         if rxc:
                             for channel in self._settings["pub_channels"]:
                                 dispatcher.send(channel, cargo=rxc)

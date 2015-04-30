@@ -264,11 +264,9 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._log.warning(self.name + " discarding Tx packet: values out of scope" )
                 return
             payload += str(int(value))+","
-        node = str(f.target - int(self._settings['nodeoffset']))
-        if int(node) < 0 or int(node) > 31:
-            self._log.warning(self.name + " discarding Tx packet: invalid node id" )
-            return
-        payload += node + cmd
+                
+        payload += cmd
+        
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
         self._ser.write(payload)
 

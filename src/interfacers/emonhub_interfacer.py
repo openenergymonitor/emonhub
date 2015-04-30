@@ -288,10 +288,17 @@ class EmonHubInterfacer(threading.Thread):
         txc = cargo
         scaled = []
         encoded = []
+        
+        # Normal operation is dest from txc.nodeid
         if txc.target:
             dest = str(txc.target)
+            # self._log.info("dest from txc.target: "+dest)
         else:
             dest = str(txc.nodeid)
+            # self._log.info("dest from txc.nodeid: "+dest)
+        
+        # self._log.info("Target: "+dest)
+        # self._log.info("Realdata: "+json.dumps(txc.realdata))
 
         # check if node is listed and has individual scales for each value
         if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'scales' in ehc.nodelist[dest]['tx']:
@@ -332,6 +339,8 @@ class EmonHubInterfacer(threading.Thread):
                         val = int(val)
                 scaled.append(val)
 
+        
+        # self._log.info("Scaled: "+json.dumps(scaled))
 
         # check if node is listed and has individual datacodes for each value
         if (dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']):
@@ -369,6 +378,8 @@ class EmonHubInterfacer(threading.Thread):
                 datacode = 0
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
+                encoded.append(dest)
+                
                 for val in scaled:
                     if float(val) % 1 != 0:
                         val = float(val)
@@ -385,6 +396,7 @@ class EmonHubInterfacer(threading.Thread):
                 count = len(scaled) #/ ehc.check_datacode(datacode)
 
         if not encoded:
+            encoded.append(dest)
             for i in range(0, count, 1):
                 # Use single datacode unless datacode = False then use datacodes
                 dc = str(datacode)
@@ -393,6 +405,8 @@ class EmonHubInterfacer(threading.Thread):
                 
                 for b in ehc.encode(dc,int(scaled[i])):
                     encoded.append(b)
+
+        # self._log.info("Encoded: "+json.dumps(encoded))
 
         txc.encoded.update({self.getName():encoded})
         return txc
