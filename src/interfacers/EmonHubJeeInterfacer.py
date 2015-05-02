@@ -71,8 +71,8 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         self._settings.update(self._defaults)
 
         # Jee specific settings to be picked up as changes not defaults to initialise "Jee" device
-        self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True'})
-        self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q'})
+        self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True', 'calibration': '230V'})
+        self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q', 'calibration': 'p'})
 
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
@@ -191,6 +191,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 command = str(setting) + 'g'
             elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
                 command = str(setting) + 'q'
+            elif key == 'calibration' and setting == '230V':
+                command = '1p'
+            elif key == 'calibration' and setting == '110V':
+                command = '2p'
                 
             else:
                 self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
