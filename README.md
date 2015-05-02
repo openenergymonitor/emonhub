@@ -1,4 +1,4 @@
-emonHub
+emonHub (emon-pi variant)
 =======
 This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) experimental branch adding: 
 
