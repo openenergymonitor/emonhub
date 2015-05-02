@@ -15,8 +15,8 @@ class EmonHubTesterInterfacer(EmonHubInterfacer):
         self._name = name
         
         self._settings = {
-            'sub_channels':['ch1'],
-            'pub_channels':['ch2']
+            'subchannels':['ch1'],
+            'pubchannels':['ch2']
         };
         
 
@@ -36,7 +36,7 @@ class EmonHubTesterInterfacer(EmonHubInterfacer):
                 rxc.nodeid = 10
                 rxc.realdata = [100,200,300]
                 
-                for channel in self._settings["pub_channels"]:
+                for channel in self._settings["pubchannels"]:
                     dispatcher.send(channel, cargo=rxc)
                     self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
                   
@@ -56,6 +56,6 @@ class EmonHubTesterInterfacer(EmonHubInterfacer):
                 self._settings[key] = kwargs[key]
         
         # Subscribe to internal channels   
-        for channel in self._settings["sub_channels"]:
+        for channel in self._settings["subchannels"]:
             dispatcher.connect(self.receiver, channel)
             self._log.debug(self._name+" Subscribed to channel' : " + str(channel))

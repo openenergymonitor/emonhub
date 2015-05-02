@@ -47,7 +47,7 @@ class EmonHubInterfacer(threading.Thread):
         # Initialise settings
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
-                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pub_channels':["ch1"],'sub_channels':["ch2"]}
+                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"]}
         self._settings = {}
 
         # This line will stop the default values printing to logfile at start-up
@@ -78,7 +78,7 @@ class EmonHubInterfacer(threading.Thread):
             if rxc:
                 rxc = self._process_rx(rxc)
                 if rxc:
-                    for channel in self._settings["pub_channels"]:
+                    for channel in self._settings["pubchannels"]:
                         dispatcher.send(channel, cargo=rxc)
                         self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
                   
@@ -452,9 +452,9 @@ class EmonHubInterfacer(threading.Thread):
                 pass
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
                 pass
-            elif key == 'pub_channels':
+            elif key == 'pubchannels':
                 pass
-            elif key == 'sub_channels':
+            elif key == 'subchannels':
                 pass
             # elif key == 'rxchannels' and int(setting) >= 0 and int(setting) < 256:
             #     pass
@@ -467,7 +467,7 @@ class EmonHubInterfacer(threading.Thread):
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
             # Is there a better place to put this?    
-            for channel in self._settings["sub_channels"]:
+            for channel in self._settings["subchannels"]:
                 dispatcher.connect(self.receiver, channel)
                 self._log.debug("Interfacer: Subscribed to channel' : " + str(channel))
 

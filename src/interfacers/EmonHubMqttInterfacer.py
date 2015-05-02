@@ -20,8 +20,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         self._connected = False
         
         self._settings = {
-            'sub_channels':['ch1'],
-            'pub_channels':['ch2'],
+            'subchannels':['ch1'],
+            'pubchannels':['ch2'],
             'basetopic': 'emonhub/'
         };
 
@@ -87,7 +87,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     if rxc:
                         # rxc = self._process_tx(rxc)
                         if rxc:
-                            for channel in self._settings["pub_channels"]:
+                            for channel in self._settings["pubchannels"]:
                                 dispatcher.send(channel, cargo=rxc)
                                 self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
 
@@ -109,6 +109,6 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 self._settings[key] = kwargs[key]
         
         # Subscribe to internal channels   
-        for channel in self._settings["sub_channels"]:
+        for channel in self._settings["subchannels"]:
             dispatcher.connect(self.receiver, channel)
             self._log.debug(self._name+" Subscribed to channel' : " + str(channel))

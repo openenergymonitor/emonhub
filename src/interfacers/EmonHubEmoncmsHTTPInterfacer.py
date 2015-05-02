@@ -16,8 +16,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         self._name = name
         
         self._settings = {
-            'sub_channels':['ch1'],
-            'pub_channels':['ch2'],
+            'subchannels':['ch1'],
+            'pubchannels':['ch2'],
             
             'apikey': "",
             'url': "http://emoncms.org",
@@ -152,7 +152,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 self._settings[key] = kwargs[key]
         
         # Subscribe to internal channels
-        for channel in self._settings["sub_channels"]:
+        for channel in self._settings["subchannels"]:
             dispatcher.connect(self.receiver, channel)
             self._log.debug(self._name+" Subscribed to channel' : " + str(channel))
 
