@@ -15,41 +15,9 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 ## Install
 
-Assuming that you have already got emonhub installed via the easy installer here https://github.com/emonhub/dev-emonhub
+Install the emon-pi variant of emonhub:
 
-    git clone https://github.com/emonhub/dev-emonhub.git ~/dev-emonhub && ~/dev-emonhub/install
-
-To switch to this branch (installed alongside existing emonhub branch):
-
-    git clone https://github.com/trystanlea/emonhub.git hub
-    
-Change emonhub /etc/default/emonhub
-
-    sudo nano /etc/default/emonhub
-
-to: 
-
-    ## emonHub settings
-    
-    # Edit this to configure the parameters used in
-    # the /etc/init.d/emonhub script.
-    
-    # This file should be deployed to /etc/default/emonhub
-    # unless you have edited the init.d file to give an
-    # alternate SYSCONF_PATH
-    
-    # Specify the directory in which emonhub.py is found:
-    EMONHUB_PATH=/home/pi/hub/src/
-    
-    # Specify the full config file path:
-    EMONHUB_CONFIG=/home/pi/hub/conf/emonhub.json
-    
-    # Specify the full log file path:
-    EMONHUB_LOG=/var/log/emonhub/emonhub.log
-
-Edit configuration in /home/pi/hub/conf/emonhub.json
-
-    nano /home/pi/hub/conf/emonhub.json
+    git clone https://github.com/openenergymonitor/emonhub.git && emonhub/install
 
 ### Install Dependencies
 
