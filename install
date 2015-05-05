@@ -5,6 +5,14 @@ echo "Emonhub installation script for emonPi"
 ### set git cloned location
 GIT_PATH=/home/pi/emonhub
 
+if [ ! -d /home/pi ] ; then
+  {
+    echo "Directory /home/pi does not exist, this installation script is for raspberrypi installation"
+    exit
+  }
+fi
+
+
 ### set location to install emonhub.py etc
 INST_PATH=/usr/share/emonhub
 
