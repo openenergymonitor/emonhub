@@ -24,18 +24,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         if com_baud != 0:
             super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
         else:
-            for com_baud in (57600, 9600):
-                super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
-                self._ser.write("?")
-                time.sleep(2)
-                self._rx_buf = self._rx_buf + self._ser.readline()
-                if '\r\n' in self._rx_buf or '\x00' in self._rx_buf:
-                    self._ser.flushInput()
-                    self._rx_buf=""
-                    break
-                elif self._ser is not None:
-                    self._ser.close()
-                continue
+            super(EmonHubJeeInterfacer, self).__init__(name, com_port, 38400)
 
         
         # Display device firmware version and current settings
