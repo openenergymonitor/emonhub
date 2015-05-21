@@ -136,6 +136,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return reply
             
     def sendstatus(self):
+        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
+                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+            return
+        
         # MYIP url
         post_url = self._settings['url']+'/myip/set.json?apikey='
         # Print info log
