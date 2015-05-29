@@ -175,7 +175,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 command = str(setting) + 'i'
             elif key == 'frequency' and setting in ['433','868','915']:
                 command = setting[:1] + 'b'
-            elif key == 'group'and int(setting) >=0 and int(setting) <=212:
+            elif key == 'group'and int(setting) >=0 and int(setting) <=250:
                 command = str(setting) + 'g'
             elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
                 command = str(setting) + 'q'
