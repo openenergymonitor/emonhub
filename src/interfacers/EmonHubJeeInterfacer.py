@@ -209,11 +209,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Broadcast time to synchronize emonGLCD
         interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if t - self._interval_timestamp < interval:
-                return
-            now = datetime.datetime.now()
-            self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
-            self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
+            if (t - self._interval_timestamp) > interval:
+                self._interval_timestam = t
+                now = datetime.datetime.now()
+                self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
+                self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
     def send (self, cargo):
         """
