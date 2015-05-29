@@ -212,18 +212,8 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             if t - self._interval_timestamp < interval:
                 return
             now = datetime.datetime.now()
-            hh = now.hour
-            mm = now.minute
-            # TODO EXPERIMENT with non-DST time for economy7
-            #dst=now.hour - time.localtime()[-1]
-            #self._log.debug(self.name + " non-DST adjusted time: %02d:%02d" % (dst, mm))
-            self._interval_timestamp = t
-            n = 0 + int(self._settings['nodeoffset'])
-            packet = new_cargo( realdata = [0,hh,mm,0], target=n)
-            self._log.debug(str(packet.uri) + " broadcast time: %02d:%02d" % (hh, mm))
-
-            self.send(packet)
-            #self.send_packet(packet)
+            self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
+            self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
     def send (self, cargo):
         """
