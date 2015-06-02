@@ -45,6 +45,3 @@ sudo pip install pydispatcher
 
 ### create "emonhub" user
 sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
-
-### start emonhub
-sudo service emonhub restart
