@@ -18,6 +18,7 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 Install the emon-pi variant of emonhub:
 
     git clone https://github.com/openenergymonitor/emonhub.git && emonhub/install
+    sudo service emonhub start
 
 ### Install Dependencies
 
