@@ -1,5 +1,6 @@
 import serial
 import time
+import Cargo
 from pydispatch import dispatcher
 import emonhub_interfacer as ehi
 
@@ -78,7 +79,7 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
         self._rx_buf = ''
 
         # Create a Payload object
-        c = new_cargo(rawdata=f)
+        c = Cargo.new_cargo(rawdata=f)
 
         f = f.split()
 
