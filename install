@@ -3,11 +3,11 @@
 echo "Emonhub installation script for emonPi"
 
 ### set git cloned location
-GIT_PATH=/home/pi/emonhub
+GIT_PATH=/home/debian/emonhub
 
-if [ ! -d /home/pi ] ; then
+if [ ! -d /home/debian ] ; then
   {
-    echo "Directory /home/pi does not exist, this installation script is for raspberrypi installation"
+    echo "Directory /home/debian does not exist, this installation script is for raspberrypi installation"
     exit
   }
 fi
@@ -29,9 +29,9 @@ sudo rm -f /etc/default/emonhub
 sudo ln -s $GIT_PATH/conf/default/emonhub /etc/default/emonhub
 
 ### create folder and move settings file (unless it exists already)
-if [ ! -f /home/pi/data/emonhub.conf ] ; then
+if [ ! -f /home/debian/data/emonhub.conf ] ; then
   {
-    sudo mv $GIT_PATH/conf/emonhub.conf /home/pi/data/emonhub.conf
+    sudo mv $GIT_PATH/conf/emonhub.conf /home/debian/data/emonhub.conf
   }
 fi
 
