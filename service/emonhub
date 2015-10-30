@@ -23,7 +23,7 @@ DAEMONUSER="emonhub"
 SYSCONF_PATH=/etc/default/
 
 # If there's no configuration file, die!!
-[ ! -f $SYSCONF_PATH$NAME ] && echo "Fatal: cannot find $SYSCONF_FILE$NAME config file!" && exit 1
+[ ! -f $SYSCONF_PATH$NAME ] && echo "Fatal: cannot find $SYSCONF_PATH$NAME config file!" && exit 1
 
 # Pull in the config settings and echo them out for easy troubleshooting.
 . $SYSCONF_PATH$NAME
