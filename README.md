@@ -33,3 +33,12 @@ Thanks to pb66: https://github.com/emonhub/emonhub/issues/134
     sudo apt-get install mosquitto python-pip
     sudo pip install paho-mqtt
     sudo pip install pydispatcher
+
+Recommended to turn off mosquitto persistence 
+
+    sudo nano /etc/mosquitto/mosquitto.conf
+
+Set 
+    
+    persistence false
+
