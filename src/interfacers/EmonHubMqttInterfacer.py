@@ -93,6 +93,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def receiver(self, cargo):
         if self._connected:
+            # VALUES
             topic = self._settings["basetopic"]+"rx/"+str(cargo.nodeid)+"/values"
             payload = ",".join(map(str,cargo.realdata))
             
@@ -101,6 +102,17 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             
             if result[0]==4:
                 self._log.info("Publishing error? returned 4")
+                
+            # RSSI
+            topic = self._settings["basetopic"]+"rx/"+str(cargo.nodeid)+"/rssi"
+            payload = str(cargo.rssi)
+            
+            self._log.info("Publishing: "+topic+" "+payload)
+            result =self._mqttc.publish(topic, payload=payload, qos=0, retain=False)
+            
+            if result[0]==4:
+                self._log.info("Publishing error? returned 4")
+                
     
     def set(self, **kwargs):
         for key,setting in self._settings.iteritems():
