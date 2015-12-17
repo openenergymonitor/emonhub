@@ -9,14 +9,16 @@ import Cargo
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, mqtt_host="127.0.0.1", mqtt_port=1883):
+    def __init__(self, name, mqtt_user, mqtt_passwd, mqtt_host="127.0.0.1", mqtt_port=1883):
         # Initialization
         super(EmonHubMqttInterfacer, self).__init__(name)
         
-        self._log.info(str(name)+" Init mqtt_host="+str(mqtt_host)+" mqtt_port="+str(mqtt_port))
+        self._log.info(str(name)+" Init mqtt_host="+str(mqtt_host)+" mqtt_port="+str(mqtt_port)+ " mqtt_user="+str(mqtt_user))
         self._name = name
         self._host = mqtt_host
         self._port = mqtt_port
+        self._user = mqtt_user
+        self._passwd = mqtt_passwd
         self._connected = False
         
         self._settings = {
@@ -36,6 +38,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if not self._connected:
             self._log.info("Connecting to MQTT Server")
             try:
+                self._mqttc.username_pw_set(self._user, self._passwd)
                 self._mqttc.connect(self._host, self._port, 60)
             except:
                 self._log.info("Could not connect...")
