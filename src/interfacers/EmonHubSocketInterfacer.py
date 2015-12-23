@@ -1,3 +1,7 @@
+import socket
+import select
+import Cargo
+
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 
@@ -87,7 +91,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         f, self._sock_rx_buf = self._sock_rx_buf.split('\r\n', 1)
 
         # create a new cargo
-        c = new_cargo(rawdata=f)
+        c = Cargo.new_cargo(rawdata=f)
 
         # Split string into values
         f = f.split(' ')
