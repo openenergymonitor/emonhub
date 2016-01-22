@@ -66,14 +66,23 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
         """
 
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline()
+        try:
+            self._rx_buf = self._rx_buf + self._ser.readline()
+        except Exception,e:
+            self._log.error(e)
+            self._rx_buf = ""
+            
         
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
             return
 
         # Remove CR,LF
-        f = self._rx_buf[:-2]
+        #self._log.debug("RAW DATA %S" %self._rx_buf)
+        
+        #remove any trailing null or whitespace characters
+        f = self._rx_buf[:-2].strip()
+        f = f.strip('\x00')
 
         # Reset buffer
         self._rx_buf = ''
@@ -81,14 +90,14 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
         # Create a Payload object
         c = Cargo.new_cargo(rawdata=f)
 
-        f = f.split()
-
-        if int(self._settings['nodeoffset']):
-            c.nodeid = int(self._settings['nodeoffset'])
-            c.realdata = f
-        else:
-            c.nodeid = int(f[0])
-            c.realdata = f[1:]
+        f = f.split()	
+	if f:
+	        if int(self._settings['nodeoffset']):
+                    c.nodeid = int(self._settings['nodeoffset'])
+                    c.realdata = f
+                else:
+                    c.nodeid = int(f[0])
+                    c.realdata = f[1:]
 
         return c
 

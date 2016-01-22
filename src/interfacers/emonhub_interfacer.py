@@ -144,9 +144,12 @@ class EmonHubInterfacer(threading.Thread):
 
         # Discard if anything non-numerical found
         try:
-            [float(val) for val in rxc.realdata]
+            tempval = 0
+            for val in rxc.realdata:
+		tempval = float(val)
+            #[float(val) for val in rxc.realdata]
         except Exception:
-            self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata))
+            self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata) + "value: " + str(tempval))
             return False
             
         # Discard if first value is not a valid node id
