@@ -96,6 +96,8 @@ Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
 
 ### EmonTx Shield
 
+Firmware location: [Shield_CT1234_Voltage.ino](https://github.com/openenergymonitor/emonTxFirmware/blob/master/emonTxShield/Shield_CT1234_Voltage/Shield_CT1234_Voltage.ino)
+
     [[6]]
         nodename = emonTxShield
         firmware =emonTxShield
