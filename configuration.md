@@ -35,3 +35,29 @@ Copied here for reference:
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 
            units =W,W,W,W,V,C,C,C,C,C,C,p
+
+### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6
+
+Can be on either nodeid 10 or 9
+
+    [[10]]
+        nodename = emonTx_1
+        firmware =V1_6_emonTxV3_4_DiscreteSampling
+        hardware = emonTx_(NodeID_DIP_Switch1:OFF)
+        [[[rx]]]
+           names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
+           datacode = h
+           scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 #Firmware V1.6
+           units =W,W,W,W,V,C,C,C,C,C,C,p
+           
+### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, <v1.4
+
+    [[10]]
+        nodename = emonTx_1
+        firmware =V1_6_emonTxV3_4_DiscreteSampling
+        hardware = emonTx_(NodeID_DIP_Switch1:OFF)
+        [[[rx]]]
+           names = power1, power2, power3, power4, Vrms, temp
+           datacode = h
+           scales = 1,1,1,1,0.01,0.1
+           units =W,W,W,W,V,C
