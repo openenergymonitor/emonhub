@@ -14,11 +14,27 @@ Its possible to decode any radio packet that is packed as a binary structure wit
            
 The node decoder could be left as this if we only wanted to decode the packet structure correctly. Alternatively if the packet structure is a series of integers its possible to write:
 
-    [[8]]
+    [[1]]
         [[[rx]]]
            datacode = h
            
-Notice that the name is datacode rather than datacode**s** with an s
+Notice that the name is datacode rather than datacode**s** with an s. There are 13 different datatypes that can be decoded:
+
+    b: byte, 1 byte
+    h: short integer, 2 bytes
+    i: integer, 4 bytes
+    l: long, 4 bytes
+    q: long long, 8 bytes
+    f: float, 4 bytes
+    d: double, 8 bytes
+    B: unsigned byte, 1 byte
+    H: unsigned integer, 2 bytes
+    I: unsigned integer, 4 bytes
+    L: unsinged long, 4 bytes
+    Q: unsinged long long, 8 bytes
+    c: char, 1 byte
+    
+**Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
 
 ## Standard node decoders
 
