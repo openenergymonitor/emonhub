@@ -223,16 +223,19 @@ class EmonHubInterfacer(threading.Thread):
         # check if node is listed and has individual scales for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scales' in ehc.nodelist[node]['rx']:
             scales = ehc.nodelist[node]['rx']['scales']
+            # === Removed check for scales length so that failure mode is more gracious ===
             # Discard the frame & return 'False' if it doesn't match the number of scales
-            if len(decoded) != len(scales):
-                self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " for RX data : " + str(rxc.realdata) +
-                                  " not suitable " )
-                return False
-            else:
-                # Determine the expected number of values to be decoded
-
-                # Set decoder to "Per value" scaling using scale 'False' as flag
+            # if len(decoded) != len(scales):
+            #     self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " for RX data : " + str(rxc.realdata) + " not suitable " )
+            #     return False
+            # else:
+                  # Determine the expected number of values to be decoded
+                  # Set decoder to "Per value" scaling using scale 'False' as flag
+            #     scale = False
+            if len(scales)>1:
                 scale = False
+            else:
+                scale = "1"
         else:
             # if node is listed, but has only a single default scale for all values
             if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scale' in ehc.nodelist[node]['rx']:
@@ -241,12 +244,14 @@ class EmonHubInterfacer(threading.Thread):
             # when node not listed or has no scale(s) use the interfacers default if specified
                 scale = self._settings['scale']
 
-
         if not scale == "1":
             for i in range(0, len(decoded), 1):
                 x = scale
                 if not scale:
-                    x = scales[i]
+                    if i<len(scales):
+                        x = scales[i]
+                    else:
+                        x = 1
                 
                 if x != "1":
                     val = decoded[i] * float(x)
