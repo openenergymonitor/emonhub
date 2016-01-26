@@ -1,0 +1,9 @@
+[[20]]
+    nodename = emonTH_2
+    firmware = emonTH_DHT22_DS18B20_RFM69CW
+    hardware = emonTH_(Node_ID_Switch_DIP1:ON_DIP2:OFF)
+    [[[rx]]]
+       names = temperature, external temperature, humidity, battery
+       datacode = h
+       scales = 0.1,0.1,0.1,0.1
+       units = C,C,%,V

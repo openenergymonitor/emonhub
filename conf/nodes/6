@@ -1,0 +1,9 @@
+[[6]]
+    nodename = emonTxShield
+    firmware =emonTxShield
+    hardware = emonTxShield
+    [[[rx]]]
+       names = power1, power2, power3, power4, Vrms
+       datacode = h
+       scales = 1,1,1,1,0.01
+       units =W,W,W,W,V
