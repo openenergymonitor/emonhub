@@ -84,7 +84,7 @@ Firmware location: [emonTH_DHT22_DS18B20_RFM69CW.ino](https://github.com/openene
 
 Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
 
-    [[29]]
+    [[19]]
         nodename = emonTH_1
         firmware = emonTH_DHT22_DS18B20_RFM69CW
         hardware = emonTH_(Node_ID_Switch_DIP1:OFF_DIP2:OFF)
