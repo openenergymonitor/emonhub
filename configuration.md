@@ -5,6 +5,7 @@
 ### EmonPi: emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino, v2.1
 
 Node struct definition [emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino#L115](https://github.com/openenergymonitor/emonpi/blob/master/Atmega328/emonPi_RFM69CW_RF12Demo_DiscreteSampling/emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino#L115)
+
 Node emonhub.conf definition [emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino#L38](https://github.com/openenergymonitor/emonpi/blob/master/Atmega328/emonPi_RFM69CW_RF12Demo_DiscreteSampling/emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino#L38)
 
 copied here for reference:
