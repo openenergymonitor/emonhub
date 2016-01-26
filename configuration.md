@@ -6,6 +6,20 @@ An un-configured Emonhub will by default assume that RFM12 or RFM69 data packets
 
 Earlier OpenEnergyMonitor nodes always sent a series of integers and so no decoder configuration was needed, more recent revisions now include the sending of pulse counts or watt hours which would overrun the maximum value that can be sent as an integer. The latest EmonPi, EmonTx3 and EmonTH firmware's all send pulse count as long datatypes at the end of their packets taking up 4 bytes.
 
+Its possible to decode any radio packet that is packed as a binary structure with Emonhub. For example if we look at the relevant part of the node decoder for the emontx v3 we can see 11 integers (h) and one unsigned long at the end (L)
+
+    [[8]]
+        [[[rx]]]
+           datacodes = h,h,h,h,h,h,h,h,h,h,h,L
+           
+The node decoder could be left as this if we only wanted to decode the packet structure correctly. Alternatively if the packet structure is a series of integers its possible to write:
+
+    [[8]]
+        [[[rx]]]
+           datacode = h
+           
+Notice that the name is datacode rather than datacode**s** with an s
+
 ## Standard node decoders
 
 The following lists the standard node decoders for recent versions of the EmonPi, EmonTx v3, EmonTH and EmonTxShield. These are currently included in emonhub.conf and provide automatic decoding of node data.
