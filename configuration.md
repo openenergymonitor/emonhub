@@ -93,3 +93,15 @@ Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
            datacode = h
            scales = 0.1,0.1,0.1,0.1
            units = C,C,%,V
+
+### EmonTx Shield
+
+    [[6]]
+        nodename = emonTxShield
+        firmware =emonTxShield
+        hardware = emonTxShield
+        [[[rx]]]
+           names = power1, power2, power3, power4, Vrms
+           datacode = h
+           scales = 1,1,1,1,0.01
+           units =W,W,W,W,V
