@@ -1,6 +1,10 @@
 # EmonHub Configuration
 
-## Latest node decoders
+## Standard node decoders
+
+The following lists the standard node decoders for recent versions of the EmonPi, EmonTx v3, EmonTH and EmonTxShield. These are currently included in emonhub.conf and provide automatic decoding of node data.
+
+If you upload the firmware yourself to any of these nodes and wish to have the data decoded with names, units and scaled correctly these are the decoders for the standard firmwares. The node decoders are also included at the top of each firmware file for reference.
 
 ### EmonPi: emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino, v2.1+
 
