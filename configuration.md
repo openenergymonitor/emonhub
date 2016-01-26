@@ -2,7 +2,7 @@
 
 ## Latest node decoders
 
-### EmonPi: emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino, v2.1
+### EmonPi: emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino, v2.1+
 
 Firmware location: [emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino](https://github.com/openenergymonitor/emonpi/blob/master/Atmega328/emonPi_RFM69CW_RF12Demo_DiscreteSampling/emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino)
 
@@ -18,7 +18,7 @@ Copied here for reference:
             scales = 1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
             units = W,W,W,V,C,C,C,C,C,C,p
 
-### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v2.3
+### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v2.3+
 
 Firmware location: [emonTxV3_4_DiscreteSampling.ino](https://github.com/openenergymonitor/emonTxFirmware/blob/master/emonTxV3/RFM/emonTxV3.4/emonTxV3_4_DiscreteSampling/emonTxV3_4_DiscreteSampling.ino)
 
@@ -36,7 +36,7 @@ Copied here for reference:
            scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 
            units =W,W,W,W,V,C,C,C,C,C,C,p
 
-### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6
+### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6+
 
 Can be on either nodeid 10 or 9
 
@@ -61,3 +61,35 @@ Can be on either nodeid 10 or 9
            datacode = h
            scales = 1,1,1,1,0.01,0.1
            units =W,W,W,W,V,C
+
+### EmonTH, emonTH_DHT22_DS18B20_RFM69CW_Pulse.ino, v2.6+
+
+Firmware location: [emonTH_DHT22_DS18B20_RFM69CW_Pulse.ino](https://github.com/openenergymonitor/emonTH/blob/master/emonTH_DHT22_DS18B20_RFM69CW_Pulse/emonTH_DHT22_DS18B20_RFM69CW_Pulse.ino)
+
+Standard nodeid's: 23, 24, 25 & 26 depending on DIP switch positions:
+
+    [[23]]
+        nodename = emonTH_5
+        firmware = V2.x_emonTH_DHT22_DS18B20_RFM69CW_Pulse
+        hardware = emonTH_(Node_ID_Switch_DIP1:OFF_DIP2:OFF)
+        [[[rx]]]
+           names = temperature, external temperature, humidity, battery, pulseCount
+           datacodes = h,h,h,h,L
+           scales = 0.1,0.1,0.1,0.1,1
+           units = C,C,%,V,p
+
+### EmonTH, emonTH_DHT22_DS18B20_RFM69CW.ino v1.5 -> v1.6.1
+
+Firmware location: [emonTH_DHT22_DS18B20_RFM69CW.ino](https://github.com/openenergymonitor/emonTH/blob/master/emonTH_DHT22_DS18B20_RFM69CW/emonTH_DHT22_DS18B20_RFM69CW.ino)
+
+Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
+
+    [[29]]
+        nodename = emonTH_1
+        firmware = emonTH_DHT22_DS18B20_RFM69CW
+        hardware = emonTH_(Node_ID_Switch_DIP1:OFF_DIP2:OFF)
+        [[[rx]]]
+           names = temperature, external temperature, humidity, battery
+           datacode = h
+           scales = 0.1,0.1,0.1,0.1
+           units = C,C,%,V
