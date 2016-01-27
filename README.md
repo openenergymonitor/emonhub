@@ -11,16 +11,7 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - json based config file option so that emonhub.conf can be loaded by emoncms - intention is to provide config interface in emoncms.
 
 
-
-
-## Install
-
-Install the emon-pi variant of emonhub:
-
-    git clone https://github.com/openenergymonitor/emonhub.git && emonhub/install
-    sudo service emonhub start
-
-### Install Dependencies
+## Install Dependencies
 
 Thanks to pb66: https://github.com/emonhub/emonhub/issues/134
 
@@ -30,9 +21,10 @@ Thanks to pb66: https://github.com/emonhub/emonhub/issues/134
     sudo wget http://repo.mosquitto.org/debian/mosquitto-jessie.list
     apt-get update
     
-    sudo apt-get install mosquitto python-pip
+    sudo apt-get install -y python-serial python-configobj mosquitto python-pip
     sudo pip install paho-mqtt
     sudo pip install pydispatcher
+    
 
 Recommended to turn off mosquitto persistence 
 
@@ -41,4 +33,17 @@ Recommended to turn off mosquitto persistence
 Set 
     
     persistence false
+
+## Install
+
+Install the emon-pi variant of emonhub:
+
+    git clone https://github.com/openenergymonitor/emonhub.git && emonhub/install
+    sudo service emonhub start
+
+## Install EmonHub Emoncms config module 
+
+(optional)
+
+https://github.com/emoncms/config
 
