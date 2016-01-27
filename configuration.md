@@ -2,7 +2,7 @@
 
 ## Node configuration
 
-The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RFM69 nodes. Here's an example of what this section looks like from the default emonpi emonhub.conf. The rest of this readme explains the different parts of node configuration.  
+The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RFM69 nodes. Here's an example of what this section looks like from the default emonpi emonhub.conf. The rest of this readme explains what each line means and how to write your own node decoders or adapt existing decoders for new requirements.
 
     #######################################################################
     #######################          Nodes          #######################
