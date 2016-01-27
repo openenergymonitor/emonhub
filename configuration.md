@@ -135,7 +135,7 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
 
 ### Names
 
-Its possible to specify sensor value names to help with identification. The emoncms nodes module can also load these names for its node list. Another possibility not yet implmented is to use these names to publish sensor values to MQTT topics of the form nodes/emontx/power1.
+Its possible to specify sensor value names to help with identification. The emoncms nodes module can also load these names for its node list. Another possibility not yet implemented is to use these names to publish sensor values to MQTT topics of the form nodes/emontx/power1.
 
     [[8]]
         [[[rx]]]
@@ -154,7 +154,7 @@ The scales to be applied can either be specified for each sensor value as in thi
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scales = 1,1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
            
-In this example the RMS Voltage is multipled by 0.01 and temperature values by 0.1. Which means that the RMS voltage was multipled by 100x and temperature values by 10x on the emontx.
+In this example the RMS Voltage is multiplied by 0.01 and temperature values by 0.1. Which means that the RMS voltage was multiplied by 100x and temperature values by 10x on the emontx.
 
 or a single scale can be applied (note scale instead of scale**s** with an s)
 
