@@ -38,6 +38,15 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
     
 **Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
 
+### Names
+
+Its possible to specify sensor value names to help with identification. The emoncms nodes module can also load these names for its node list. Another possibility not yet implmented is to use these names to publish sensor values to MQTT topics of the form nodes/emontx/power1.
+
+    [[8]]
+        [[[rx]]]
+           names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
+           datacodes = h,h,h,h,h,h,h,h,h,h,h,L
+
 ### Scales
 
 In order to keep radio packet length small a sensor value measured as a float on an emontx or emonth (i.e temperature) is first multiplied by 10x or 100x, then sent as a 2-byte integer in the radio packet and then scaled back to the original value on receipt in emonhub. This saves 2 bytes per sensor value and provides a convenient way of providing 1 or 2 decimal place resolution.
@@ -46,8 +55,11 @@ The scales to be applied can either be specified for each sensor value as in thi
 
     [[8]]
         [[[rx]]]
+           names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scales = 1,1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
+           
+In this example the RMS Voltage is multipled by 0.01 and temperature values by 0.1. Which means that the RMS voltage was multipled by 100x and temperature values by 10x on the emontx.
 
 or a single scale can be applied (note scale instead of scale**s** with an s)
 
