@@ -2,6 +2,8 @@
 
 ## Node configuration
 
+### Datacodes
+
 An un-configured Emonhub will by default assume that RFM12 or RFM69 data packets received are a series of integers, each 2 bytes long. The radio packet format is quite minimal and non-descriptive and so emonhub cant know how to decode the packets from the received data if the packet structure is any different.
 
 Earlier OpenEnergyMonitor nodes always sent a series of integers and so no decoder configuration was needed, more recent revisions now include the sending of pulse counts or watt hours which would overrun the maximum value that can be sent as an integer. The latest EmonPi, EmonTx3 and EmonTH firmware's all send pulse count as long datatypes at the end of their packets taking up 4 bytes.
@@ -35,6 +37,28 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
     c: char, 1 byte
     
 **Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
+
+### Scales
+
+In order to keep radio packet length small a sensor value measured as a float on an emontx or emonth (i.e temperature) is first multiplied by 10x or 100x, then sent as a 2-byte integer in the radio packet and then scaled back to the original value on receipt in emonhub. This saves 2 bytes per sensor value and provides a convenient way of providing 1 or 2 decimal place resolution.
+
+The scales to be applied can either be specified for each sensor value as in this example for the emontx:
+
+    [[8]]
+        [[[rx]]]
+           datacodes = h,h,h,h,h,h,h,h,h,h,h,L
+           scales = 1,1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
+
+or a single scale can be applied (note scale instead of scale**s** with an s)
+
+    [[8]]
+        [[[rx]]]
+           datacodes = h,h,h,h,h,h,h,h,h,h,h,L
+           scale = 1
+           
+The default scale value is 1 and so in the scale where no scaling is needed this line can be left out of the configuration.
+
+The latest version of the emon-pi variant of emonhub does not require the number of scales to match the number of variables, it will scale according to the scales available or scale by 1 if scales are not available.
 
 ## Standard node decoders
 
