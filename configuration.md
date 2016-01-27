@@ -1,11 +1,56 @@
 # EmonHub Configuration
 
-1. Sending data to emoncms.org or other remote emoncms installation
+1. Publishing to MQTT
+2. Sending data to emoncms.org or other remote emoncms installation
 2. Node configuration
+
+## Publishing to MQTT
+
+Emonhub supports publishing and subscribing to MQTT topics through the EmonHubMqttInterfacer, defined in the interfacers section of emonhub.conf. 
+
+There are two formats that can be used for publishing node data to MQTT:
+
+**Node only format** 
+
+    topic: basetopic/rx/10/values
+    payload: 100,200,300
+    
+The node only format is currently used with the emoncms nodes module.
+
+**Node variable format**
+
+    topic: basetopic/emontx/power1
+    payload: 100
+
+This format is a more generic MQTT publishing format that can more easily be used by applications such as nodered and openhab. This format can also be used with the emoncms phpmqtt_input.php script in conjunction with the emoncms inputs module.
+
+The emonhub.conf MQTT config looks like this:
+
+    [[MQTT]]
+        Type = EmonHubMqttInterfacer
+        [[[init_settings]]]
+            mqtt_host = 127.0.0.1
+            mqtt_port = 1883
+            mqtt_user = emonpi
+            mqtt_passwd = emonpimqtt2016
+
+        [[[runtimesettings]]]
+            pubchannels = ToRFM12,
+            subchannels = ToEmonCMS,
+
+            # emonhub/rx/10/values format - default emoncms nodes module
+            node_format_enable = 1
+            node_format_basetopic = emonhub/
+            
+            # nodes/emontx/power1 format
+            nodevar_format_enable = 0
+            nodevar_format_basetopic = nodes/
+            
+To enable the node variable format set nodevar_format_enable = 1. To disable the node only format set node_format_enable = 0.
 
 ## Sending data to emoncms.org or other remote emoncms installation
 
-The EmonHubEmoncmsHTTPInterfacer interfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
+The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
             
     [[emoncmsorg]]
         Type = EmonHubEmoncmsHTTPInterfacer
