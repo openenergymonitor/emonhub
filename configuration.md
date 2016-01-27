@@ -5,7 +5,7 @@
 
 ## Sending data to emoncms.org or other remote emoncms installation
 
-The EmonHubEmoncmsHTTPInterfacer interfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the online change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
+The EmonHubEmoncmsHTTPInterfacer interfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
             
     [[emoncmsorg]]
         Type = EmonHubEmoncmsHTTPInterfacer
@@ -82,8 +82,8 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
     B: unsigned byte, 1 byte
     H: unsigned integer, 2 bytes
     I: unsigned integer, 4 bytes
-    L: unsinged long, 4 bytes
-    Q: unsinged long long, 8 bytes
+    L: unsigned long, 4 bytes
+    Q: unsigned long long, 8 bytes
     c: char, 1 byte
     
 **Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
