@@ -1,5 +1,28 @@
 # EmonHub Configuration
 
+1. Sending data to emoncms.org or other remote emoncms installation
+2. Node configuration
+
+## Sending data to emoncms.org or other remote emoncms installation
+
+The EmonHubEmoncmsHTTPInterfacer interfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the online change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
+            
+    [[emoncmsorg]]
+        Type = EmonHubEmoncmsHTTPInterfacer
+        [[[init_settings]]]
+        [[[runtimesettings]]]
+            pubchannels = ToRFM12,
+            subchannels = ToEmonCMS,
+            url = http://emoncms.org
+            apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            senddata = 1
+            sendstatus = 1
+            
+
+**sendstatus** Its possible to the EmonHubEmoncmsHTTPInterfacer to send a 'ping' to the destination emoncms that can be picked up by the myip module which will then list the source IP address. This can be useful for remote login to an home emonpi if port forwarding is enabled on your router.
+
+**senddata** If you only want to send the ping request and no data to emoncms.org set this to 0
+
 ## Node configuration
 
 The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RFM69 nodes. Here's an example of what this section looks like from the default emonpi emonhub.conf. The rest of this readme explains what each line means and how to write your own node decoders or adapt existing decoders for new requirements.
