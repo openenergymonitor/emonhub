@@ -72,6 +72,17 @@ The default scale value is 1 and so in the scale where no scaling is needed this
 
 The latest version of the emon-pi variant of emonhub does not require the number of scales to match the number of variables, it will scale according to the scales available or scale by 1 if scales are not available.
 
+### Units
+
+It's also possible to specify sensor value units to help with identification. The are currently only made use of in the emoncms nodes module.
+
+    [[8]]
+        [[[rx]]]
+           names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
+           datacodes = h,h,h,h,h,h,h,h,h,h,h,L
+           scales = 1,1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
+           units =W,W,W,W,V,C,C,C,C,C,C,p
+
 ## Standard node decoders
 
 The following lists the standard node decoders for recent versions of the EmonPi, EmonTx v3, EmonTH and EmonTxShield. These are currently included in emonhub.conf and provide automatic decoding of node data.
