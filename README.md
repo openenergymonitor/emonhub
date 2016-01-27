@@ -10,7 +10,7 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - Rx and tx modes for node decoding/encoding provides improved control support.
 - json based config file option so that emonhub.conf can be loaded by emoncms - intention is to provide config interface in emoncms.
 
-(emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
+## [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
 ## Install Dependencies
 
