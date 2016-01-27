@@ -24,7 +24,14 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         self._settings = {
             'subchannels':['ch1'],
             'pubchannels':['ch2'],
-            'basetopic': 'emonhub/'
+            
+            # emonhub/rx/10/values format - default emoncms nodes module
+            'node_format_enable': 1,
+            'node_format_basetopic': 'emonhub/',
+            
+            # nodes/emontx/power1 format
+            'nodevar_format_enable': 0,
+            'nodevar_format_basetopic': "nodes/"
         };
 
         self._mqttc = mqtt.Client()
@@ -60,7 +67,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.info("connection status: "+connack_string[rc])
             self._connected = True
             # Subscribe to MQTT topics
-            self._mqttc.subscribe(str(self._settings["basetopic"])+"tx/#")
+            self._mqttc.subscribe(str(self._settings["node_format_basetopic"])+"tx/#")
             
         self._log.debug("CONACK => Return code: "+str(rc))
 
@@ -75,7 +82,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     def on_message(self, client, userdata, msg):
         topic_parts = msg.topic.split("/")
         
-        if topic_parts[0] == self._settings["basetopic"][:-1]:
+        if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
             if topic_parts[1] == "tx":
                 if topic_parts[3] == "values":
                     nodeid = int(topic_parts[2])
@@ -96,25 +103,62 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def receiver(self, cargo):
         if self._connected:
-            # VALUES
-            topic = self._settings["basetopic"]+"rx/"+str(cargo.nodeid)+"/values"
-            payload = ",".join(map(str,cargo.realdata))
+            # ----------------------------------------------------------
+            # General MQTT format: emonhub/rx/emonpi/power1 ... 100
+            # ----------------------------------------------------------
+            if int(self._settings["nodevar_format_enable"])==1:
             
-            self._log.info("Publishing: "+topic+" "+payload)
-            result =self._mqttc.publish(topic, payload=payload, qos=0, retain=False)
-            
-            if result[0]==4:
-                self._log.info("Publishing error? returned 4")
+                # Node id or nodename if given
+                nodestr = str(cargo.nodeid)
+                if cargo.nodename!=False: nodestr = str(cargo.nodename)
                 
-            # RSSI
-            topic = self._settings["basetopic"]+"rx/"+str(cargo.nodeid)+"/rssi"
-            payload = str(cargo.rssi)
+                varid = 1
+                for value in cargo.realdata:
+                    # Variable id or variable name if given
+                    varstr = str(varid)
+                    if (varid-1)<len(cargo.names):
+                        varstr = str(cargo.names[varid-1])
+                    # Construct topic
+                    topic = self._settings["nodevar_format_basetopic"]+nodestr+"/"+varstr
+                    payload = str(value)
+                    
+                    self._log.info("Publishing: "+topic+" "+payload)
+                    result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
+                    
+                    if result[0]==4:
+                        self._log.info("Publishing error? returned 4")
+                    
+                    varid += 1
+                    
+                # RSSI
+                topic = self._settings["nodevar_format_basetopic"]+nodestr+"/rssi"
+                payload = str(cargo.rssi)
+                self._log.info("Publishing: "+topic+" "+payload)
+                result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
             
-            self._log.info("Publishing: "+topic+" "+payload)
-            result =self._mqttc.publish(topic, payload=payload, qos=0, retain=False)
+            # ----------------------------------------------------------    
+            # Emoncms nodes module format: emonhub/rx/10/values ... 100,200,300
+            # ----------------------------------------------------------
+            if int(self._settings["node_format_enable"])==1:
             
-            if result[0]==4:
-                self._log.info("Publishing error? returned 4")
+                topic = self._settings["node_format_basetopic"]+"rx/"+str(cargo.nodeid)+"/values"
+                payload = ",".join(map(str,cargo.realdata))
+                
+                self._log.info("Publishing: "+topic+" "+payload)
+                result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
+                
+                if result[0]==4:
+                    self._log.info("Publishing error? returned 4")
+                    
+                # RSSI
+                topic = self._settings["node_format_basetopic"]+"rx/"+str(cargo.nodeid)+"/rssi"
+                payload = str(cargo.rssi)
+                
+                self._log.info("Publishing: "+topic+" "+payload)
+                result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
+                
+                if result[0]==4:
+                    self._log.info("Publishing error? returned 4")
                 
     
     def set(self, **kwargs):
