@@ -2,6 +2,33 @@
 
 ## Node configuration
 
+The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RFM69 nodes. Here's an example of what this section looks like from the default emonpi emonhub.conf. The rest of this readme explains the different parts of node configuration.  
+
+    #######################################################################
+    #######################          Nodes          #######################
+    #######################################################################
+    
+    [nodes]
+    
+    ### List of nodes by node ID
+    ### 'datacode' is default for node and 'datacodes' are per value data codes.
+    ### if both are present 'datacode' is ignored in favour of 'datacodes'
+    ### eg node 99 would expect 1 long and 4 ints, unless the "datacodes" line
+    ### was removed, then "datacode" would make it expect any number of longs,
+    ### likewise per value "scales" will override default node "scale"
+    
+    [[5]]
+    nodename = emonPi
+    firmware = emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino
+    hardware = emonpi
+    [[[rx]]]
+        names = power1,power2,power1_plus_power2,Vrms,T1,T2,T3,T4,T5,T6,pulseCount
+        datacodes = h, h, h, h, h, h, h, h, h, h, L
+        scales = 1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
+        units = W,W,W,V,C,C,C,C,C,C,p
+        
+    ...
+
 ### Datacodes
 
 An un-configured Emonhub will by default assume that RFM12 or RFM69 data packets received are a series of integers, each 2 bytes long. The radio packet format is quite minimal and non-descriptive and so emonhub cant know how to decode the packets from the received data if the packet structure is any different.
