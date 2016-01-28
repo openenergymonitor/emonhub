@@ -126,9 +126,9 @@ Indicates the host environment. *This field is optional.*
 
 ### rx
 
-[[[rx]]]
+    [[[rx]]]
     
-This must be "rx" and specifies the config for the sensor values received from a node. Its also possible to define a "tx" section for variables to be sent to the node such as control state's. Documentation on this to be added.
+This must be "rx" and specifies that the next section is for the config of the sensor values received from a node. Its also possible to define a "tx" section for variables to be sent to the node such as control state's. Documentation on this to be added.
 
 ### Datacodes
 
