@@ -22,7 +22,7 @@ The node only format is currently used with the emoncms nodes module.
     topic: basetopic/emontx/power1
     payload: 100
 
-This format is a more generic MQTT publishing format that can more easily be used by applications such as nodered and openhab. This format can also be used with the emoncms phpmqtt_input.php script in conjunction with the emoncms inputs module.
+This format is a more generic MQTT publishing format that can more easily be used by applications such as nodered and openhab. This format can also be used with the emoncms phpmqtt_input.php script in conjunction with the emoncms inputs module. See emoncms readme on [enabling MQTT for more info](https://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md). 
 
 The emonhub.conf MQTT config looks like this:
 
