@@ -3,6 +3,7 @@
 1. Publishing to MQTT
 2. Sending data to emoncms.org or other remote emoncms installation
 2. Node configuration
+3. Troubleshooting
 
 ## Publishing to MQTT
 
@@ -289,3 +290,9 @@ Firmware location: [Shield_CT1234_Voltage.ino](https://github.com/openenergymoni
            datacode = h
            scales = 1,1,1,1,0.01
            units =W,W,W,W,V
+
+## Troubleshooting
+
+### Node data inactive or, node data does not appear for a configured node
+
+Try replacing the datacodes = h,h,h,h,... line with **datacode = h** (note: datacode without an s). This will decode most of the radio packet content for the standard OpenEnergyMonitor emontx,emonth and emonpi firmwares, including historic versions.
