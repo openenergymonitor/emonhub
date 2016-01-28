@@ -328,3 +328,7 @@ Firmware location: [Shield_CT1234_Voltage.ino](https://github.com/openenergymoni
 ### Node data inactive or, node data does not appear for a configured node
 
 Try replacing the datacodes = h,h,h,h,... line with **datacode = h** (note: datacode without an s). This will decode most of the radio packet content for the standard OpenEnergyMonitor emontx,emonth and emonpi firmwares, including historic versions.
+
+### The data still does not appear on the nodeid I expect
+
+The EmonTx and EmonTH nodes both have switches on their circuit boards for changing the nodeid to save having to reprogram. Depending on the switch positions and firmware version the EmonTx v3 can be on node 7,8,9 or 10. The EmonTH can be on 19,20,21,22,23,24,25 or 26.
