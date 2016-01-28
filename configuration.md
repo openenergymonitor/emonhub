@@ -110,6 +110,8 @@ A numeric NodeID. This identifies the node to emonHub, and every node within you
     
 A text string, for your benefit in identifying each node. *This field is optional.*
 
+MQTT: The nodename can be used with the MQTT interfacer to send topics of the form nodes/nodename/variablename. 
+
 ### firmware
 
     firmware =
@@ -121,6 +123,12 @@ A text string specifying the sketch running on the node. (At present, this is fo
     hardware =
 
 Indicates the host environment. *This field is optional.*
+
+### rx
+
+[[[rx]]]
+    
+This must be "rx" and specifies the config for the sensor values received from a node. Its also possible to define a "tx" section for variables to be sent to the node such as control state's. Documentation on this to be added.
 
 ### Datacodes
 
