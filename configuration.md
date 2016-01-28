@@ -202,7 +202,7 @@ The latest version of the emon-pi variant of emonhub does not require the number
 
 ### Units
 
-It's also possible to specify sensor value units to help with identification. The are currently only made use of in the emoncms nodes module.
+A comma-separated list of engineering units to describe the data. Common units are W, kW, V, A, C, %. These are only to help with identification. The are currently made use of in the emoncms nodes module UI.
 
     [[8]]
         [[[rx]]]
