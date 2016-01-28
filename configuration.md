@@ -98,6 +98,30 @@ The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RF
         
     ...
 
+### NodeID
+
+    [[10]]
+
+A numeric NodeID. This identifies the node to emonHub, and every node within your system must have a unique ID. There may be only one definition for each NodeId. The NodeID is programmed into the node firmware, either in the sketch and/or by switches.
+
+### nodename
+
+    nodename =
+    
+A text string, for your benefit in identifying each node. *This field is optional.*
+
+### firmware
+
+    firmware =
+
+A text string specifying the sketch running on the node. (At present, this is for information only. At some future time, it might be used to auto-configure emonHub and/or the sketch.) *This field is optional.*
+
+### hardware
+
+    hardware =
+
+Indicates the host environment. *This field is optional.*
+
 ### Datacodes
 
 An un-configured Emonhub will by default assume that RFM12 or RFM69 data packets received are a series of integers, each 2 bytes long. The radio packet format is quite minimal and non-descriptive and so emonhub cant know how to decode the packets from the received data if the packet structure is any different.
