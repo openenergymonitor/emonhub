@@ -1,17 +1,23 @@
 # EmonHub Configuration
 
+emonHub configuration is set using `emonhub.conf` config file. On the emonPi / emonBase this file is located in the RW data partition `/home/pi/data/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited from the EmonHub tab in local Emoncms, see [emonPi / emonBase setup guide](http://openenergymonitor.org/emon/modules/emonpi#emonhubconfig)   
+
+# Contents: 
+
 1. Publishing to MQTT
 2. Sending data to emoncms.org or other remote emoncms installation
 2. Node configuration
 3. Troubleshooting
 
-## Publishing to MQTT
+## 1. Publishing to MQTT
 
-Emonhub supports publishing and subscribing to MQTT topics through the EmonHubMqttInterfacer, defined in the interfacers section of emonhub.conf. 
+Emonhub supports publishing to MQTT topics through the EmonHubMqttInterfacer, defined in the interfacers section of emonhub.conf. 
 
 There are two formats that can be used for publishing node data to MQTT:
 
 **Node only format** 
+
+(default base topic is `emonhub`)
 
     topic: basetopic/rx/10/values
     payload: 100,200,300
@@ -20,10 +26,12 @@ The node only format is currently used with the emoncms nodes module.
 
 **Node variable format**
 
+(default base topic is `nodes`)
+
     topic: basetopic/emontx/power1
     payload: 100
 
-This format is a more generic MQTT publishing format that can more easily be used by applications such as nodered and openhab. This format can also be used with the emoncms phpmqtt_input.php script in conjunction with the emoncms inputs module. See emoncms readme on [enabling MQTT for more info](https://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md). 
+This format is a more generic MQTT publishing format that can more easily be used by applications such as nodered and openhab. This format can also be used with the emoncms phpmqtt_input.php script in conjunction with the emoncms inputs module. See emoncms readme on [enabling MQTT for more info](https://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md). [Related forum thread discussion](http://openenergymonitor.org/emon/node/12091)
 
 The emonhub.conf MQTT config looks like this:
 
@@ -49,7 +57,7 @@ The emonhub.conf MQTT config looks like this:
             
 To enable the node variable format set nodevar_format_enable = 1. To disable the node only format set node_format_enable = 0.
 
-## Sending data to emoncms.org or other remote emoncms installation
+2. ## Sending data to emoncms.org or other remote emoncms installation
 
 The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
             
@@ -69,7 +77,7 @@ The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to 
 
 **senddata** If you only want to send the ping request and no data to emoncms.org set this to 0
 
-## Node configuration
+## 3. Node configuration
 
 The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RFM69 nodes. Here's an example of what this section looks like from the default emonpi emonhub.conf. The rest of this readme explains what each line means and how to write your own node decoders or adapt existing decoders for new requirements.
 
@@ -323,7 +331,7 @@ Firmware location: [Shield_CT1234_Voltage.ino](https://github.com/openenergymoni
            scales = 1,1,1,1,0.01
            units =W,W,W,W,V
 
-## Troubleshooting
+## 4. Troubleshooting
 
 ### Node data inactive or, node data does not appear for a configured node
 
