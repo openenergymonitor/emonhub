@@ -1,8 +1,8 @@
 # EmonHub Configuration
 
-emonHub configuration is set using `emonhub.conf` config file. On the emonPi / emonBase this file is located in the RW data partition `/home/pi/data/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited from the EmonHub tab in local Emoncms, see [emonPi / emonBase setup guide](http://openenergymonitor.org/emon/modules/emonpi#emonhubconfig)   
+emonHub configuration is set using `emonhub.conf` config file. On the emonPi / emonBase this file is located in the RW data partition `/home/pi/data/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited from the EmonHub tab in local Emoncms, see [emonPi / emonBase setup guide](http://openenergymonitor.org/emon/modules/emonpi#emonhubconfig)
 
-# Contents: 
+# Contents:
 
 1. Publishing to MQTT
 2. Sending data to emoncms.org or other remote emoncms installation
@@ -11,11 +11,11 @@ emonHub configuration is set using `emonhub.conf` config file. On the emonPi / e
 
 ## 1. Publishing to MQTT
 
-Emonhub supports publishing to MQTT topics through the EmonHubMqttInterfacer, defined in the interfacers section of emonhub.conf. 
+Emonhub supports publishing to MQTT topics through the EmonHubMqttInterfacer, defined in the interfacers section of emonhub.conf.
 
 There are two formats that can be used for publishing node data to MQTT:
 
-**Node only format** 
+**Node only format**
 
 (default base topic is `emonhub`)
 
@@ -26,7 +26,7 @@ The node only format is currently used with the emoncms nodes module.
 
 **Node variable format**
 
-(default base topic is `nodes`)
+(default base topic is `emoncms`)
 
     topic: basetopic/emontx/power1
     payload: 100
@@ -51,9 +51,9 @@ The emonhub.conf MQTT config looks like this:
             node_format_enable = 1
             node_format_basetopic = emonhub/
             
-            # nodes/emontx/power1 format
+            # emoncms/emontx/power1 format
             nodevar_format_enable = 0
-            nodevar_format_basetopic = nodes/
+            nodevar_format_basetopic = emoncms/
             
 To enable the node variable format set nodevar_format_enable = 1. To disable the node only format set node_format_enable = 0.
 
@@ -118,7 +118,7 @@ A numeric NodeID. This identifies the node to emonHub, and every node within you
     
 A text string, for your benefit in identifying each node. *This field is optional.*
 
-MQTT: The nodename can be used with the MQTT interfacer to send topics of the form nodes/nodename/variablename. 
+MQTT: The nodename can be used with the MQTT interfacer to send topics of the form nodes/nodename/variablename.
 
 ### firmware
 
@@ -256,7 +256,7 @@ Copied here for reference:
         [[[rx]]]
            names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
-           scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 
+           scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1
            units =W,W,W,W,V,C,C,C,C,C,C,p
 
 ### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6+
