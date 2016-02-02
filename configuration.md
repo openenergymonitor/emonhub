@@ -21,12 +21,12 @@ There are two formats that can be used for publishing node data to MQTT:
 
     topic: basetopic/rx/10/values
     payload: 100,200,300
-    
+
 The node only format is currently used with the emoncms nodes module.
 
 **Node variable format**
 
-(default base topic is `emoncms`)
+(default base topic is `emon`)
 
     topic: basetopic/emontx/power1
     payload: 100
@@ -50,17 +50,17 @@ The emonhub.conf MQTT config looks like this:
             # emonhub/rx/10/values format - default emoncms nodes module
             node_format_enable = 1
             node_format_basetopic = emonhub/
-            
+
             # emoncms/emontx/power1 format
             nodevar_format_enable = 0
             nodevar_format_basetopic = emoncms/
-            
+
 To enable the node variable format set nodevar_format_enable = 1. To disable the node only format set node_format_enable = 0.
 
 2. ## Sending data to emoncms.org or other remote emoncms installation
 
 The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
-            
+
     [[emoncmsorg]]
         Type = EmonHubEmoncmsHTTPInterfacer
         [[[init_settings]]]
@@ -71,7 +71,7 @@ The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to 
             apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
             senddata = 1
             sendstatus = 1
-            
+
 
 **sendstatus** Its possible to the EmonHubEmoncmsHTTPInterfacer to send a 'ping' to the destination emoncms that can be picked up by the myip module which will then list the source IP address. This can be useful for remote login to an home emonpi if port forwarding is enabled on your router.
 
@@ -84,16 +84,16 @@ The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RF
     #######################################################################
     #######################          Nodes          #######################
     #######################################################################
-    
+
     [nodes]
-    
+
     ### List of nodes by node ID
     ### 'datacode' is default for node and 'datacodes' are per value data codes.
     ### if both are present 'datacode' is ignored in favour of 'datacodes'
     ### eg node 99 would expect 1 long and 4 ints, unless the "datacodes" line
     ### was removed, then "datacode" would make it expect any number of longs,
     ### likewise per value "scales" will override default node "scale"
-    
+
     [[5]]
     nodename = emonPi
     firmware = emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino
@@ -103,7 +103,7 @@ The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RF
         datacodes = h, h, h, h, h, h, h, h, h, h, L
         scales = 1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
         units = W,W,W,V,C,C,C,C,C,C,p
-        
+
     ...
 
 ### NodeID
@@ -115,7 +115,7 @@ A numeric NodeID. This identifies the node to emonHub, and every node within you
 ### nodename
 
     nodename =
-    
+
 A text string, for your benefit in identifying each node. *This field is optional.*
 
 MQTT: The nodename can be used with the MQTT interfacer to send topics of the form nodes/nodename/variablename.
@@ -135,7 +135,7 @@ Indicates the host environment. *This field is optional.*
 ### rx
 
     [[[rx]]]
-    
+
 This must be "rx" and specifies that the next section is for the config of the sensor values received from a node. Its also possible to define a "tx" section for variables to be sent to the node such as control state's. Documentation on this to be added.
 
 ### Datacodes
@@ -149,13 +149,13 @@ Its possible to decode any radio packet that is packed as a binary structure wit
     [[8]]
         [[[rx]]]
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
-           
+
 The node decoder could be left as this if we only wanted to decode the packet structure correctly. Alternatively if the packet structure is a series of integers its possible to write:
 
     [[1]]
         [[[rx]]]
            datacode = h
-           
+
 Notice that the name is datacode rather than datacode**s** with an s. There are 13 different datatypes that can be decoded:
 
     b: byte, 1 byte
@@ -171,7 +171,7 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
     L: unsigned long, 4 bytes
     Q: unsigned long long, 8 bytes
     c: char, 1 byte
-    
+
 **Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
 
 ### Names
@@ -194,7 +194,7 @@ The scales to be applied can either be specified for each sensor value as in thi
            names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scales = 1,1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
-           
+
 In this example the RMS Voltage is multiplied by 0.01 and temperature values by 0.1. Which means that the RMS voltage was multiplied by 100x and temperature values by 10x on the emontx.
 
 or a single scale can be applied (note scale instead of scale**s** with an s)
@@ -203,7 +203,7 @@ or a single scale can be applied (note scale instead of scale**s** with an s)
         [[[rx]]]
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scale = 1
-           
+
 The default scale value is 1 and so in the scale where no scaling is needed this line can be left out of the configuration.
 
 The latest version of the emon-pi variant of emonhub does not require the number of scales to match the number of variables, it will scale according to the scales available or scale by 1 if scales are not available.
@@ -272,7 +272,7 @@ Can be on either nodeid 10 or 9
            datacode = h
            scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 #Firmware V1.6
            units =W,W,W,W,V,C,C,C,C,C,C,p
-           
+
 ### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, <v1.4
 
     [[10]]
