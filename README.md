@@ -1,5 +1,4 @@
-emonHub (emon-pi variant)
-=======
+## emonHub (emon-pi variant)
 
 Emonhub is typically used in the OpenEnergyMonitor system to first read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board and then second to then forward this data on to emoncms in a decoded ready-to-use form.
 
@@ -7,7 +6,7 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 
 Emonhub is included on the pre-built SD card used by both the EmonPi and Emonbase. The documentation below convers installing the emon-pi variant of emonhub on linux for self build setups.
 
-## Emon-Pi variant
+### Emon-Pi variant
 
 This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) experimental branch adding: 
 
@@ -19,9 +18,9 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - Rx and tx modes for node decoding/encoding provides improved control support.
 - json based config file option so that emonhub.conf can be loaded by emoncms - intention is to provide config interface in emoncms.
 
-## [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
+### [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
-## Installing Emonhub
+### Installing Emonhub
 
 Emonhub requires the following dependencies:
 
@@ -61,7 +60,7 @@ Install the emon-pi variant of emonhub:
     git clone https://github.com/openenergymonitor/emonhub.git && emonhub/install
     sudo service emonhub start
 
-## EmonHub Emoncms config module 
+### EmonHub Emoncms config module 
 
 If your using emoncms on the same raspberry pi as emonhub you may find the emoncms config module useful which provides in browser access to emonhub.conf and emonhub.log:
 
