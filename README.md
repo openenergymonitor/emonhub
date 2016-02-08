@@ -1,6 +1,6 @@
 ## emonHub (emon-pi variant)
 
-Emonhub is typically used in the OpenEnergyMonitor system to first read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board and then second to then forward this data on to emoncms in a decoded ready-to-use form.
+Emonhub is typically used in the OpenEnergyMonitor system to first read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board and then second to then forward this data on to emoncms in a decoded ready-to-use form - based on the configuration in [emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
 More generally: Emonhub consists of a series of interfacers that can read/subscribe or send/publish data to and from a multitude of services.
 
