@@ -61,7 +61,7 @@ The node only format is currently used with the emoncms nodes module.
 
 This format is a more generic MQTT publishing format that can more easily be used by applications such as nodered and openhab. This format can also be used with the emoncms phpmqtt_input.php script in conjunction with the emoncms inputs module. See emoncms readme on [enabling MQTT for more info](https://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md). [Related forum thread discussion](http://openenergymonitor.org/emon/node/12091)
 
-The emonhub.conf MQTT config looks like this:
+The emonhub.conf MQTT config looks like this and is added to the interfacers section:
 
     [[MQTT]]
         Type = EmonHubMqttInterfacer
@@ -87,7 +87,7 @@ To enable the node variable format set nodevar_format_enable = 1. To disable the
 
 ## 2. Sending data to emoncms.org or other remote emoncms installation
 
-The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
+The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org can also be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
 
     [[emoncmsorg]]
         Type = EmonHubEmoncmsHTTPInterfacer
