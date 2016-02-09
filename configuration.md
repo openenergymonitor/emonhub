@@ -2,6 +2,34 @@
 
 emonHub configuration is set using `emonhub.conf` config file. On the emonPi / emonBase this file is located in the RW data partition `/home/pi/data/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited from the EmonHub tab in local Emoncms, see [emonPi / emonBase setup guide](http://openenergymonitor.org/emon/modules/emonpi#emonhubconfig)
 
+Emonhub.conf has 3 sections: hub, interfacers and nodes:
+
+        #######################################################################
+        #######################      emonhub.conf     #########################
+        #######################################################################
+        ### emonHub configuration file, for info see documentation:
+        ### http://github.com/openenergymonitor/emonhub/blob/master/configuration.md
+        #######################################################################
+        #######################    emonHub  settings    #######################
+        #######################################################################
+        [hub]
+        ### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
+        loglevel = DEBUG
+        
+        #######################################################################
+        #######################       Interfacers       #######################
+        #######################################################################
+        [interfacers]
+        
+        #######################################################################
+        #######################          Nodes          #######################
+        #######################################################################
+        [nodes]
+
+- Hub is a section for emonhub global settings such as the loglevel.
+- Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the rfm12/69pi adapter board or emonpi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics.
+- Nodes holds the decoder configuration for rfm12/69 node data which are sent as binary structures.
+
 # Contents:
 
 1. Publishing to MQTT
@@ -57,7 +85,7 @@ The emonhub.conf MQTT config looks like this:
 
 To enable the node variable format set nodevar_format_enable = 1. To disable the node only format set node_format_enable = 0.
 
-2. ## Sending data to emoncms.org or other remote emoncms installation
+## 2. Sending data to emoncms.org or other remote emoncms installation
 
 The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org can be found in the interfacers section of emonhub.conf. If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
 
