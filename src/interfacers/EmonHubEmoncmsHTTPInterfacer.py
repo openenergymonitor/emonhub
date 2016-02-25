@@ -56,8 +56,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self.lastsent = now
             # print json.dumps(self.buffer)
             if int(self._settings['senddata']):
-                self.bulkpost(self.buffer)
-            self.buffer = []
+                # Send bulk post 
+                if self.bulkpost(self.buffer):
+                    # Clear buffer if successfull else keep buffer and try again
+		    self.buffer = []
             
         if (now-self.lastsentstatus) > int(self._settings['status_send_interval']):
             self.lastsentstatus = now
@@ -69,7 +71,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     	#Removing length check fo apikey
         if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             self._log.error("API key not found skipping: " + str( databuffer ))
-            return
+            return False
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
@@ -87,7 +89,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
 
         # Add apikey to post_url
-        post_url = post_url + self._settings['apikey'] + "&" + "siteid=" + self._settings['siteid'] + "&"
+        post_url = post_url + self._settings['apikey'] + "&" + "site_id=" + self._settings['site_id'] + "&"
 
         # logged before apikey added for security
         self._log.info("sending: " + post_url + post_body)
@@ -102,6 +104,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return True
         else:
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
+            self._log.warning("Keeping buffer till successfull attempt, buffer length: " + str(len(self.buffer)))
+            return False
             
     def _send_post(self, post_url, post_body=None):
         """

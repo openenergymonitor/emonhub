@@ -43,7 +43,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         
         #Parser requirments
         self._extract = toextract
-        print "init system with to extract %s"%self._extract
+        #print "init system with to extract %s"%self._extract
 
 
     def input(self, byte):

@@ -130,7 +130,7 @@ class EmonHubInterfacer(threading.Thread):
         """
 
         # Log data
-        self._log.debug(str(cargo.uri) + " NEW FRAME : " + cargo.rawdata)
+        self._log.debug(str(cargo.uri) + " NEW FRAME : " + str(cargo.rawdata))
 
         rxc = cargo
         decoded = []
@@ -148,8 +148,9 @@ class EmonHubInterfacer(threading.Thread):
             for val in rxc.realdata:
 		tempval = float(val)
             #[float(val) for val in rxc.realdata]
-        except Exception:
-            self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata) + "value: " + str(tempval))
+        except Exception,e:
+            self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata) + " value: " + str(tempval)) 
+	    print e
             return False
             
         # Discard if first value is not a valid node id
@@ -228,8 +229,9 @@ class EmonHubInterfacer(threading.Thread):
             scales = ehc.nodelist[node]['rx']['scales']
             # Discard the frame & return 'False' if it doesn't match the number of scales
             if len(decoded) != len(scales):
-                self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " for RX data : " + str(rxc.realdata) +
-                                  " not suitable " )
+                self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " length:" +str(len(scales)) +" for RX data : " + str(rxc.realdata) + " not suitable length:" + str(len(rxc.realdata)))
+                #self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " for RX data : " + str(rxc.realdata) +
+                #                  " not suitable " )
                 return False
             else:
                 # Determine the expected number of values to be decoded
@@ -308,8 +310,7 @@ class EmonHubInterfacer(threading.Thread):
             scales = ehc.nodelist[dest]['tx']['scales']
             # Discard the frame & return 'False' if it doesn't match the number of scales
             if len(txc.realdata) != len(scales):
-                self._log.warning(str(txc.uri) + " Scales " + str(scales) + " for RX data : " + str(txc.realdata) +
-                                  " not suitable " )
+                self._log.warning(str(txc.uri) + " Scales " + str(scales) + " length:" +str(len(scales)) +" for RX data : " + str(txc.realdata) + " not suitable length:" + str(len(txc.realdata)))
                 return False
             else:
                 # Determine the expected number of values to be decoded

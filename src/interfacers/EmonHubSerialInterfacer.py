@@ -49,7 +49,7 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
         #    com_baud = 9600
 
         try:
-            s = serial.Serial(com_port, com_baud, timeout=0)
+            s = serial.Serial(com_port, com_baud, timeout=10)
             self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
@@ -78,14 +78,18 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
             return
 
         # Remove CR,LF
-        #self._log.debug("RAW DATA %S" %self._rx_buf)
-        
+        self._log.debug("RAW DATA %s" %str(self._rx_buf))
+        #print "RAW DATA %s"%self._rx_buf
+
         #remove any trailing null or whitespace characters
         f = self._rx_buf[:-2].strip()
-        f = f.strip('\x00')
+        f = f.replace('\x00',' ')
 
+        #print "CLEAN DATA %s"%self._rx_buf
         # Reset buffer
         self._rx_buf = ''
+        #self._log.debug("CLEAN DATA %" %str(self._rx_buf))
+        
 
         # Create a Payload object
         c = Cargo.new_cargo(rawdata=f)
@@ -100,7 +104,7 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
                        c.nodeid = int(f[0])
                        c.realdata = f[1:]
                    except Exception,e:
-                       self._log.error("unable to decode packet skipping %e" %e)
+                       self._log.error("unable to decode packet skipping" +str(e))
                        pass
                        
 
