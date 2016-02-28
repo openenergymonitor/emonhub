@@ -31,6 +31,7 @@ SYSCONF_PATH=/etc/default/
 [ ! -f $EMONHUB_CONFIG ] && echo "Fatal: cannot find $EMONHUB_CONFIG" && exit 1
 [ ! -f $EMONHUB_PATH$NAME.py ] && echo "Fatal: cannot find $EMONHUB_PATH$NAME.py" && exit 1
 [ ! -f $EMONHUB_LOG ] && sudo mkdir -p "$(dirname "$EMONHUB_LOG")" && sudo touch "$EMONHUB_LOG" && sudo chown -R $DAEMONUSER "$(dirname "$EMONHUB_LOG")"
+sudo chown -R $DAEMONUSER "$(dirname "$EMONHUB_LOG")"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
