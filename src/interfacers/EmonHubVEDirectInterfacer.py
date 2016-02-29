@@ -15,7 +15,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
     
     (WAIT_HEADER, IN_KEY, IN_VALUE, IN_CHECKSUM) = range(4)
 
-    def __init__(self, name, com_port='', com_baud=9600, toextract='' ):
+    def __init__(self, name, com_port='', com_baud=9600, toextract='' , poll_interval=30):
         """Initialize interfacer
 
         com_port (string): path to COM port
@@ -40,6 +40,8 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         self.bytes_sum = 0;
         self.state = self.WAIT_HEADER
         self.dict = {}
+	self.poll_interval = int(poll_interval)
+	self.last_read = time.time()
         
         #Parser requirments
         self._extract = toextract
@@ -145,15 +147,8 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
 	return clean_data
             
 
-        
-    def read(self):
-        """Read data from serial port and process if complete line received.
-
-        Return data as a list: [NodeID, val1, val2]
-        
-        """
-
-        # Read serial RX
+    def _read_serial(self):
+        self._log.debug(" Starting Serial read")
         try:
             while self._rx_buf == '':
 		    byte = self._ser.read(1)
@@ -164,7 +159,26 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         except Exception,e:
             self._log.error(e)
             self._rx_buf = ""
-            
+ 
+
+    def read(self):
+        """Read data from serial port and process if complete line received.
+
+        Return data as a list: [NodeID, val1, val2]
+        
+        """
+
+        # Read serial RX
+	now = time.time()
+	if not (now - self.last_read) > self.poll_interval:
+            #self._log.debug(" Waiting for %s seconds "%(str(now - self.last_read)))
+            # Wait to read based on poll_interval
+	    return 
+	
+	# Read from serial         
+	self._read_serial()
+	# Update last read time
+        self.last_read = now
         # If line incomplete, exit
         if self._rx_buf == None:
             return
