@@ -12,7 +12,7 @@ Monitors the serial port for data
 
 
 class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
-    
+
     (WAIT_HEADER, IN_KEY, IN_VALUE, IN_CHECKSUM) = range(4)
 
     def __init__(self, name, com_port='', com_baud=9600, toextract='' , poll_interval=30):
@@ -27,7 +27,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
-        
+
         # Initialize RX buffer
         self._rx_buf = ''
 
@@ -42,7 +42,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         self.dict = {}
 	self.poll_interval = int(poll_interval)
 	self.last_read = time.time()
-        
+
         #Parser requirments
         self._extract = toextract
         #print "init system with to extract %s"%self._extract
@@ -96,7 +96,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
 
     def close(self):
         """Close serial port"""
-        
+
         # Close serial port
         if self._ser is not None:
             self._log.debug("Closing serial port")
@@ -145,7 +145,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
 
 		    clean_data = clean_data + " " + str(data[key])
 	return clean_data
-            
+
 
     def _read_serial(self):
         self._log.debug(" Starting Serial read")
@@ -159,25 +159,25 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         except Exception,e:
             self._log.error(e)
             self._rx_buf = ""
- 
+
 
     def read(self):
         """Read data from serial port and process if complete line received.
 
         Return data as a list: [NodeID, val1, val2]
-        
+
         """
 
         # Read serial RX
-	now = time.time()
-	if not (now - self.last_read) > self.poll_interval:
+        now = time.time()
+        if not (now - self.last_read) > self.poll_interval:
             #self._log.debug(" Waiting for %s seconds "%(str(now - self.last_read)))
             # Wait to read based on poll_interval
-	    return 
-	
-	# Read from serial         
-	self._read_serial()
-	# Update last read time
+	        return
+
+        # Read from serial
+        self._read_serial()
+        # Update last read time
         self.last_read = now
         # If line incomplete, exit
         if self._rx_buf == None:
@@ -188,18 +188,18 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         # Create a Payload object
         c = Cargo.new_cargo(rawdata = self._rx_buf)
         f = self.parse_package(self._rx_buf)
-	f = f.split()
+        f = f.split()
 
         # Reset buffer
         self._rx_buf = ''
 
-	if f:
+        if f:
 	        if int(self._settings['nodeoffset']):
                     c.nodeid = int(self._settings['nodeoffset'])
                     c.realdata = f[1:]
                 else:
                     self._log.error("nodeoffset needed in emonhub configuratio, make sure it exits ans is integer ")
                     pass
-                       
+
         return c
 
