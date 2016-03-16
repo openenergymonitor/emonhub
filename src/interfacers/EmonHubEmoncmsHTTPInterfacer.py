@@ -22,11 +22,12 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0
+            'sendstatus': 0,
+            'sendinterval': 30
         }
         
         self.buffer = []
-        self.lastsent = time.time() 
+        self.lastsent = time.time()
         self.lastsentstatus = time.time()
 
     def receiver(self, cargo):
@@ -49,14 +50,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     
         now = time.time()
         
-        if (now-self.lastsent)>30:
+        if (now-self.lastsent) > (int(self._settings['sendinterval'])):
             self.lastsent = now
             # print json.dumps(self.buffer)
             if int(self._settings['senddata']):
                 self.bulkpost(self.buffer)
             self.buffer = []
             
-        if (now-self.lastsentstatus)>60:
+        if (now-self.lastsentstatus)> (int(self._settings['sendinterval'])):
             self.lastsentstatus = now
             if int(self._settings['sendstatus']):
                 self.sendstatus()
