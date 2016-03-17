@@ -76,6 +76,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
+        #self._log.debug("###### recieved %s"%self._rx_buf)
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
@@ -91,7 +92,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             return
 
         if f[0] == '\x01':
-            #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
+            self._log.debug("Ignoring frame consisting of SOH character" + str(f))
             return
 
         if f[0] == '?':
@@ -114,12 +115,13 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         # Save raw packet to new cargo object
         c = Cargo.new_cargo(rawdata=f)
-
+        #self._log.debug("#!#!Raw data is %s"%str(c.rawdata))
         # Convert single string to list of string values
         f = f.split(' ')
+        #self._log.debug("#!#!Raw data after split is %s"%str(f))
 
         # Strip leading 'OK' from frame if needed
-        if f[0]=='OK':
+        if f[0].lower() =='ok':
             f = f[1:]
  
         # Extract RSSI value if it's available
@@ -129,16 +131,18 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         try:
             # Extract node id from frame
+            #self._log.debug("###debug value for nodeid is %s"%str(f[0]))
             c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
-        except ValueError:
+        except ValueError: 
+            self._log.warning("value error unable to parse nodeoffset %s"%str(c))
             return
 
         try:
             # Store data as a list of integer values
             c.realdata = [int(i) for i in f[1:]]
         except ValueError:
+           # self._log.warning("value error unable to parse realdata %s"%str(c))
             return
-
         return c
 
         # # unix timestamp
@@ -186,7 +190,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 command = '2p'
                 
             else:
-                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+               # self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
             self._settings[key] = setting
             self._log.info("Setting " + self.name + " %s: %s" % (key, setting) + " (" + command + ")")
