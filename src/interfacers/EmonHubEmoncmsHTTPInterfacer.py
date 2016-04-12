@@ -1,9 +1,13 @@
 """class EmonHubEmoncmsHTTPInterfacer
 """
+import zlib
 import time
 import json
 import urllib2
 import httplib
+import redis
+
+from sys import getsizeof as size
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 
@@ -14,17 +18,22 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         super(EmonHubEmoncmsHTTPInterfacer, self).__init__(name)
         
         self._name = name
-        
+        self._data_size = 0
         self._settings = {
             'subchannels':['ch1'],
             'pubchannels':['ch2'],
-            
+            'compression':True,   
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0
+            'sendstatus': 0,
+            'data_send_interval':30,
+            'status_send_interval':60,
+            'buffer_size':10,
+	    'site_id':5
         }
         
+	self._compression_level = 9
         self.buffer = []
         self.lastsent = time.time() 
         self.lastsentstatus = time.time()
@@ -41,34 +50,41 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             f.append(cargo.rssi)
 
         self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-        
+	# If buffer is full don't append
         # Append to bulk post buffer
-        self.buffer.append(f)
+	if len(self.buffer) <= self._settings['buffer_size']:
+		self.buffer.append(f)
+	else:
+		self._log.warning("buffer full no more data points will be added")
         
     def action(self):
     
         now = time.time()
         
-        if (now-self.lastsent)>30:
+        if (now-self.lastsent) > int(self._settings['data_send_interval']):
             self.lastsent = now
             # print json.dumps(self.buffer)
             if int(self._settings['senddata']):
-                self.bulkpost(self.buffer)
-            self.buffer = []
+                # Send bulk post 
+                if self.bulkpost(self.buffer):
+                    # Clear buffer if successfull else keep buffer and try again
+		    self.buffer = []
             
-        if (now-self.lastsentstatus)>60:
+        if (now-self.lastsentstatus) > int(self._settings['status_send_interval']):
             self.lastsentstatus = now
             if int(self._settings['sendstatus']):
                 self.sendstatus()
             
     def bulkpost(self,databuffer):
-    
-        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
-                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
-            return
-            
+        self._log.info("Prepping bulk post: " + str( databuffer ))
+    	#Removing length check fo apikey
+        if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+            self._log.error("API key not found skipping: " + str( databuffer ))
+            return False
+        self._log.debug("data string %s "%databuffer)    
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
+	
         # Prepare URL string of the form
         # http://domain.tld/emoncms/input/bulk.json?apikey=12345
         # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
@@ -79,24 +95,29 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         # Construct post_url (without apikey)
         post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
-        post_body = "data="+data_string+"&sentat="+str(sentat)
+        post_body = data_string
 
-        # logged before apikey added for security
-        self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
+	if self._settings["compression"]:
+		post_body = zlib.compress(post_body, self._compression_level)
 
         # Add apikey to post_url
-        post_url = post_url + self._settings['apikey']
+        post_url = post_url + self._settings['apikey'] + "&" + "site_id=" + self._settings['site_id'] + "&time="+str(sentat)
+
+        # logged before apikey added for security
+        self._log.info("sending: " + post_url + " body:" +post_body)
 
         # The Develop branch of emoncms allows for the sending of the apikey in the post
         # body, this should be moved from the url to the body as soon as this is widely
         # adopted
 
         reply = self._send_post(post_url, post_body)
-        if reply == 'ok':
+        if reply.lower().strip() == 'ok':
             self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
         else:
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
+            self._log.warning("Keeping buffer till successfull attempt, buffer length: " + str(len(self.buffer)))
+            return False
             
     def _send_post(self, post_url, post_body=None):
         """
@@ -116,6 +137,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         reply = ""
         request = urllib2.Request(post_url, post_body)
+	if self._settings["compression"]:
+		#request.add_header('Content-Type','text/plain')
+		request.add_header('Content-Encoding','gzip')
+	self._data_size = self._data_size + size(post_body)
         try:
             response = urllib2.urlopen(request, timeout=60)
         except urllib2.HTTPError as e:
@@ -133,11 +158,11 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         else:
             reply = response.read()
         finally:
+            self._log.debug("amount of data sent is %s"%self._data_size)
             return reply
             
     def sendstatus(self):
-        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
-                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+        if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
         
         # MYIP url

@@ -92,6 +92,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                                 self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
 
     def receiver(self, cargo):
+	
+        self._log.debug(self._name+" Recieved package MQQT" )
         if self._connected:
             topic = self._settings["basetopic"]+"rx/"+str(cargo.nodeid)+"/values"
             payload = ",".join(map(str,cargo.realdata))

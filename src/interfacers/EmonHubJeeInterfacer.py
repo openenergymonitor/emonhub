@@ -91,7 +91,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             return
 
         if f[0] == '\x01':
-            #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
+            self._log.debug("Ignoring frame consisting of SOH character" + str(f))
             return
 
         if f[0] == '?':

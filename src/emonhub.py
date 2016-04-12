@@ -16,6 +16,7 @@ import logging.handlers
 import signal
 import argparse
 import pprint
+import traceback
 
 import emonhub_setup as ehs
 import interfacers.emonhub_interfacer as ehi
@@ -28,6 +29,7 @@ import interfacers.EmonHubPacketGenInterfacer
 import interfacers.EmonHubMqttInterfacer
 import interfacers.EmonHubTesterInterfacer
 import interfacers.EmonHubEmoncmsHTTPInterfacer
+import interfacers.EmonHubVEDirectInterfacer
 
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
 ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
@@ -36,6 +38,7 @@ ehi.EmonHubPacketGenInterfacer = interfacers.EmonHubPacketGenInterfacer.EmonHubP
 ehi.EmonHubMqttInterfacer = interfacers.EmonHubMqttInterfacer.EmonHubMqttInterfacer
 ehi.EmonHubTesterInterfacer = interfacers.EmonHubTesterInterfacer.EmonHubTesterInterfacer
 ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.EmonHubEmoncmsHTTPInterfacer
+ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
 
 """class EmonHub
 
@@ -180,6 +183,7 @@ class EmonHub(object):
                 except Exception as e:
                     # If interfacer can't be created, log error and skip to next
                     self._log.error("Unable to create '" + name + "' interfacer: " + str(e))
+                    traceback.print_exc()
                     continue
                 else:
                     self._interfacers[name] = interfacer
