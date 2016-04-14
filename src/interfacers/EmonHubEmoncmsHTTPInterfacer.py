@@ -16,30 +16,30 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     def __init__(self, name):
         # Initialization
         super(EmonHubEmoncmsHTTPInterfacer, self).__init__(name)
-        
+
         self._name = name
         self._data_size = 0
         self._settings = {
             'subchannels':['ch1'],
             'pubchannels':['ch2'],
-            'compression':True,   
+            'compression':True,
+            'use_binary':True,
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
             'sendstatus': 0,
-            'data_send_interval':30,
-            'status_send_interval':60,
+            'data_send_interval':60,
+            'status_send_interval':260,
             'buffer_size':10,
-	    'site_id':5
         }
-        
+
 	self._compression_level = 9
         self.buffer = []
-        self.lastsent = time.time() 
+        self.lastsent = time.time()
         self.lastsentstatus = time.time()
 
     def receiver(self, cargo):
-    
+
         # Create a frame of data in "emonCMS format"
         f = []
         f.append(int(cargo.timestamp))
@@ -56,35 +56,35 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 		self.buffer.append(f)
 	else:
 		self._log.warning("buffer full no more data points will be added")
-        
+
     def action(self):
-    
+
         now = time.time()
-        
+
         if (now-self.lastsent) > int(self._settings['data_send_interval']):
             self.lastsent = now
             # print json.dumps(self.buffer)
             if int(self._settings['senddata']):
-                # Send bulk post 
+                # Send bulk post
                 if self.bulkpost(self.buffer):
                     # Clear buffer if successfull else keep buffer and try again
 		    self.buffer = []
-            
+
         if (now-self.lastsentstatus) > int(self._settings['status_send_interval']):
             self.lastsentstatus = now
             if int(self._settings['sendstatus']):
                 self.sendstatus()
-            
+
     def bulkpost(self,databuffer):
         self._log.info("Prepping bulk post: " + str( databuffer ))
     	#Removing length check fo apikey
         if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             self._log.error("API key not found skipping: " + str( databuffer ))
             return False
-        self._log.debug("data string %s "%databuffer)    
+        self._log.debug("data string %s "%databuffer)
         data_string = json.dumps(databuffer, separators=(',', ':'))
-        
-	
+
+
         # Prepare URL string of the form
         # http://domain.tld/emoncms/input/bulk.json?apikey=12345
         # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
@@ -97,11 +97,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
         post_body = data_string
 
-	if self._settings["compression"]:
-		post_body = zlib.compress(post_body, self._compression_level)
+        if self._settings["use_binary"]:
+            post_body = msgpack.packb(post_body)
+
+        if self._settings["compression"]:
+            post_body = zlib.compress(post_body, self._compression_level)
 
         # Add apikey to post_url
-        post_url = post_url + self._settings['apikey'] + "&" + "site_id=" + self._settings['site_id'] + "&time="+str(sentat)
+        post_url = post_url + self._settings['apikey'] + "&time="+str(sentat)
 
         # logged before apikey added for security
         self._log.info("sending: " + post_url + " body:" +post_body)
@@ -118,7 +121,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
             self._log.warning("Keeping buffer till successfull attempt, buffer length: " + str(len(self.buffer)))
             return False
-            
+
     def _send_post(self, post_url, post_body=None):
         """
 
@@ -137,10 +140,15 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         reply = ""
         request = urllib2.Request(post_url, post_body)
-	if self._settings["compression"]:
-		#request.add_header('Content-Type','text/plain')
-		request.add_header('Content-Encoding','gzip')
-	self._data_size = self._data_size + size(post_body)
+        if self._settings["compression"]:
+            request.add_header('content-encoding','gzip')
+        if self._settings['use_binary']:
+            request.add_header('application/x-msgpack','gzip')
+
+        if not self._settings['use_binary'] or self._settings['compression']:
+            request.add_header('content-type','application/json')
+
+        self._data_size = self._data_size + size(post_body)
         try:
             response = urllib2.urlopen(request, timeout=60)
         except urllib2.HTTPError as e:
@@ -160,11 +168,11 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         finally:
             self._log.debug("amount of data sent is %s"%self._data_size)
             return reply
-            
+
     def sendstatus(self):
         if not 'apikey' in self._settings.keys() or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
-        
+
         # MYIP url
         post_url = self._settings['url']+'/myip/set.json?apikey='
         # Print info log
@@ -173,13 +181,13 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         post_url = post_url + self._settings['apikey']
         # send request
         reply = self._send_post(post_url,None)
-            
+
     def set(self, **kwargs):
         for key,setting in self._settings.iteritems():
             if key in kwargs.keys():
                 # replace default
                 self._settings[key] = kwargs[key]
-        
+
         # Subscribe to internal channels
         for channel in self._settings["subchannels"]:
             dispatcher.connect(self.receiver, channel)
