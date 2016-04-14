@@ -262,12 +262,7 @@ if __name__ == "__main__":
     loghandler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
 
-    syslogger = logging.handlers.SysLogHandler(address = '/dev/log')
-    syslogger.setFormatter(logging.Formatter(
-            'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
-
     logger.addHandler(loghandler)
-    logger.addHandler(syslogger)
 
     # Initialize hub setup
     try:
@@ -275,6 +270,14 @@ if __name__ == "__main__":
     except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
         sys.exit("Unable to load configuration file: " + args.config_file)
+
+    if 'use_syslog' in setup.settings['hub']:
+        if setup.settings['hub']['use_syslog'] == 'yes':
+            syslogger = logging.handlers.SysLogHandler(address = '/dev/log')
+            syslogger.setFormatter(logging.Formatter(
+                  'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
+            logger.addHandler(syslogger)
+
 
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
