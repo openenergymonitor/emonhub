@@ -3,7 +3,7 @@
 """
 
   This code is released under the GNU Affero General Public License.
-  
+
   OpenEnergyMonitor project:
   http://openenergymonitor.org
 
@@ -48,14 +48,14 @@ Controlled by the user via EmonHubSetup
 """
 
 class EmonHub(object):
-    
+
     __version__ = "emonHub 'emon-pi' variant v1.1"
-    
+
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
-        
+
         Interface (EmonHubSetup): User interface to the hub.
-        
+
         """
 
         # Initialize exit request flag
@@ -64,22 +64,22 @@ class EmonHub(object):
         # Initialize setup and get settings
         self._setup = setup
         settings = self._setup.settings
-        
+
         # Initialize logging
         self._log = logging.getLogger("EmonHub")
         self._set_logging_level('INFO', False)
         self._log.info("EmonHub %s" % self.__version__)
         self._log.info("Opening hub...")
-        
+
         # Initialize Interfacers
         self._interfacers = {}
 
         # Update settings
         self._update_settings(settings)
-        
+
     def run(self):
         """Launch the hub.
-        
+
         Monitor the interfaces and process data.
         Check settings on a regular basis.
 
@@ -87,10 +87,10 @@ class EmonHub(object):
 
         # Set signal handler to catch SIGINT and shutdown gracefully
         signal.signal(signal.SIGINT, self._sigint_handler)
-        
+
         # Until asked to stop
         while not self._exit:
-            
+
             # Run setup and update settings if modified
             self._setup.run()
             if self._setup.check_settings():
@@ -105,10 +105,10 @@ class EmonHub(object):
 
             # Sleep until next iteration
             time.sleep(0.2)
-         
+
     def close(self):
         """Close hub. Do some cleanup before leaving."""
-        
+
         self._log.info("Exiting hub...")
 
         for I in self._interfacers.itervalues():
@@ -120,7 +120,7 @@ class EmonHub(object):
 
     def _sigint_handler(self, signal, frame):
         """Catch SIGINT (Ctrl+C)."""
-        
+
         self._log.debug("SIGINT received.")
         # hub should exit at the end of current iteration.
         self._exit = True
@@ -134,9 +134,10 @@ class EmonHub(object):
         else:
             self._set_logging_level()
 
+
         # Create a place to hold buffer contents whilst a deletion & rebuild occurs
         self.temp_buffer = {}
-        
+
         # Interfacers
         for name in self._interfacers.keys():
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
@@ -160,7 +161,7 @@ class EmonHub(object):
             self._log.info("Deleting interfacer '%s' ", name)
             self._interfacers[name].stop = True
             del(self._interfacers[name])
-            
+
         for name, I in settings['interfacers'].iteritems():
             # If interfacer does not exist, create it
             if name not in self._interfacers:
@@ -193,15 +194,15 @@ class EmonHub(object):
 
     def _set_logging_level(self, level='WARNING', log=True):
         """Set logging level.
-        
-        level (string): log level name in 
+
+        level (string): log level name in
         ('DEBUG', 'INFO', 'WARNING', 'ERROR', 'CRITICAL')
-        
+
         """
 
         # Ensure "level" is all upper case
         level = level.upper()
-        
+
         # Check level argument is valid
         try:
             loglevel = getattr(logging, level)
@@ -211,14 +212,14 @@ class EmonHub(object):
         except Exception as e:
             self._log.error('Logging level %s ' % str(e))
             return False
-        
+
         # Change level if different from current level
         if loglevel != self._log.getEffectiveLevel():
             self._log.setLevel(level)
             if log:
                 self._log.info('Logging level set to %s' % level)
 
-        
+
 if __name__ == "__main__":
 
     # Command line arguments parser
@@ -238,7 +239,7 @@ if __name__ == "__main__":
                         help='display version number and exit')
     # Parse arguments
     args = parser.parse_args()
-    
+
     # Display version number and exit
     if args.version:
         print('emonHub %s' % EmonHub.__version__)
@@ -260,6 +261,7 @@ if __name__ == "__main__":
     # Format log strings
     loghandler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
+
     logger.addHandler(loghandler)
 
     # Initialize hub setup
@@ -268,12 +270,20 @@ if __name__ == "__main__":
     except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
         sys.exit("Unable to load configuration file: " + args.config_file)
- 
+
+    if 'use_syslog' in setup.settings['hub']:
+        if setup.settings['hub']['use_syslog'] == 'yes':
+            syslogger = logging.handlers.SysLogHandler(address = '/dev/log')
+            syslogger.setFormatter(logging.Formatter(
+                  'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
+            logger.addHandler(syslogger)
+
+
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
         setup.check_settings()
         pprint.pprint(setup.settings)
-    
+
     # Otherwise, create, run, and close EmonHub instance
     else:
         try:
