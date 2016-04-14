@@ -136,6 +136,7 @@ class EmonHub(object):
         else:
             self._set_logging_level()
 
+
         # Create a place to hold buffer contents whilst a deletion & rebuild occurs
         self.temp_buffer = {}
 
@@ -262,6 +263,7 @@ if __name__ == "__main__":
     # Format log strings
     loghandler.setFormatter(logging.Formatter(
             '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
+
     logger.addHandler(loghandler)
 
     # Initialize hub setup
@@ -270,6 +272,13 @@ if __name__ == "__main__":
     except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
         sys.exit("Unable to load configuration file: " + args.config_file)
+
+    if 'use_syslog' in setup.settings['hub']:
+        if setup.settings['hub']['use_syslog'] == 'yes':
+            syslogger = logging.handlers.SysLogHandler(address='/dev/log')
+            syslogger.setFormatter(logging.Formatter(
+                  'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
+            logger.addHandler(syslogger)
 
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:

@@ -49,7 +49,7 @@ SCRIPTNAME=/etc/init.d/$NAME
 [ -x "$DAEMON" ] || echo "Not starting - cannot find $DAEMON" || exit 1
 
 # Exit if not run as root
-case `id -u` in 
+case `id -u` in
 	0) ;;
 	*) echo "This script must be run as root" >&2; exit 1 ;;
 esac

@@ -1,9 +1,9 @@
-## emonHub settings 
+## emonHub settings
 
-# Edit this to configure the parameters used in 
+# Edit this to configure the parameters used in
 # the /etc/init.d/emonhub script.
 
-# This file should be deployed to /etc/default/emonhub 
+# This file should be deployed to /etc/default/emonhub
 # unless you have edited the init.d file to give an
 # alternate SYSCONF_PATH
 
