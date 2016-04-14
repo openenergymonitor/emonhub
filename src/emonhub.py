@@ -28,6 +28,7 @@ import interfacers.EmonHubPacketGenInterfacer
 import interfacers.EmonHubMqttInterfacer
 import interfacers.EmonHubTesterInterfacer
 import interfacers.EmonHubEmoncmsHTTPInterfacer
+import interfacers.EmonHubSmilicsInterfacer
 
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
 ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
@@ -36,6 +37,7 @@ ehi.EmonHubPacketGenInterfacer = interfacers.EmonHubPacketGenInterfacer.EmonHubP
 ehi.EmonHubMqttInterfacer = interfacers.EmonHubMqttInterfacer.EmonHubMqttInterfacer
 ehi.EmonHubTesterInterfacer = interfacers.EmonHubTesterInterfacer.EmonHubTesterInterfacer
 ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.EmonHubEmoncmsHTTPInterfacer
+ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
 
 """class EmonHub
 
@@ -273,11 +275,10 @@ if __name__ == "__main__":
 
     if 'use_syslog' in setup.settings['hub']:
         if setup.settings['hub']['use_syslog'] == 'yes':
-            syslogger = logging.handlers.SysLogHandler(address = '/dev/log')
+            syslogger = logging.handlers.SysLogHandler(address='/dev/log')
             syslogger.setFormatter(logging.Formatter(
                   'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
             logger.addHandler(syslogger)
-
 
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
