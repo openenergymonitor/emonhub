@@ -1,27 +1,3 @@
-'''
-    Interface conf:
-    [[SMILICS_INTERFACE]]
-        Type = EmonHubSmilicsInterfacer
-        [[[init_settings]]]
-            port = 8080
-        [[[runtimesettings]]]
-            pubchannels = ToCloud
-            subchannels = ToNothing
-
-    Node conf:
-    Using the Wibeee mac-address as node id
-
-    [[121111111111]]
-        nodename = SMILICS01
-        firmware =V120
-        hardware = Smilics Wibeee
-        [[[rx]]]
-           names = power1, power2, power3, power_total, wh1, wh2, wh3, wh_total
-           datacodes = h, h, h, h, h, h, h, h
-           scales       = 1, 1, 1, 1, 1, 1, 1, 1
-           units = W, W, W, W, Wh, Wh, Wh, Wh
-'''
-
 import threading
 import datetime
 import time
