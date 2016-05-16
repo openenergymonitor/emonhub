@@ -129,6 +129,9 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
 
         """
         clean_data = "%s"%self._settings['nodeoffset']
+        if not data:
+          self._log.warning("No data returned")
+          return "" 
         for key in self._extract:
             if data.has_key(key):
                     #Emonhub doesn't like strings so we convert them to ints

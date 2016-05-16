@@ -30,7 +30,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'data_send_interval':30,
             'status_send_interval':60,
             'buffer_size':10,
-	    'site_id':5
         }
         
 	self._compression_level = 9
@@ -101,7 +100,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 		post_body = zlib.compress(post_body, self._compression_level)
 
         # Add apikey to post_url
-        post_url = post_url + self._settings['apikey'] + "&" + "site_id=" + self._settings['site_id'] + "&time="+str(sentat)
+	# Site_id is deprecated
+        post_url = post_url + self._settings['apikey'] + "&" +  "&time="+str(sentat)
 
         # logged before apikey added for security
         self._log.info("sending: " + post_url + " body:" +post_body)
