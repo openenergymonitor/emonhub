@@ -6,6 +6,7 @@ import json
 import urllib2
 import httplib
 import redis
+import msgpack
 
 from sys import getsizeof as size
 from pydispatch import dispatcher
@@ -82,13 +83,13 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.error("API key not found skipping: " + str( databuffer ))
             return False
         self._log.debug("data string %s "%databuffer)
-        data_string = json.dumps(databuffer, separators=(',', ':'))
+	
+        # If we are sending binary data
+        if self._settings["use_binary"]:
+            data_string = msgpack.packb(databuffer)
+	else:
+            data_string = json.dumps(databuffer, separators=(',', ':'))
 
-
-        # Prepare URL string of the form
-        # http://domain.tld/emoncms/input/bulk.json?apikey=12345
-        # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
-        # &sentat=15' (requires emoncms >= 8.0)
 
         # time that the request was sent at
         sentat = int(time.time())
@@ -97,8 +98,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
         post_body = data_string
 
-        if self._settings["use_binary"]:
-            post_body = msgpack.packb(post_body)
 
         if self._settings["compression"]:
             post_body = zlib.compress(post_body, self._compression_level)
@@ -107,7 +106,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         post_url = post_url + self._settings['apikey'] + "&time="+str(sentat)
 
         # logged before apikey added for security
-        self._log.info("sending: " + post_url + " body:" +post_body)
+        self._log.debug("sending: " + post_url + " body:" +post_body)
 
         # The Develop branch of emoncms allows for the sending of the apikey in the post
         # body, this should be moved from the url to the body as soon as this is widely
@@ -140,13 +139,13 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         reply = ""
         request = urllib2.Request(post_url, post_body)
-        if self._settings["compression"]:
-            request.add_header('content-encoding','gzip')
-        if self._settings['use_binary']:
-            request.add_header('application/x-msgpack','gzip')
+        request.add_header('Content-Type','application/json')
 
-        if not self._settings['use_binary'] or self._settings['compression']:
-            request.add_header('content-type','application/json')
+        if self._settings["compression"]:
+            request.add_header('Content-Encoding','gzip')
+        if self._settings['use_binary']:
+            request.add_header('Content-Type','application/x-msgpack')
+
 
         self._data_size = self._data_size + size(post_body)
         try:
