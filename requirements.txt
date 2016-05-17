@@ -20,3 +20,4 @@ uptime==3.0.1
 urwid==1.0.1
 wicd==1.7.2.4
 wsgiref==0.1.2
+msgpack-python
