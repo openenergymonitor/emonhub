@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "EUID: $EUID"
 emonhub_location=/home/pi/data/emonhub.conf
 
 max=31
