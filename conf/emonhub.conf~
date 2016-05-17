@@ -1,17 +1,24 @@
 #######################################################################
 #######################      emonhub.conf     #########################
 #######################################################################
+
+## **LEGACY CONFIG: For use with 17thJune2015 emonPi/emonBase image and older **
+## (check image version by looking for file in /boot)
+## Uses old CSV MQTT topic structure compatible with Emoncms Nodes
+## Does not use MQTT server authentication
+
 ### emonHub configuration file, for info see documentation:
-### http://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md
+### http://github.com/openenergymonitor/emonhub/blob/master/configuration.md
 #######################################################################
 #######################    emonHub  settings    #######################
 #######################################################################
 
 [hub]
 ### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
-loglevel = DEBUG
+loglevel = DEBUG #(default:WARNING)
 ### Uncomment this to also send to syslog
 # use_syslog = yes
+
 #######################################################################
 #######################       Interfacers       #######################
 #######################################################################
@@ -22,7 +29,7 @@ loglevel = DEBUG
     Type = EmonHubJeeInterfacer
     [[[init_settings]]]
         com_port = /dev/ttyAMA0
-        com_baud = 38400                        # 9600 for old RFM12Pi
+        com_baud = 38400                      # 9600 for old RFM12Pi modules
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         subchannels = ToRFM12,
@@ -40,8 +47,8 @@ loglevel = DEBUG
     [[[init_settings]]]
         mqtt_host = 127.0.0.1
         mqtt_port = 1883
-        mqtt_user = emonpi
-        mqtt_passwd = emonpimqtt2016
+        mqtt_user = ''
+        mqtt_passwd = ''
 
     [[[runtimesettings]]]
         pubchannels = ToRFM12,
@@ -124,15 +131,6 @@ loglevel = DEBUG
        datacode = h
        scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1
        units =W,W,W,W,V,C,C,C,C,C,C,p
-
-[[11]]
-   nodename = emonTx_three_phase
-   firmware = three_phase
- [[[rx]]]
-   names = powerL1, powerL2, powerL3, power4, Vrms, temp1
-   datacode = h
-   scales = 1,1,1,1,0.01,0.1
-   units =W,W,W,W,V,C
 
 [[19]]
    nodename = emonth1
