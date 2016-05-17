@@ -1,7 +1,7 @@
 """
 
   This code is released under the GNU Affero General Public License.
-  
+
   OpenEnergyMonitor project:
   http://openenergymonitor.org
 
@@ -26,7 +26,7 @@ from pydispatch import dispatcher
 
 """class EmonHubInterfacer
 
-Monitors a data source. 
+Monitors a data source.
 
 This almost empty class is meant to be inherited by subclasses specific to
 their data source.
@@ -36,7 +36,7 @@ their data source.
 class EmonHubInterfacer(threading.Thread):
 
     def __init__(self, name):
-        
+
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
@@ -57,7 +57,7 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
-        
+
         # create a stop
         self.stop = False
 
@@ -81,17 +81,17 @@ class EmonHubInterfacer(threading.Thread):
                     for channel in self._settings["pubchannels"]:
                         dispatcher.send(channel, cargo=rxc)
                         self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
-                  
+
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
-   
-    # Subscribed channels entry                 
+
+    # Subscribed channels entry
     def receiver(self, cargo):
         txc = self._process_tx(cargo)
         self.send(txc)
-                            
+
     def read(self):
         """Read raw data from interface and pass for processing.
         Specific version to be created for each interfacer
@@ -122,15 +122,15 @@ class EmonHubInterfacer(threading.Thread):
 
         This function splits the string into numbers and check its validity.
 
-        'NodeID val1 val2 ...' is the generic data format. If the source uses 
+        'NodeID val1 val2 ...' is the generic data format. If the source uses
         a different format, override this method.
-        
+
         Return data as a list: [NodeID, val1, val2]
 
         """
 
         # Log data
-        self._log.debug(str(cargo.uri) + " NEW FRAME : " + cargo.rawdata)
+        self._log.debug(str(cargo.uri) + " NEW FRAME : " + str(cargo.rawdata))
 
         rxc = cargo
         decoded = []
@@ -148,7 +148,7 @@ class EmonHubInterfacer(threading.Thread):
         except Exception:
             self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata))
             return False
-            
+
         # Discard if first value is not a valid node id
         # n = float(rxc.realdata[0])
         # if n % 1 != 0 or n < 0 or n > 31:
@@ -160,7 +160,7 @@ class EmonHubInterfacer(threading.Thread):
 
             # fetch the string of datacodes
             datacodes = ehc.nodelist[node]['rx']['datacodes']
-            
+
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
@@ -252,24 +252,24 @@ class EmonHubInterfacer(threading.Thread):
                         x = scales[i]
                     else:
                         x = 1
-                
+
                 if x != "1":
                     val = decoded[i] * float(x)
                     if val % 1 == 0:
                         decoded[i] = int(val)
                     else:
                         decoded[i] = float(val)
-                        
+
         rxc.realdata = decoded
-        
+
         names = []
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'names' in ehc.nodelist[node]['rx']:
             names = ehc.nodelist[node]['rx']['names']
         rxc.names = names
-        
+
         nodename = False
         if node in ehc.nodelist and 'nodename' in ehc.nodelist[node]:
-            nodename = ehc.nodelist[node]['nodename']           
+            nodename = ehc.nodelist[node]['nodename']
         rxc.nodename = nodename
 
         if not rxc:
@@ -281,7 +281,7 @@ class EmonHubInterfacer(threading.Thread):
         self._log.debug(str(rxc.uri) + "    Values : " + str(rxc.realdata))
         if rxc.rssi:
             self._log.debug(str(rxc.uri) + "      RSSI : " + str(rxc.rssi))
-        
+
         return rxc
 
 
@@ -303,7 +303,7 @@ class EmonHubInterfacer(threading.Thread):
         txc = cargo
         scaled = []
         encoded = []
-        
+
         # Normal operation is dest from txc.nodeid
         if txc.target:
             dest = str(txc.target)
@@ -311,7 +311,7 @@ class EmonHubInterfacer(threading.Thread):
         else:
             dest = str(txc.nodeid)
             # self._log.info("dest from txc.nodeid: "+dest)
-        
+
         # self._log.info("Target: "+dest)
         # self._log.info("Realdata: "+json.dumps(txc.realdata))
 
@@ -336,7 +336,7 @@ class EmonHubInterfacer(threading.Thread):
             # when node not listed or has no scale(s) use the interfacers default if specified
                 if 'scale' in self._settings:
                     scale = self._settings['scale']
-                else: 
+                else:
                     scale = "1"
 
         if scale == "1":
@@ -354,7 +354,7 @@ class EmonHubInterfacer(threading.Thread):
                         val = int(val)
                 scaled.append(val)
 
-        
+
         # self._log.info("Scaled: "+json.dumps(scaled))
 
         # check if node is listed and has individual datacodes for each value
@@ -362,7 +362,7 @@ class EmonHubInterfacer(threading.Thread):
 
             # fetch the string of datacodes
             datacodes = ehc.nodelist[dest]['tx']['datacodes']
-            
+
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
             for code in datacodes:
@@ -387,14 +387,14 @@ class EmonHubInterfacer(threading.Thread):
                     datacode = self._settings['datacode']
                 else:
                     datacode = "h"
-                    
+
             # Ensure only int 0 is passed not str 0
             if datacode == '0':
                 datacode = 0
             # when no (default)datacode(s) specified, pass string values back as numerical values
             if not datacode:
                 encoded.append(dest)
-                
+
                 for val in scaled:
                     if float(val) % 1 != 0:
                         val = float(val)
@@ -417,7 +417,7 @@ class EmonHubInterfacer(threading.Thread):
                 dc = str(datacode)
                 if not datacode:
                     dc = str(datacodes[i])
-                
+
                 for b in ehc.encode(dc,int(scaled[i])):
                     encoded.append(b)
 
@@ -437,7 +437,7 @@ class EmonHubInterfacer(threading.Thread):
             'pause' = in   pauses the input only, no input read performed
             'pause' = out  pauses output only, input is read, processed but not posted to buffer
             'pause' = off  pause is off and Interfacer is fully operational (default)
-        
+
         """
     #def setall(self, **kwargs):
 
@@ -481,7 +481,7 @@ class EmonHubInterfacer(threading.Thread):
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
 
-            # Is there a better place to put this?    
+            # Is there a better place to put this?
             for channel in self._settings["subchannels"]:
                 dispatcher.connect(self.receiver, channel)
                 self._log.debug("Interfacer: Subscribed to channel' : " + str(channel))
