@@ -8,8 +8,8 @@ for var in `seq 2 $max`
 do
   if ! grep "\[$var\]" $emonhub_location; then
     if [ -f $path/$var ]; then
-      cat $path/$var >> $emonhub_location
       echo "">>$emonhub_location
+      cat $path/$var >> $emonhub_location
       echo "Added node $var to emonhub.conf"
     fi
   else
