@@ -14,7 +14,6 @@ python-apt==0.8.8.2
 redis==2.10.5
 simplegeneric==0.8.1
 smbus==1.1
-ufw==0.31.1.post2
 uptime==3.0.1
 urwid==1.0.1
 wicd==1.7.2.4
