@@ -4,17 +4,17 @@ emonHub is configured with `emonhub.conf` config file. On the emonPi / emonBase 
 
 Emonhub.conf has 3 sections: 
 
-1. **`hub`**
+## 1. `hub`
 
 Hub is a section for emonhub global settings such as the loglevel.
 
 
-2. **`interfacers`**
+## 2. `interfacers`
 
 Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics.
 
 
-3. **`nodes`**
+## 3. `nodes`
 
 Nodes holds the decoder configuration for rfm12/69 node data which are sent as binary structures.
 
@@ -45,7 +45,7 @@ Nodes holds the decoder configuration for rfm12/69 node data which are sent as b
 
 **View full latest [default emonHub.conf](https://github.com/openenergymonitor/emonhub/blob/emon-pi/conf/emonpi.default.emonhub.conf)**
 
-
+***
 
 # 1. 'hub' Configuration 
 
@@ -59,7 +59,7 @@ loglevel = DEBUG
 ### Uncomment this to also send to syslog
 # use_syslog = yes
 ```
-
+***
 # 2. 'interfaces' Configuration
 
 Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics:
@@ -169,6 +169,8 @@ The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to 
 **sendstatus** Its possible to the EmonHubEmoncmsHTTPInterfacer to send a 'ping' to the destination emoncms that can be picked up by the myip module which will then list the source IP address. This can be useful for remote login to an home emonpi if port forwarding is enabled on your router.
 
 **senddata** If you only want to send the ping request and no data to emoncms.org set this to 0
+
+***
 
 # 3. 'nodes' Configuration
 
@@ -444,7 +446,8 @@ Firmware location: [Shield_CT1234_Voltage.ino](https://github.com/openenergymoni
            scales = 1,1,1,1,0.01
            units =W,W,W,W,V
 
-## 4. Troubleshooting
+***
+# 4. Troubleshooting
 
 ### Node data inactive or, node data does not appear for a configured node
 
