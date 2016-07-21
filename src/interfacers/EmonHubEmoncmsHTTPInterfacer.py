@@ -27,17 +27,33 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'use_binary':True,
             'apikey': "",
             'url': "http://emoncms.org",
+            'redis_url':'localhost',
+            'redis_port': 6379,
+	    'redis_db':0,
             'senddata': 1,
             'sendstatus': 0,
             'data_send_interval':60,
             'status_send_interval':260,
-            'buffer_size':10,
+            'buffer_size':1000,
         }
 
 	self._compression_level = 9
         self.buffer = []
         self.lastsent = time.time()
         self.lastsentstatus = time.time()
+	self.r = redis.Redis(self._settings['redis_url'], 
+		 port=self._settings['redis_port'],
+		 db=self._settings['redis_db'] )
+
+	# We wait here until redis has successfully started up
+	redisready = False
+	while not redisready:
+	    try:
+		self.r.client_list()
+		redisready = True
+	    except redis.ConnectionError:
+		logger.info("waiting for redis-server to start...")
+		time.sleep(1.0)
 
     def receiver(self, cargo):
 
@@ -115,8 +131,11 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         reply = self._send_post(post_url, post_body)
         if reply.lower().strip() == 'ok':
             self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
+            #Send data to LCD
+            self.r.set('server:active',1)
             return True
         else:
+            self.r.set('server:active',0)
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
             self._log.warning("Keeping buffer till successfull attempt, buffer length: " + str(len(self.buffer)))
             return False
