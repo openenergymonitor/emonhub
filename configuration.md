@@ -170,6 +170,23 @@ The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to 
 
 **senddata** If you only want to send the ping request and no data to emoncms.org set this to 0
 
+You can create multiple of these sections to send data to multiple emoncms instances. For example, if you wanted to send to an emoncms running at emoncms.example.com you would add the following underneath the `emoncmsorg` section described above:
+
+```
+    [[emoncmsexample]]
+        Type = EmonHubEmoncmsHTTPInterfacer
+        [[[init_settings]]]
+        [[[runtimesettings]]]
+            pubchannels = ToRFM12,
+            subchannels = ToEmonCMS,
+            url = https://emoncms.example.com
+            apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+            senddata = 1
+            sendstatus = 1
+```
+
+This time, the API key will be the API key from your account at emoncms.example.com.
+
 ***
 
 # 3. 'nodes' Configuration
