@@ -79,8 +79,9 @@ class EmonHubInterfacer(threading.Thread):
                 rxc = self._process_rx(rxc)
                 if rxc:
                     for channel in self._settings["pubchannels"]:
+                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
                         dispatcher.send(channel, cargo=rxc)
-                        self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
+                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
             # Don't loop to fast
             time.sleep(0.1)
