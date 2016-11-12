@@ -23,31 +23,14 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
 
 # Initialization
         super(EmonModbusTcpInterfacer, self).__init__(name)
-#        if modbus_port != 0:
-#            super(EmonModbusTcpInterfacer, self).__init__(name, modbus_IP, modbus_port)
-#        else:
-#            super(EmonModbusTcpInterfacer, self).__init__(name, modbus_IP, 502)
 
     # open connection
-	#self._log.info("args: " + modbus_IP + " - " + modbus_port )
+	self._log.debug("EmonModbusTcpInterfacer args: " + str(modbus_IP) + " - " + str(modbus_port) )
 	self._con = self._open_modTCP(modbus_IP,modbus_port)
 	if self._modcon :
-            # Display device firmware version and current settings
-	    self.info =["",""]
-            #self._log.info("Modtcp Connected")
-            r2= self._con.read_holding_registers(40005-1,4,unit=1)
-            r3= self._con.read_holding_registers(40021-1,4,unit=1)
-            invBrand = BinaryPayloadDecoder.fromRegisters(r2.registers, endian=Endian.Big)
-            invModel = BinaryPayloadDecoder.fromRegisters(r3.registers, endian=Endian.Big)
-            self._log.info( self.name +  " Inverter: " + invBrand.decode_string(8) + invModel.decode_string(8))
-            swDM= self._con.read_holding_registers(40037-1,8,unit=1)
-            swInv= self._con.read_holding_registers(40045-1,8,unit=1)
-            swDMdecode = BinaryPayloadDecoder.fromRegisters(swDM.registers, endian=Endian.Big)
-            swInvdecode = BinaryPayloadDecoder.fromRegisters(swInv.registers, endian=Endian.Big)
-            self._log.info( self.name + " SW Versions: Datamanager " + swDMdecode.decode_string(16) + "- Inverter " + swInvdecode.decode_string(16))
-            r1 = self._con.read_holding_registers(40070-1,1,unit=1)
-            ssModel = BinaryPayloadDecoder.fromRegisters(r1.registers, endian=Endian.Big)
-            self._log.info( self.name + " SunSpec Model: " + str(ssModel.decode_16bit_uint()) )
+            self._log.info("Modbustcp client Connected")
+	else:
+	    self._log.info("Connection to ModbusTCP client failed. Will try again")
 
 
     def set(self, **kwargs):
@@ -55,7 +38,7 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
         for key in kwargs.keys():
             setting = kwargs[key]
             self._settings[key] = setting
-            self._log.info("Setting " + self.name + " %s: %s" % (key, setting) )
+            self._log.debug("Setting " + self.name + " %s: %s" % (key, setting) )
 
     def close(self):
                     
@@ -70,7 +53,7 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
         try:
             c = ModbusClient(modbus_IP,modbus_port)
 	    if c.connect():
-                self._log.debug("opening TCP connection: " + str(modbus_port) + " @ " +str(modbus_IP))
+                self._log.info("Opening modbusTCP connection: " + str(modbus_port) + " @ " +str(modbus_IP))
 		self._modcon = True
 	    else:
 		self._log.debug("Connection failed")
@@ -110,12 +93,12 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
 
                 try:
 		    self.rVal = self._con.read_holding_registers(register-1,qty,unit=1)
+                    assert(self.rVal.function_code < 0x80)
 		except Exception as e:
-		    self._log.error("Connection failed on read of register" + str(e))
+		    self._log.error("Connection failed on read of register: " +str(register) + " : " + str(e))
 		    self._modcon = False
 		else:
 	            #self._log.debug("register value:" + str(self.rVal.registers)+" type= " + str(type(self.rVal.registers)))
-                    assert(self.rVal.function_code < 0x80)
 	            #f = f + self.rVal.registers
                     decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, endian=Endian.Big)
 		    self._log.debug("register type: " + str(rType))
@@ -123,6 +106,14 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
                     if rType == "uint16":
                         rValD = decoder.decode_16bit_uint()
                         t = emonhub_coder.encode('H',rValD)
+                        f = f + list(t)
+                    elif rType == "uint32":
+                        rValD = decoder.decode_32bit_uint()
+                        t = emonhub_coder.encode('I',rValD)
+                        f = f + list(t)
+                    elif rType == "uint64":
+                        rValD = decoder.decode_64bit_uint()
+                        t = emonhub_coder.encode('Q',rValD)
                         f = f + list(t)
                     elif rType == "int16":
                         rValD = decoder.decode_16bit_int()
