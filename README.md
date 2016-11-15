@@ -2,21 +2,34 @@
 
 Emonhub is typically used in the OpenEnergyMonitor system to first read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board and then second to then forward this data on to emoncms in a decoded ready-to-use form - based on the configuration in [emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
-More generally: Emonhub consists of a series of interfacers that can read/subscribe or send/publish data to and from a multitude of services.
+More generally: Emonhub consists of a series of interfacers that can read/subscribe or send/publish data to and from a multitude of services. EmonHub supports decoding data from:
 
-Emonhub is included on the pre-built SD card used by both the EmonPi and Emonbase. The documentation below convers installing the emon-pi variant of emonhub on linux for self build setups.
+### Enabled by default
+
+- RFM [JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc. 
+
+### Not enabled by default
+
+*See protocol specific readme's in `/conf`*
+
+- Smilics energy monitors (added by @K0den)
+- Victron Products e.g  BMV 700 battery monitor (added by @jlark)
+- ModBus e.g. FRONIUS Solar inverter (added by @cjthuys)
+
+***
+
+Emonhub is included on the [emonsD pre-built SD card](https://github.com/openenergymonitor/emonpi/wiki/emonSD-pre-built-SD-card-Download-&-Change-Log) used by both the EmonPi and Emonbase. The documentation below convers installing the emon-pi variant of emonhub on linux for self build setups.
 
 ### Emon-Pi variant
 
 This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) experimental branch adding: 
 
 - Internal pub/sub message bus based on pydispatcher
-- Tested MQTT interfacer (integrated with new emoncms nodes module)
-- HTTP Emoncms interfacer (rather than reporter). 
-- Reporters have been removed. 
+- Post to MQTT
+- HTTP(S) Emoncms interface
 - A multi-file implementation of interfacers.
 - Rx and tx modes for node decoding/encoding provides improved control support.
-- json based config file option so that emonhub.conf can be loaded by emoncms - intention is to provide config interface in emoncms.
+- json based config file option so that emonhub.conf can be loaded by emoncms
 
 ### [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
@@ -72,7 +85,7 @@ To view the emonhub log via terminal on the emonpi or emonbase:
 
 ### EmonHub Emoncms config module 
 
-If your using emoncms on the same raspberry pi as emonhub you may find the emoncms config module useful which provides in browser access to emonhub.conf and emonhub.log:
+If your using Emoncms on the same Raspberry Pi as emonhub you may find the emoncms config module useful which provides in browser access to `emonhub.conf` and `emonhub.log`:
 
 https://github.com/emoncms/config
 
