@@ -16,6 +16,11 @@ import logging.handlers
 import signal
 import argparse
 import pprint
+try:
+      import pymodbus
+      pymodbus_found = True
+except ImportError:
+      pymodbus_found = False
 
 import emonhub_setup as ehs
 import interfacers.emonhub_interfacer as ehi
@@ -30,8 +35,9 @@ import interfacers.EmonHubTesterInterfacer
 import interfacers.EmonHubEmoncmsHTTPInterfacer
 import interfacers.EmonHubSmilicsInterfacer
 import interfacers.EmonHubVEDirectInterfacer
-import interfacers.EmonModbusTcpInterfacer
-import interfacers.EmonFroniusModbusTcpInterfacer
+if pymodbus_found:
+        import interfacers.EmonModbusTcpInterfacer
+        import interfacers.EmonFroniusModbusTcpInterfacer
 
 
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
@@ -43,8 +49,9 @@ ehi.EmonHubTesterInterfacer = interfacers.EmonHubTesterInterfacer.EmonHubTesterI
 ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.EmonHubEmoncmsHTTPInterfacer
 ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
 ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
-ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
-ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
+if pymodbus_found:
+        ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
+        ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
 
 """class EmonHub
 
@@ -178,6 +185,8 @@ class EmonHub(object):
                     if not 'Type' in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
+                    if I['Type'] in ('EmonModbusTcpInterfacer','EmonFroniusModbusTcpInterfacer') and not pymodbus_found :
+                        self._log.error("Python module pymodbus not installed. unable to load modbus interfacer")
                     # This gets the class from the 'Type' string
                     interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
