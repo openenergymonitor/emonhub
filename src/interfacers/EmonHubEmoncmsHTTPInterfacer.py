@@ -34,15 +34,17 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     
         # Create a frame of data in "emonCMS format"
         f = []
-        f.append(int(cargo.timestamp))
-        f.append(cargo.nodeid)
-        for i in cargo.realdata:
-            f.append(i)
-        if cargo.rssi:
-            f.append(cargo.rssi)
-
-        self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-        
+        try:
+            f.append(float(cargo.timestamp))
+            f.append(cargo.nodeid)
+            for i in cargo.realdata:
+                f.append(i)
+            if cargo.rssi:
+                f.append(cargo.rssi)
+            self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
+        except:
+            self._log.warning("Failed to create emonCMS frame " + str(f))
+            
         # Append to bulk post buffer
         self.buffer.append(f)
         
