@@ -10,7 +10,7 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 
 ### Not enabled by default
 
-*See protocol specific readme's in `[/conf/interfacer_examples](conf/interfacer_examples)`
+*See protocol specific readme's in [/conf/interfacer_examples](conf/interfacer_examples)
 
 - Smilics energy monitors (added by @K0den)
 - Victron Products e.g  BMV 700 battery monitor (added by @jlark)
