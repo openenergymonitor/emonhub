@@ -30,8 +30,9 @@ SYSCONF_PATH=/etc/default/
 
 [ ! -f $EMONHUB_CONFIG ] && echo "Fatal: cannot find $EMONHUB_CONFIG" && exit 1
 [ ! -f $EMONHUB_PATH$NAME.py ] && echo "Fatal: cannot find $EMONHUB_PATH$NAME.py" && exit 1
-[ ! -f $EMONHUB_LOG ] && sudo mkdir -p "$(dirname "$EMONHUB_LOG")" && sudo touch "$EMONHUB_LOG" && sudo chown -R $DAEMONUSER "$(dirname "$EMONHUB_LOG")"
-sudo chown -R $DAEMONUSER "$(dirname "$EMONHUB_LOG")"
+[ ! -z $EMONHUB_LOG ] || [ ! -f $EMONHUB_LOG ] && sudo mkdir -p "$(dirname "$EMONHUB_LOG")" && sudo touch "$EMONHUB_LOG" && sudo chown -R $DAEMONUSER "$(dirname "$EMONHUB_LOG")"
+
+[ ! -z $EMONHUB_LOG ] && sudo chown -R $DAEMONUSER "$(dirname "$EMONHUB_LOG")"
 
 # PATH should only include /usr/* if it runs after the mountnfs.sh script
 PATH=/sbin:/usr/sbin:/bin:/usr/bin
@@ -40,7 +41,8 @@ DESC="OpenEnergyMonitor emonHub"
 DAEMON=$EMONHUB_PATH$NAME.py
 
 # Specify command line arguments here
-DAEMON_ARGS="--logfile $EMONHUB_LOG --config-file $EMONHUB_CONFIG"
+DAEMON_ARGS="--config-file $EMONHUB_CONFIG"
+[ ! -z $EMONHUB_LOG ] && DAEMON_ARGS="$DAEMON_ARGS --logfile $EMONHUB_LOG"
 
 PIDFILE=/var/run/$NAME.pid
 SCRIPTNAME=/etc/init.d/$NAME
