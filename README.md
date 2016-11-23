@@ -15,6 +15,7 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 - Smilics energy monitors (added by @K0den)
 - Victron Products e.g  BMV 700 battery monitor (added by @jlark)
 - ModBus e.g. FRONIUS Solar inverter (added by @cjthuys)
+- Graphite timeseries DB (added by @hmm01i)
 
 ***
 
