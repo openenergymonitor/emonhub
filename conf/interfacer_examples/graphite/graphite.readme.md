@@ -1,4 +1,4 @@
-#Graphite interfacer#
+# Graphite interfacer
 
 Graphite is an enterprise-ready timeseries database capable of collecting millions of metrics per minute.
 It has a powerful API and function set for querying and manipulating the data.
@@ -7,16 +7,13 @@ For details on graphite see <https://graphiteapp.org/>
 It is frequently paired with [Grafana](http://grafana.org/) for dashboards and visualizations
 
 
-##Usage and configuration##
+## Usage and configuration
 Simply configure interface with host, port and interval of your graphite installation.
-metrics get sent to a path similar to the nodevar format as MQTT interface.
+Metrics get sent to a path similar to the nodevar format as MQTT interface.
 
-<prefix>.<node>.<sensor>
+Ex: `<prefix>.emonPi.power1`
 
-Ex
-emonpi.emonPi.power1
-
-
+### Parameters
 
 * `pubchannels` and `subchannels`
 
@@ -28,20 +25,24 @@ emonpi.emonPi.power1
 
 * `graphite_port`
 
-  The port graphite accepts raw tcp metrics. (Default: 2003)
+  Graphite tcp metrics port. (Default: 2003)
+
+* `senddata`
+
+  Set to 0 to disable sending metrics. (Default: 1)
 
 * `sendinterval`
 
   Frequency, in seconds, to send metrics. (Default: 30)
-  Should be set the same in your graphite storage scheme
+  (Should be set the same in your graphite storage scheme)
 
 * `prefix`
 
   Prefix for graphite storage path. (Default: emonpi)
 
-###Sample interfacer config within emonhub.conf ###
+### Sample interfacer config within emonhub.conf
 
-
+```
     [[Graphite]]
         Type = EmonHubGraphiteInterfacer
         [[[init_settings]]]
@@ -52,8 +53,8 @@ emonpi.emonPi.power1
             graphite_port = 2003,
             senddata = 1,
             sendinterval = 30,
-            prefix = 'emonpi'
-
+            prefix = emonpi
+```
 
 With this config in place now you simply need to restart emonhub on your emonpi by ssh'ing into it and typing 
 
