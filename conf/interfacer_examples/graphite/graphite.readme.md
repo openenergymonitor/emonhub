@@ -19,20 +19,20 @@ emonpi.emonPi.power1
 
 
 * `pubchannels` and `subchannels`
-Same usage as other interfacers
+  Same usage as other interfacers
 
 * `graphite_host`
-Host or IP of your graphite server
+  Host or IP of your graphite server
 
 * `graphite_port`
-The port graphite accepts raw tcp metrics. (Default: 2003)
+  The port graphite accepts raw tcp metrics. (Default: 2003)
 
 * `sendinterval`
-Frequency, in seconds, to send metrics. (Default: 30)
-Should be set the same in your graphite storage scheme
+  Frequency, in seconds, to send metrics. (Default: 30)
+  Should be set the same in your graphite storage scheme
 
 * `prefix`
-Prefix for graphite storage path. (Default: emonpi)
+  Prefix for graphite storage path. (Default: emonpi)
 
 ###Sample interfacer config within emonhub.conf ###
 
