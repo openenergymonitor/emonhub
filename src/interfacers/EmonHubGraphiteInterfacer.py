@@ -12,9 +12,9 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
     def __init__(self, name):
         # Initialization
         super(EmonHubGraphiteInterfacer, self).__init__(name)
-        
+
         self._name = name
-        
+
         self._settings = {
             'subchannels':['ch1'],
             'pubchannels':['ch2'],
@@ -25,13 +25,13 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
             'prefix': 'emonpi'
         }
         self._log.debug(self._settings)
-        
+
         self.buffer = []
         self.lastsent = time.time()
         self.lastsentstatus = time.time()
 
     def receiver(self, cargo):
-        self._log.info('entering recieve') 
+        self._log.debug('Entering recieve function')
         nodestr = str(cargo.nodeid)
         if cargo.nodename!=False: nodestr = str(cargo.nodename)
 
@@ -47,23 +47,23 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
                 # Construct path
             path = self._settings['prefix']+'.'+nodestr+"."+varstr
             payload = str(value)
-                  
-#            self._log.info("Graphite Collecting metric: "+path+" "+payload)
-            self.buffer.append(path+" "+payload+" "+str(int(cargo.timestamp)))
-                    
-            varid += 1        
 
-        
+            self._log.debug("Collecting metric: "+path+" "+payload)
+            self.buffer.append(path+" "+payload+" "+str(int(cargo.timestamp)))
+
+            varid += 1
+
+
     def action(self):
-    
+
         now = time.time()
-        
+
         if (now-self.lastsent) > (int(self._settings['sendinterval'])):
             self.lastsent = now
             if int(self._settings['senddata']):
                 self._send_metrics(self.buffer)
             self.buffer = []
-            
+
 
     def _send_metrics(self, metrics=[]):
         """
@@ -80,24 +80,23 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
 
         """
 
-        HOST = str(self._settings['graphite_host']).strip('[]')
-        PORT = int(str(self._settings['graphite_port']).strip('[\'\']'))
-        self._log.debug(HOST)
-        self._log.debug(PORT)
+        host = str(self._settings['graphite_host']).strip('[]')
+        port = int(str(self._settings['graphite_port']).strip('[\'\']'))
+        self._log.debug("Graphite target: " + host + ":" + port)
         message = '\n'.join(metrics)+'\n'
-#        self._log.info("sending metrics to graphite"+message)
+        self._log.debug("Sending metrics: "+message)
 
         sock = socket.socket()
-        sock.connect(('graphite.wland.mtrx', 2003))
+        sock.connect((HOST, PORT))
         sock.sendall(message)
         sock.close()
-            
+
     def set(self, **kwargs):
         for key,setting in self._settings.iteritems():
             if key in kwargs.keys():
                 # replace default
                 self._settings[key] = kwargs[key]
-        
+
         # Subscribe to internal channels
         for channel in self._settings["subchannels"]:
             dispatcher.connect(self.receiver, channel)
