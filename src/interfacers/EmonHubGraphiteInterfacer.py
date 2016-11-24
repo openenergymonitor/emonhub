@@ -12,18 +12,17 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
     def __init__(self, name):
         # Initialization
         super(EmonHubGraphiteInterfacer, self).__init__(name)
-
         self._name = name
-
-        self._settings = {
+        self._defaults = {
             'subchannels':['ch1'],
             'pubchannels':['ch2'],
-            'graphite_host': 'graphite.example.com',
+            'graphite_host': 'localhost',
             'graphite_port': '2003',
             'senddata': 1,
             'sendinterval': 30,
             'prefix': 'emonpi'
         }
+        self._settings.update(self._defaults)
         self._log.debug(self._settings)
 
         self.buffer = []
@@ -48,7 +47,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
             path = self._settings['prefix']+'.'+nodestr+"."+varstr
             payload = str(value)
 
-            self._log.debug("Collecting metric: "+path+" "+payload)
+            self._log.info("Collecting metric: "+path+" "+payload)
             self.buffer.append(path+" "+payload+" "+str(int(cargo.timestamp)))
 
             varid += 1
@@ -80,14 +79,14 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
 
         """
 
-        host = str(self._settings['graphite_host']).strip('[]')
+        host = str(self._settings['graphite_host']).strip('[\'\']')
         port = int(str(self._settings['graphite_port']).strip('[\'\']'))
-        self._log.debug("Graphite target: " + host + ":" + port)
+        self._log.debug("Graphite target: {}:{}".format(host, port))
         message = '\n'.join(metrics)+'\n'
         self._log.debug("Sending metrics: "+message)
 
         sock = socket.socket()
-        sock.connect((HOST, PORT))
+        sock.connect((host, port))
         sock.sendall(message)
         sock.close()
 
