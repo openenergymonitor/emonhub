@@ -124,7 +124,12 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
  
         # Extract RSSI value if it's available
         if str(f[-1])[0]=='(' and str(f[-1])[-1]==')':
-            c.rssi = int(f[-1][1:-1])
+            r = f[-1][1:-1]
+            try:
+                c.rssi = int(r)
+            except ValueError:
+                self._log.warning("Packet discarded as the RSSI format is invalid: "+ str(f))
+                return
             f = f[:-1]
 
         try:
