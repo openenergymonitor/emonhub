@@ -4,13 +4,14 @@ Emonhub is typically used in the OpenEnergyMonitor system to first read data rec
 
 More generally: Emonhub consists of a series of interfacers that can read/subscribe or send/publish data to and from a multitude of services. EmonHub supports decoding data from:
 
-### Enabled by default
+### Default Interfacers
 
-- `EmonHubJeeInterfacer` [RFM JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc.
+- `EmonHubJeeInterfacer`: Decode data received from RFM69Pi & emonPi in [JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc.
+- `EmonHubMqttInterfacer`: Publish decoded data to MQTT
 
-### Not enabled by default
+### Other Interfacers
 
-*See protocol specific readme's in [/conf/interfacer_examples](conf/interfacer_examples)
+*See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
 - Direct Serial
 - Smilics energy monitors (added by @K0den)
@@ -22,13 +23,13 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 
 Emonhub is included on the [emonsD pre-built SD card](https://github.com/openenergymonitor/emonpi/wiki/emonSD-pre-built-SD-card-Download-&-Change-Log) used by both the EmonPi and Emonbase. The documentation below convers installing the emon-pi variant of emonhub on linux for self build setups.
 
-### Emon-Pi variant
+### 'Emon-Pi' variant
 
 This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) experimental branch adding:
 
 - Internal pub/sub message bus based on pydispatcher
-- Post to MQTT
-- HTTP(S) Emoncms interface
+- Publish to MQTT
+- Https Emoncms interface
 - A multi-file implementation of interfacers.
 - Rx and tx modes for node decoding/encoding provides improved control support.
 - json based config file option so that emonhub.conf can be loaded by emoncms
@@ -83,7 +84,6 @@ To view the emonhub log via terminal on the emonpi or emonbase:
 
     tail -f /var/log/emonhub.log
     
-
 
 ### EmonHub Emoncms config module
 

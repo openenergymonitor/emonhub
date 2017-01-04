@@ -2,7 +2,7 @@
 
 emonHub is configured with `emonhub.conf` config file. On the emonPi / emonBase this file is located in the R/W data partition `/home/pi/data/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited direct from the EmonHub tab in local Emoncms, see [User Guide](https://guide.openenergymonitor.org)
 
-Emonhub.conf has 3 sections: 
+Emonhub.conf has 3 sections:
 
 ## 1. `hub`
 
@@ -11,7 +11,7 @@ Hub is a section for emonhub global settings such as the loglevel.
 
 ## 2. `interfacers`
 
-Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics.
+Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics. For more interfacer examples see [conf/interfacer_examples](https://github.com/openenergymonitor/emonhub/blob/emon-pi/conf/interfacer_examples)
 
 
 ## 3. `nodes`
@@ -47,7 +47,7 @@ Nodes holds the decoder configuration for rfm12/69 node data which are sent as b
 
 ***
 
-# 1. 'hub' Configuration 
+# 1. 'hub' Configuration
 
 Hub is a section for emonhub global settings such as the loglevel.
 
@@ -55,7 +55,7 @@ The hub configuration should be self explanatory. Emonhub log can be viewed in t
 
 ```
 ### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
-loglevel = DEBUG 
+loglevel = DEBUG
 ### Uncomment this to also send to syslog
 # use_syslog = yes
 ```
@@ -67,11 +67,11 @@ Interfacers holds the configuration for the different interfacers that emonhub s
 
 ### a.) [[RFM2Pi]]
 
-The `[[RFM2Pi]]` interfacer section contains the settings to read from RFM69Pi / emonPi boards via GPIO internal serial port `/dev/ttyAMA0`. The default serial baud on all emonPi and RFM69Pi is `38400`. Older RFM12Pi boards using `9600` baud. 
+The `[[RFM2Pi]]` interfacer section contains the settings to read from RFM69Pi / emonPi boards via GPIO internal serial port `/dev/ttyAMA0`. The default serial baud on all emonPi and RFM69Pi is `38400`. Older RFM12Pi boards using `9600` baud.
 
-The frequency and network group must match the hardware and other nodes on the network. 
+The frequency and network group must match the hardware and other nodes on the network.
 
-The `calibration` config is used to set the calibration of the emonPi when using USA AC-AC adapters 110V. Set `calibration = 110V` when using USA AC-AC adapter.  
+The `calibration` config is used to set the calibration of the emonPi when using USA AC-AC adapters 110V. Set `calibration = 110V` when using USA AC-AC adapter.
 
 ```
 [[RFM2Pi]]
@@ -89,7 +89,7 @@ The `calibration` config is used to set the calibration of the emonPi when using
         quiet = true                            # Report incomplete RF packets (no implemented on emonPi)
         calibration = 230V                      # (UK/EU: 230V, US: 110V)
         # interval =  0                         # Interval to transmit time to emonGLCD (seconds)
-``` 
+```
 
 
 ### b.) [[MQTT]]
