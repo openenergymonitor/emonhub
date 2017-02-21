@@ -1,6 +1,6 @@
 ## emonHub (emon-pi variant)
 
-Emonhub is typically used in the OpenEnergyMonitor system to first read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board and then second to then forward this data on to emoncms in a decoded ready-to-use form - based on the configuration in [emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
+Emonhub is used in the OpenEnergyMonitor system to read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board then forward the data to emonCMS in a decoded ready-to-use form - based on the configuration in [emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
 More generally: Emonhub consists of a series of interfacers that can read/subscribe or send/publish data to and from a multitude of services. EmonHub supports decoding data from:
 
@@ -21,7 +21,7 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 
 ***
 
-Emonhub is included on the [emonsD pre-built SD card](https://github.com/openenergymonitor/emonpi/wiki/emonSD-pre-built-SD-card-Download-&-Change-Log) used by both the EmonPi and Emonbase. The documentation below convers installing the emon-pi variant of emonhub on linux for self build setups.
+Emonhub is included on the [emonsD pre-built SD card](https://github.com/openenergymonitor/emonpi/wiki/emonSD-pre-built-SD-card-Download-&-Change-Log) used by both the EmonPi and Emonbase. The documentation below covers installing the emon-pi variant of emonhub on linux for self build setups.
 
 ### 'Emon-Pi' variant
 
@@ -46,7 +46,7 @@ Mosquitto: (see http://mosquitto.org/2013/01/mosquitto-debian-repository)
     sudo apt-key add mosquitto-repo.gpg.key
     cd /etc/apt/sources.list.d/
 
-Depending on which version of debian your using:
+Depending on which version of Debian you're using:
 
     sudo wget http://repo.mosquitto.org/debian/mosquitto-wheezy.list
     
@@ -87,7 +87,7 @@ To view the emonhub log via terminal on the emonpi or emonbase:
 
 ### EmonHub Emoncms config module
 
-If your using Emoncms on the same Raspberry Pi as emonhub you may find the emoncms config module useful which provides in browser access to `emonhub.conf` and `emonhub.log`:
+If you're using Emoncms on the same Raspberry Pi as emonhub, you may find the emoncms config module useful which provides in-browser access to `emonhub.conf` and `emonhub.log`:
 
 https://github.com/emoncms/config
 
