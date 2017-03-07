@@ -4,9 +4,28 @@ import time
 import json
 import urllib2
 import httplib
+import socket
+import fcntl
+import struct
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 
+# Helper class to get local ip address - to send to emoncms.org myip module
+class IPAddress(object):
+    def __init__(self):
+        self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+
+    def get_ip_address(self, ifname):
+        try:
+            return socket.inet_ntoa(fcntl.ioctl(
+                self.sock.fileno(),
+                0x8915,  # SIOCGIFADDR
+                struct.pack('256s', ifname[:15])
+            )[20:24])
+        except Exception:
+            return 0
+
+# EmonHubEmoncmsHTTPInterfacer class
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
     def __init__(self, name):
@@ -143,8 +162,17 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return
         
+        # LAN IP
+        ipaddress = IPAddress()
+        lanip = ''
+        eth0ip = ipaddress.get_ip_address('eth0')
+        if bool(eth0ip): lanip = eth0ip
+        wlan0ip = ipaddress.get_ip_address('wlan0')
+        if bool(wlan0ip): lanip = wlan0ip
+        if lanip: lanip = "lanip="+lanip+"&"
+
         # MYIP url
-        post_url = self._settings['url']+'/myip/set.json?apikey='
+        post_url = self._settings['url']+'/myip/set.json?'+lanip+'apikey='
         # Print info log
         self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
         # add apikey
