@@ -196,5 +196,3 @@ class SMABluetoothPacket:
 
         if (checksum > 0) and (self.ValidateHeaderChecksum() == False):
             raise Exception("Invalid header checksum!")
-
-        # print "SMABluetoothPacket class initiated"

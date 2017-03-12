@@ -12,10 +12,12 @@ __author__ = 'Stuart Pittaway'
 import time
 import argparse
 import sys
+import string
 import traceback
 import bluetooth
 import datetime
 from datetime import datetime
+import re
 import serial
 import time
 import Cargo
@@ -23,7 +25,7 @@ from pydispatch import dispatcher
 #import emonhub_interfacer as ehi
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
-
+from collections import namedtuple
 from smalibrary import SMASolar_library
 
 
@@ -35,7 +37,7 @@ Monitors a SMA Solar inverter over bluetooth
 
 class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, inverteraddress='', inverterpincode='0000'):
+    def __init__(self, name, inverteraddress='', inverterpincode='0000', timeinverval=10, nodeid=29):
         """Initialize interfacer
         com_port (string): path to COM port
         """
@@ -46,24 +48,26 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._inverteraddress=inverteraddress
         self._inverterpincode=inverterpincode
         self._port=1
+        self._nodeid=int(nodeid)
 
         self._packet_send_counter = 0
-        self._time_inverval = 5
+        self._Inverters = None
+        #Duration in seconds
+        self._time_inverval =  int(timeinverval)
 
         self._reset_duration_timer()
 
         # Open serial port
         self._login_inverter()
 
-    def _reset_duration_timer(self):
-        self._last_time_reading = time.time()
+        self._log.info("Reading from SMASolar every " + str(self._time_inverval) + " seconds")
+
 
     def _login_inverter(self):
         """Log into the SMA solar inverter"""
         self._log.info("Log into the SMA solar inverter " + str(self._inverteraddress))
 
         self._btSocket = self._open_bluetooth(self._inverteraddress, self._port)
-
 
         #If bluetooth didnt work, exit here
         if self._btSocket is None:
@@ -82,19 +86,16 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self.mylocalBTAddress = SMASolar_library.BTAddressToByteArray(self._btSocket.getsockname()[0], ":")
         self.mylocalBTAddress.reverse()
 
-        SMASolar_library.initaliseSMAConnection(self._btSocket, self.mylocalBTAddress, self.AddressFFFFFFFF, self.InverterCodeArray,
-                                                    self._packet_send_counter)
+        SMASolar_library.initaliseSMAConnection(self._btSocket, self.mylocalBTAddress, self.AddressFFFFFFFF, self.InverterCodeArray, self._packet_send_counter)
 
         # Logon to inverter
-        pluspacket1 = SMASolar_library.SMANET2PlusPacket(0x0e, 0xa0, self._packet_send_counter, self.InverterCodeArray,
-                                                             0x00,
-                                                             0x01, 0x01)
-        pluspacket1.pushRawByteArray(
-            bytearray([0x80, 0x0C, 0x04, 0xFD, 0xFF, 0x07, 0x00, 0x00, 0x00, 0x84, 0x03, 0x00, 0x00]))
-        pluspacket1.pushRawByteArray(
-            SMASolar_library.floattobytearray(SMASolar_library.time.mktime(datetime.today().timetuple())))
+        pluspacket1 = SMASolar_library.SMANET2PlusPacket(0x0e, 0xa0, self._packet_send_counter, self.InverterCodeArray,  0x00,  0x01, 0x01)
+        pluspacket1.pushRawByteArray( bytearray([0x80, 0x0C, 0x04, 0xFD, 0xFF, 0x07, 0x00, 0x00, 0x00, 0x84, 0x03, 0x00, 0x00]))
+        pluspacket1.pushRawByteArray( SMASolar_library.floattobytearray(SMASolar_library.time.mktime(datetime.today().timetuple())))
         pluspacket1.pushRawByteArray(bytearray([0x00, 0x00, 0x00, 0x00]))
         pluspacket1.pushRawByteArray(InverterPasswordArray)
+
+        #pluspacket1.debugViewPacket()
 
         send = SMASolar_library.SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, self.mylocalBTAddress, self.AddressFFFFFFFF)
         send.pushRawByteArray(pluspacket1.getBytesForSending())
@@ -111,12 +112,24 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         if bluetoothbuffer.leveltwo.errorCode() > 0:
             raise Exception("Error code returned from inverter - during logon - wrong password?")
 
+        #TODO: We need to see what packets look like when we get multiple inverters talking to us
         inverterserialnumber = bluetoothbuffer.leveltwo.getFourByteLong(16)
         invName = SMASolar_library.getInverterName(self._btSocket, self._packet_send_counter, self.mylocalBTAddress,
                                                        self.InverterCodeArray,
                                                        self.AddressFFFFFFFF)
         self._increment_packet_send_counter()
 
+        SMAInverterTuple = namedtuple('Inverter', 'SerialNumber Name NodeId NodeName')
+
+        #valid_characters = string.ascii_letters + string.digits
+        #allowed_characters =''.join(ch for ch in string.printable if ch in valid_characters)
+
+        nodeName=re.sub(r'[^a-zA-Z0-9]','', invName)
+
+        #Build list of inverters we communicate with
+        self._Inverters = [ SMAInverterTuple( str(inverterserialnumber),invName,self._nodeid, nodeName) ]
+
+        self._log.info("Connected to SMA inverter named [" + self._Inverters[0].Name + "] with serial number ["+self._Inverters[0].SerialNumber+"] using NodeId="+str(self._Inverters[0].NodeId)+" and name="+self._Inverters[0].NodeName)
 
 
     def close(self):
@@ -148,10 +161,41 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             return btSocket
 
     def _increment_packet_send_counter(self):
+        """Increment the internal sequence number in SMA Packets"""
         self._packet_send_counter += 1
         if self._packet_send_counter  > 200:
             self._packet_send_counter = 0
 
+    def _reset_duration_timer(self):
+        """Reset timer to current date/time"""
+        self._last_time_reading = time.time()
+
+    def _is_it_time(self):
+        """Checks to see if the duration has expired
+
+        Return true or false
+
+        """
+        duration_of_delay = time.time() - self._last_time_reading
+        return (int(duration_of_delay) > self._time_inverval)
+
+    #Override base _process_rx code from emonhub_interfacer
+    def _process_rx(self, rxc):
+
+        if not rxc:
+            return False
+
+        self._log.debug(str(rxc.uri) + " Timestamp : " + str(rxc.timestamp))
+        self._log.debug(str(rxc.uri) + " From Node : " + str(rxc.nodeid))
+        if rxc.target:
+            self._log.debug(str(rxc.uri) + " To Target : " + str(rxc.target))
+        self._log.debug(str(rxc.uri) + "    Values : " + str(rxc.realdata))
+        if rxc.rssi:
+            self._log.debug(str(rxc.uri) + "      RSSI : " + str(rxc.rssi))
+
+        return rxc
+
+    #Override base read code from emonhub_interfacer
     def read(self):
         """Read data from inverter and process
 
@@ -159,13 +203,13 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         """
         #Wait until we are ready to read from inverter
-        duration_of_delay = time.time() - self._last_time_reading
-        if (duration_of_delay< self._time_inverval):
+        if (self._is_it_time() == False):
             return
 
         self._reset_duration_timer()
 
         try:
+            #Check we have a connection already, if not try and obtain one
             if self._btSocket is None:
                 self._login_inverter()
 
@@ -188,18 +232,22 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             # 0x4651 AC Line Current Phase 2
             # 0x4652 AC Line Current Phase 3
             # 0x4657 AC Grid Frequency
-            #payload = "{0},{1},{2},{3},{4},{5},{6},{7},{8},{9}".format(L2[1][1], L2[2][1], L2[3][1], L2[4][1],
-            #                                                           L2[5][1],
-            #                                                           L2[6][1], L2[7][1], L2[8][1], L2[9][1],
-            #                                                           L2[10][1])
 
-            #self._log.info(payload)
-            payload = [L2[1][1], L2[2][1], L2[3][1], L2[4][1], L2[5][1], L2[6][1], L2[7][1], L2[8][1], L2[9][1], L2[10][1]]
-            c = Cargo.new_cargo(realdata=payload)
-            c.nodeid = 40
-            #c.realdata = [int(i) for i in f[1:]]
-            c.rssi=0
-            #c.names=''
+            f = [ float(L2[1][1]), float(L2[2][1]), float(L2[3][1]), float(L2[4][1]),
+                  float(L2[5][1]), float(L2[6][1]), float(L2[7][1]), float(L2[8][1]),
+                  float(L2[9][1]), float(L2[10][1]) ]
+
+            c = Cargo.new_cargo()
+            #TODO: We need to revisit this once we know how multiple inverters communication with us
+            c.nodeid = self._Inverters[0].NodeId
+            c.nodename = self._Inverters[0].NodeName
+            c.rawdata = None
+            #TODO: We should be able to populate the rssi number from the bluetooth signal strength
+            c.rssi=-55
+
+            c.realdata = f
+            c.names = [ 'Ph1Power','Ph2Power','Ph3Power','Ph1ACVolt','Ph2ACVolt','Ph3ACVolt','Ph1ACCurrent','Ph2ACCurrent','Ph3ACCurrent','ACGridFreq' ]
+
 
             return c
 

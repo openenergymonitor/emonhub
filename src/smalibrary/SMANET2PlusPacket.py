@@ -6,12 +6,10 @@ import math
 
 __author__ = 'Stuart Pittaway'
 
-
 class SMANET2PlusPacket:
     """Holds a second type of SMA protocol packet"""
 
     def __init__(self, ctrl1=0, ctrl2=0, packetcount=0, InverterCodeArray=bytearray(), a=0, b=0, c=0):
-        # print "Creating instance of SMANET2PlusPacket"
 
         self.packet = bytearray()
         self.FCSChecksum = 0xffff
@@ -177,57 +175,57 @@ class SMANET2PlusPacket:
 
         return outputpacket
 
-        # def debugViewPacket(self):
-        #     pos = 0;
-        #
-        #     print "L2  ARRAY LENGTH = {0}".format(len(self.packet))
-        #     print "L2 {0:04x}  START = {1:02x}".format(pos, 0x7e)
-        #     pos += 0
-        #     print "L2 {0:04x}  Header= {1:02x} {2:02x} {3:02x} {4:02x}".format(pos, self.packet[pos + 0],
-        #                                                                        self.packet[pos + 1], self.packet[pos + 2],
-        #                                                                        self.packet[pos + 3])
-        #     pos += 4
-        #     print "L2 {0:04x}  Length= {1:02x}  ={2} bytes".format(pos, self.packet[pos], (self.packet[pos] * 4) + 8)
-        #     pos += 1
-        #     print "L2 {0:04x}       ?= {1:02x}".format(pos, self.packet[pos])
-        #     pos += 1
-        #     print "L2 {0:04x}    Add1= {1:02x} {2:02x} {3:02x} {4:02x} {5:02x} {6:02x}".format(pos, self.packet[pos + 0],
-        #                                                                                        self.packet[pos + 1],
-        #                                                                                        self.packet[pos + 2],
-        #                                                                                        self.packet[pos + 3],
-        #                                                                                        self.packet[pos + 4],
-        #                                                                                        self.packet[pos + 5])
-        #     pos += 6
-        #     print "L2 {0:04x}  ArchCd= {1:02x}".format(pos, self.packet[pos])
-        #     pos += 1
-        #     print "L2 {0:04x}    zero= {1:02x}".format(pos, self.packet[pos])
-        #     pos += 1
-        #     print "L2 {0:04x}    Add2= {1:02x} {2:02x} {3:02x} {4:02x} {5:02x} {6:02x}".format(pos, self.packet[pos + 0],
-        #                                                                                        self.packet[pos + 1],
-        #                                                                                        self.packet[pos + 2],
-        #                                                                                        self.packet[pos + 3],
-        #                                                                                        self.packet[pos + 4],
-        #                                                                                        self.packet[pos + 5])
-        #     pos += 6
-        #     print "L2 {0:04x}    zero= {1:02x} {2:02x}".format(pos, self.packet[pos + 0], self.packet[pos + 1])
-        #     pos += 2
-        #     print "L2 {0:04x}   ERROR= {1:02x} {2:02x}".format(pos, self.packet[pos + 0], self.packet[pos + 1])
-        #     pos += 2
-        #     print "L2 {0:04x} Fragmnt= {1:02x}".format(pos, self.packet[pos])
-        #     pos += 1
-        #     print "L2 {0:04x}       ?= {1:02x}".format(pos, self.packet[pos])
-        #     pos += 1
-        #     print "L2 {0:04x} Counter= {1:02x}".format(pos, self.packet[pos])
-        #     pos += 1
-        #
-        #     s = ""
-        #     for j in range(pos, len(self.packet)):
-        #         if (j % 16 == 0 or j == pos):
-        #             s += "\n    %08x: " % j
-        #
-        #         s += "%02x " % self.packet[j]
-        #
-        #     print "L2 Payload= %s" % s
-        #     myfcs = self.FCSChecksum ^ 0xffff
-        #     print "L2 Checksu= {0:02x} {1:02x}".format(myfcs & 0x00ff, (myfcs >> 8) & 0x00ff)
-        #     print "L2    END = {0:02x}".format(0x7e)
+    def debugViewPacket(self):
+        pos = 0;
+
+        print "L2  ARRAY LENGTH = {0}".format(len(self.packet))
+        print "L2 {0:04x}  START = {1:02x}".format(pos, 0x7e)
+        pos += 0
+        print "L2 {0:04x}  Header= {1:02x} {2:02x} {3:02x} {4:02x}".format(pos, self.packet[pos + 0],
+                                                                    self.packet[pos + 1], self.packet[pos + 2],
+                                                                    self.packet[pos + 3])
+        pos += 4
+        print "L2 {0:04x}  Length= {1:02x}  ={2} bytes".format(pos, self.packet[pos], (self.packet[pos] * 4) + 8)
+        pos += 1
+        print "L2 {0:04x}       ?= {1:02x}".format(pos, self.packet[pos])
+        pos += 1
+        print "L2 {0:04x}    Add1= {1:02x} {2:02x} {3:02x} {4:02x} {5:02x} {6:02x}".format(pos, self.packet[pos + 0],
+                                                                                    self.packet[pos + 1],
+                                                                                    self.packet[pos + 2],
+                                                                                    self.packet[pos + 3],
+                                                                                    self.packet[pos + 4],
+                                                                                    self.packet[pos + 5])
+        pos += 6
+        print "L2 {0:04x}  ArchCd= {1:02x}".format(pos, self.packet[pos])
+        pos += 1
+        print "L2 {0:04x}    zero= {1:02x}".format(pos, self.packet[pos])
+        pos += 1
+        print "L2 {0:04x}    Add2= {1:02x} {2:02x} {3:02x} {4:02x} {5:02x} {6:02x}".format(pos, self.packet[pos + 0],
+                                                                                    self.packet[pos + 1],
+                                                                                    self.packet[pos + 2],
+                                                                                    self.packet[pos + 3],
+                                                                                    self.packet[pos + 4],
+                                                                                    self.packet[pos + 5])
+        pos += 6
+        print "L2 {0:04x}    zero= {1:02x} {2:02x}".format(pos, self.packet[pos + 0], self.packet[pos + 1])
+        pos += 2
+        print "L2 {0:04x}   ERROR= {1:02x} {2:02x}".format(pos, self.packet[pos + 0], self.packet[pos + 1])
+        pos += 2
+        print "L2 {0:04x} Fragmnt= {1:02x}".format(pos, self.packet[pos])
+        pos += 1
+        print "L2 {0:04x}       ?= {1:02x}".format(pos, self.packet[pos])
+        pos += 1
+        print "L2 {0:04x} Counter= {1:02x}".format(pos, self.packet[pos])
+        pos += 1
+
+        s = ""
+        for j in range(pos, len(self.packet)):
+            if (j % 16 == 0 or j == pos):
+                s += "\n    %08x: " % j
+
+            s += "%02x " % self.packet[j]
+
+        print "L2 Payload= %s" % s
+        myfcs = self.FCSChecksum ^ 0xffff
+        print "L2 Checksu= {0:02x} {1:02x}".format(myfcs & 0x00ff, (myfcs >> 8) & 0x00ff)
+        print "L2    END = {0:02x}".format(0x7e)

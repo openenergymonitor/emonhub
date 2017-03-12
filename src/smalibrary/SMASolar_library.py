@@ -267,7 +267,7 @@ def spotvaluelist_dictionary():
     spotvaluelist[0x4521] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
     spotvaluelist[0x4521].Description = "DC Current"
     spotvaluelist[0x4521].Units = "Amps"
-    spotvaluelist[0x4521].Scale = 1000
+    spotvaluelist[0x4521].Scale = 1
 
     spotvaluelist["unknown"] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
     spotvaluelist["unknown"].Description = "?????"
@@ -319,7 +319,7 @@ def extract_spot_values(level2Packet, gap=40):
     return outputlist
 
 def spotvalues_ac(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-    #print "Asking inverter for its AC spot value data...."
+
     send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
 
     pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
@@ -430,15 +430,12 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     #print "netid=%02x" % netid
     inverterAddress = bluetoothbuffer.levelone.SourceAddress;
 
-    # LogMessageWithByteArray("inverterAddress", inverterAddress)
-
     # Reply to 0x0002 cmd with our data
     send = SMABluetoothPacket(0x1f, 0x00, 0x00, 0x02, 0x00, mylocalBTAddress, inverterAddress);
     send.pushUnescapedByteArray( bytearray([0x00, 0x04, 0x70, 0x00, netid, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]) )
     send.finish()
     # print send.DisplayPacketDebugInfo("Reply to 0x02 cmd")
     send.sendPacket(btSocket);
-    #pause()
 
     # Receive 0x000a cmd
     bluetoothbuffer = read_SMA_BT_Packet(btSocket,mylocalBTAddress);
@@ -471,7 +468,6 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     packet_send_counter += 1
 
     inverterSerial = bluetoothbuffer.leveltwo.getDestinationAddress()
-    #LogMessageWithByteArray("inverterSerial", inverterSerial)
 
     send = SMABluetoothPacket(0x3b, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket1 = SMANET2PlusPacket(0x08, 0xa0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
@@ -480,8 +476,6 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     send.finish()
     send.sendPacket(btSocket)
 
-    # No reply for packet 2 is received
-    # bluetoothbuffer = readSMABluetoothPacket(ref level2Packet, btSocket, packet_send_counter, true,mylocalBTAddress);
     packet_send_counter += 1
 
 def checkPacketReply(bluetoothbuffer,commandcode):
