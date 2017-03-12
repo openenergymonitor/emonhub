@@ -20,10 +20,10 @@ sudo hciconfig hci0 up
 ```
 ###Finding inverter bluetooth address###
 
-Run the command "hcitool scan", which should list the addresses it can see.
+Run the command "hcitool scan", which should list the bluetooth devices/addresses it can see.
 ```
 Scanning ...
-        *00:80:25:1D:AC:53*       SMA001d SN: 2120051742 SN2120051742
+        00:80:25:1D:AC:53       SMA001d SN: 2120051742 SN2120051742
 ```
 
 ##Sample config for emonhub.conf ##
