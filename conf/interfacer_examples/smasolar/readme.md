@@ -4,10 +4,32 @@ This is an interface between SMA Solar inverters (http://www.sma-uk.com/) and em
 
 emonHub is used to communicate over bluetooth to the solar inverter and retrieve various generation values, which are posted into emonCMS.
 
+##Installation##
+
+Note that you will need to have a bluetooth USB device installed - recommend a class 1 device with a longer range if your inverter is more than 10 metres away.
+
+On emonPI, you will need to install the bluetooth software library, using the commands
+
+```
+rpi-rw
+sudo aptitude install bluez python-bluetooth
+
+sudo service bluetooth start
+sudo service bluetooth status
+sudo hciconfig hci0 up
+```
+###Finding inverter bluetooth address###
+
+Run the command "hcitool scan", which should list the addresses it can see.
+```
+Scanning ...
+        *00:80:25:1D:AC:53*       SMA001d SN: 2120051742 SN2120051742
+```
+
 ##Sample config for emonhub.conf ##
 
 Sample configuration for SMA Solar interface, add these settings under the [interfacers] tag.
-
+```
 [[SMASolar]]
     Type = EmonHubSMASolarInterfacer
     [[[init_settings]]]
@@ -17,6 +39,7 @@ Sample configuration for SMA Solar interface, add these settings under the [inte
         nodeid = 29
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
+```
 
 ##Settings##
 
