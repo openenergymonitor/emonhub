@@ -143,136 +143,34 @@ def floattobytearray(value):
 def spotvaluelist_dictionary():
     spotvaluelist = {}
 
-    #These are fake entries just for use in the CSV!
-    spotvaluelist[0x0000] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x0000].Description = "Date"
-    spotvaluelist[0x0000].Units = ""
-    spotvaluelist[0x0000].Scale = 1
+    SpotValue=namedtuple("spotvalue", ["Description", "Units", "Scale"])
 
-    spotvaluelist[0x0001] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x0001].Description = "Inverter Serial"
-    spotvaluelist[0x0001].Units = ""
-    spotvaluelist[0x0001].Scale = 1
+    spotvaluelist[0x0001] = SpotValue("Inverter Serial","",1)
+    spotvaluelist[0x0002] = SpotValue("Inverter Name","",None)
+    spotvaluelist[0x263f] = SpotValue("AC Total Power","Watts", 1)
+    spotvaluelist[0x411e] = SpotValue("AC Max Phase 1","Watts", 1)
+    spotvaluelist[0x411f] = SpotValue("AC Max Phase 2","Watts", 1)
+    spotvaluelist[0x4120] = SpotValue("AC Max Phase 3","Watts", 1)
+    spotvaluelist[0x4640] = SpotValue("AC Output Phase 1","Watts",1)
+    spotvaluelist[0x4641] = SpotValue("AC Output Phase 2","Watts",1)
+    spotvaluelist[0x4642] = SpotValue("AC Output Phase 3","Watts",1)
+    spotvaluelist[0x4648] = SpotValue("AC Line Voltage Phase 1","Volts",100)
+    spotvaluelist[0x4649] = SpotValue("AC Line Voltage Phase 2","Volts",100)
+    spotvaluelist[0x464a] = SpotValue("AC Line Voltage Phase 3","Volts",100)
+    spotvaluelist[0x4650] = SpotValue("AC Line Current Phase 1","Amps",1000)
+    spotvaluelist[0x4651] = SpotValue("AC Line Current Phase 1","Amps",1000)
+    spotvaluelist[0x4652] = SpotValue("AC Line Current Phase 1","Amps",1000)
+    spotvaluelist[0x4657] = SpotValue("AC Grid Frequency","Hz",100)
+    spotvaluelist[0x821e] = SpotValue("Inverter Name","TEXT",None)
+    spotvaluelist[0x2601] = SpotValue("Total Yield","Wh",1)
+    spotvaluelist[0x2622] = SpotValue("Day Yield","Wh",1)
+    spotvaluelist[0x462f] = SpotValue("Feed in time","hours",3600)
+    spotvaluelist[0x462e] = SpotValue("Operating time","hours",3600)
+    spotvaluelist[0x251e] = SpotValue("DC Power","Watts",1)
+    spotvaluelist[0x451f] = SpotValue("DC Voltage","Volts",100)
+    spotvaluelist[0x4521] = SpotValue("DC Current","Amps",1)
 
-    spotvaluelist[0x0002] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x0002].Description = "Inverter Name"
-    spotvaluelist[0x0002].Units = ""
-    spotvaluelist[0x0002].Scale = 1
-
-    spotvaluelist[0x263f] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x263f].Description = "AC Total Power"
-    spotvaluelist[0x263f].Units = "Watts"
-    spotvaluelist[0x263f].Scale = 1
-
-    spotvaluelist[0x411e] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x411e].Description = "AC Max Phase 1"
-    spotvaluelist[0x411e].Units = "Watts"
-    spotvaluelist[0x411e].Scale = 1
-
-    spotvaluelist[0x411f] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x411f].Description = "AC Max Phase 2"
-    spotvaluelist[0x411f].Units = "Watts"
-    spotvaluelist[0x411f].Scale = 1
-
-    spotvaluelist[0x4120] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4120].Description = "AC Max Phase 2"
-    spotvaluelist[0x4120].Units = "Watts"
-    spotvaluelist[0x4120].Scale = 1
-
-    spotvaluelist[0x4640] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4640].Description = "AC Output Phase 1"
-    spotvaluelist[0x4640].Units = "Watts"
-    spotvaluelist[0x4640].Scale = 1
-
-    spotvaluelist[0x4641] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4641].Description = "AC Output Phase 2"
-    spotvaluelist[0x4641].Units = "Watts"
-    spotvaluelist[0x4641].Scale = 1
-
-    spotvaluelist[0x4642] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4642].Description = "AC Output Phase 3"
-    spotvaluelist[0x4642].Units = "Watts"
-    spotvaluelist[0x4642].Scale = 1
-
-    spotvaluelist[0x4648] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4648].Description = "AC Line Voltage Phase 1"
-    spotvaluelist[0x4648].Units = "Volts"
-    spotvaluelist[0x4648].Scale = 100
-
-    spotvaluelist[0x4649] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4649].Description = "AC Line Voltage Phase 2"
-    spotvaluelist[0x4649].Units = "Volts"
-    spotvaluelist[0x4649].Scale = 100
-
-    spotvaluelist[0x464a] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x464a].Description = "AC Line Voltage Phase 3"
-    spotvaluelist[0x464a].Units = "Volts"
-    spotvaluelist[0x464a].Scale = 100
-
-    spotvaluelist[0x4650] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4650].Description = "AC Line Current Phase 1"
-    spotvaluelist[0x4650].Units = "Amps"
-    spotvaluelist[0x4650].Scale = 1000
-
-    spotvaluelist[0x4651] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4651].Description = "AC Line Current Phase 2"
-    spotvaluelist[0x4651].Units = "Amps"
-    spotvaluelist[0x4651].Scale = 1000
-
-    spotvaluelist[0x4652] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4652].Description = "AC Line Current Phase 3"
-    spotvaluelist[0x4652].Units = "Amps"
-    spotvaluelist[0x4652].Scale = 1000
-
-    spotvaluelist[0x4657] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4657].Description = "AC Grid Frequency"
-    spotvaluelist[0x4657].Units = "Hz"
-    spotvaluelist[0x4657].Scale = 100
-
-    spotvaluelist[0x821e] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x821e].Description = "Inverter Name"
-    spotvaluelist[0x821e].Units = "TEXT"
-    spotvaluelist[0x821e].Scale = None
-
-    spotvaluelist[0x2601] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x2601].Description = "Total Yield"
-    spotvaluelist[0x2601].Units = "Wh"
-    spotvaluelist[0x2601].Scale = 1
-
-    spotvaluelist[0x2622] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x2622].Description = "Day Yield"
-    spotvaluelist[0x2622].Units = "Wh"
-    spotvaluelist[0x2622].Scale = 1
-
-    spotvaluelist[0x462f] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x462f].Description = "Feed in time"
-    spotvaluelist[0x462f].Units = "hours"
-    spotvaluelist[0x462f].Scale = 3600
-
-    spotvaluelist[0x462e] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x462e].Description = "Operating time"
-    spotvaluelist[0x462e].Units = "hours"
-    spotvaluelist[0x462e].Scale = 3600
-
-    spotvaluelist[0x251e] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x251e].Description = "DC Power"
-    spotvaluelist[0x251e].Units = "Watts"
-    spotvaluelist[0x251e].Scale = 1
-
-    spotvaluelist[0x451f] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x451f].Description = "DC Voltage"
-    spotvaluelist[0x451f].Units = "Volts"
-    spotvaluelist[0x451f].Scale = 100
-
-    spotvaluelist[0x4521] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist[0x4521].Description = "DC Current"
-    spotvaluelist[0x4521].Units = "Amps"
-    spotvaluelist[0x4521].Scale = 1
-
-    spotvaluelist["unknown"] = namedtuple("spotvalue", ["Description", "Units", "Scale"])
-    spotvaluelist["unknown"].Description = "?????"
-    spotvaluelist["unknown"].Units = "?"
-    spotvaluelist["unknown"].Scale = 1
+    spotvaluelist["unknown"]  = SpotValue("??","??",1)
     return spotvaluelist
 
 def extract_spot_values(level2Packet, gap=40):
