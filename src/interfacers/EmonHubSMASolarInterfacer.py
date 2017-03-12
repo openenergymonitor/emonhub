@@ -221,6 +221,14 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             L2 = SMASolar_library.spotvalues_ac(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
             self._increment_packet_send_counter()
 
+            # DC power
+            L3 = SMASolar_library.spotvalues_dcwatts(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+            self._increment_packet_send_counter()
+
+            #Yield and running hours
+            L4 = SMASolar_library.spotvalues_yield(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+            self._increment_packet_send_counter()
+
             # Output 10 parameters for AC values
             # 0x4640 AC Output Phase 1
             # 0x4641 AC Output Phase 2
@@ -232,10 +240,16 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             # 0x4651 AC Line Current Phase 2
             # 0x4652 AC Line Current Phase 3
             # 0x4657 AC Grid Frequency
+            # 0x251e DC Power Watts L3[1][1]
+            # 0x2601 Total Yield kWh
+            # 0x2622 Day Yield kWh
+            # 0x462e Operating time (hours)
+            # 0x462f Feed in time (hours)
 
             f = [ float(L2[1][1]), float(L2[2][1]), float(L2[3][1]), float(L2[4][1]),
                   float(L2[5][1]), float(L2[6][1]), float(L2[7][1]), float(L2[8][1]),
-                  float(L2[9][1]), float(L2[10][1]) ]
+                  float(L2[9][1]), float(L2[10][1]), float(L3[1][1]), float(L4[1][1]),
+                  float(L4[2][1]), round(L4[3][1],2), round(L4[4][1],2) ]
 
             c = Cargo.new_cargo()
             #TODO: We need to revisit this once we know how multiple inverters communication with us
@@ -246,7 +260,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             c.rssi=-55
 
             c.realdata = f
-            c.names = [ 'Ph1Power','Ph2Power','Ph3Power','Ph1ACVolt','Ph2ACVolt','Ph3ACVolt','Ph1ACCurrent','Ph2ACCurrent','Ph3ACCurrent','ACGridFreq' ]
+            c.names = [ 'Ph1Power','Ph2Power','Ph3Power',
+                'Ph1ACVolt','Ph2ACVolt','Ph3ACVolt',
+                'Ph1ACCurrent','Ph2ACCurrent','Ph3ACCurrent',
+                'ACGridFreq','DCPower1','TotalYield',
+                'DayYield','OperatingTime','FeedInTime' ]
 
 
             return c
