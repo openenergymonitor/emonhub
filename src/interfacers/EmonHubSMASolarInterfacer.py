@@ -1,7 +1,11 @@
 #!/usr/bin/python
-# EmonHubSMASolarInterfacer released for use by OpenEnergyMonitor project
+
+
 # GNU GENERAL PUBLIC LICENSE -  Version 2, June 1991
 # See LICENCE and README file for details
+
+# This will background the task
+# nohup python SMASolarMQTT.py 00:80:25:1D:AC:53 0000 1> SMASolarMQTT.log 2> SMASolarMQTT.log.error &
 
 __author__ = 'Stuart Pittaway'
 
@@ -205,7 +209,6 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._reset_duration_timer()
 
         try:
-            self._log.debug("Entering read try section")
             #Check we have a connection already, if not try and obtain one
             if self._btSocket is None:
                 self._login_inverter()
@@ -215,17 +218,14 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 return
 
             #Read the AC values from the inverter
-            self._log.debug("Reading spotvalues_ac")
             L2 = SMASolar_library.spotvalues_ac(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
             self._increment_packet_send_counter()
 
             # DC power
-            self._log.debug("Reading spotvalues_dcwatts")
             L3 = SMASolar_library.spotvalues_dcwatts(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
             self._increment_packet_send_counter()
 
             #Yield and running hours
-            self._log.debug("Reading spotvalues_yield")
             L4 = SMASolar_library.spotvalues_yield(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
             self._increment_packet_send_counter()
 
@@ -246,13 +246,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             # 0x462e Operating time (hours)
             # 0x462f Feed in time (hours)
 
-            self._log.debug("Creating list")
             f = [ float(L2[1][1]), float(L2[2][1]), float(L2[3][1]), float(L2[4][1]),
                   float(L2[5][1]), float(L2[6][1]), float(L2[7][1]), float(L2[8][1]),
                   float(L2[9][1]), float(L2[10][1]), float(L3[1][1]), float(L4[1][1]),
                   float(L4[2][1]), round(L4[3][1],2), round(L4[4][1],2) ]
 
-            self._log.debug("Building cargo")
             c = Cargo.new_cargo()
             #TODO: We need to revisit this once we know how multiple inverters communication with us
             c.nodeid = self._Inverters[0].NodeId
@@ -269,7 +267,6 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 'DayYield','OperatingTime','FeedInTime' ]
 
 
-            self._log.debug("Returning cargo")
             return c
 
         except bluetooth.btcommon.BluetoothError as err1:
@@ -279,7 +276,6 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             self._btSocket = None
 
         except Exception as err2:
-            exc_type, exc_value, exc_traceback = sys.exc_info()
             self._log.error(err2)
-            self._log.error(repr(traceback.format_exception(exc_type, exc_value,exc_traceback)))
+            #self._btSocket.close()
             self._btSocket = None
