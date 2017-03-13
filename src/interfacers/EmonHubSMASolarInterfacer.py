@@ -18,7 +18,7 @@ import serial
 import time
 import Cargo
 from pydispatch import dispatcher
-#import emonhub_interfacer as ehi
+
 from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 from collections import namedtuple
@@ -33,7 +33,7 @@ Monitors a SMA Solar inverter over bluetooth
 
 class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, inverteraddress='', inverterpincode='0000', timeinverval=10, nodeid=29):
+    def __init__(self, name, inverteraddress='', inverterpincode='0000', timeinverval=10, nodeid=29, readdcvalues=1):
         """Initialize interfacer
         com_port (string): path to COM port
         """
@@ -45,6 +45,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._inverterpincode=inverterpincode
         self._port=1
         self._nodeid=int(nodeid)
+        self._readdcvalues=int(readdcvalues)
 
         self._packet_send_counter = 0
         self._Inverters = None
@@ -206,29 +207,37 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         try:
             self._log.debug("Entering read try section")
-            #Check we have a connection already, if not try and obtain one
+            # Check we have a connection already, if not try and obtain one
             if self._btSocket is None:
                 self._login_inverter()
 
-            #If bluetooth didnt work, exit here
+            # If bluetooth didn't work, exit here
             if self._btSocket is None:
                 return
 
-            #Read the AC values from the inverter
-            self._log.debug("Reading spotvalues_ac")
-            L2 = SMASolar_library.spotvalues_ac(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
-            self._increment_packet_send_counter()
+            names= []
+            values = []
 
-            # DC power
-            self._log.debug("Reading spotvalues_dcwatts")
-            L3 = SMASolar_library.spotvalues_dcwatts(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+            #Read the AC values from the inverter
+            self._log.debug("Reading spotvalues AC")
+            AC = SMASolar_library.spotvalues_ac(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
             self._increment_packet_send_counter()
 
             #Yield and running hours
-            self._log.debug("Reading spotvalues_yield")
-            L4 = SMASolar_library.spotvalues_yield(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+            self._log.debug("Reading spotvalues yield")
+            Yield = SMASolar_library.spotvalues_yield(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
             self._increment_packet_send_counter()
+            AC.update(Yield)
 
+            # DC power
+            if (self._readdcvalues==1):
+                self._log.debug("Reading spotvalues DC")
+                DC = SMASolar_library.spotvalues_dcwatts(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+                self._increment_packet_send_counter()
+                AC.update(DC)
+
+            self._log.debug("Extracting data")
+            # Output values which match these keys - note some inverters wont return all data requested particularly DC string values
             # Output 10 parameters for AC values
             # 0x4640 AC Output Phase 1
             # 0x4641 AC Output Phase 2
@@ -241,33 +250,27 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             # 0x4652 AC Line Current Phase 3
             # 0x4657 AC Grid Frequency
             # 0x251e DC Power Watts L3[1][1]
-            # 0x2601 Total Yield kWh
-            # 0x2622 Day Yield kWh
+            # 0x2601 Total Yield Wh
+            # 0x2622 Day Yield Wh
             # 0x462e Operating time (hours)
             # 0x462f Feed in time (hours)
-
-            self._log.debug("Creating list")
-            f = [ float(L2[1][1]), float(L2[2][1]), float(L2[3][1]), float(L2[4][1]),
-                  float(L2[5][1]), float(L2[6][1]), float(L2[7][1]), float(L2[8][1]),
-                  float(L2[9][1]), float(L2[10][1]), float(L3[1][1]), float(L4[1][1]),
-                  float(L4[2][1]), round(L4[3][1],2), round(L4[4][1],2) ]
+            for key in [0x4640,0x4641,0x4642,0x4648,0x4649,0x464a,0x4650,0x4651,0x4652,0x4657,0x251e,0x2601,0x2622,0x462e,0x462f]:
+                if key in AC:
+                    names.append( AC[key].Label )
+                    values.append( AC[key].Value )
 
             self._log.debug("Building cargo")
             c = Cargo.new_cargo()
-            #TODO: We need to revisit this once we know how multiple inverters communication with us
+            c.rawdata = None
+            c.realdata = values
+            c.names = names
+
+            #TODO: We need to revisit this once we know how multiple inverters communicate with us
             c.nodeid = self._Inverters[0].NodeId
             c.nodename = self._Inverters[0].NodeName
-            c.rawdata = None
+
             #TODO: We should be able to populate the rssi number from the bluetooth signal strength
-            c.rssi=-55
-
-            c.realdata = f
-            c.names = [ 'Ph1Power','Ph2Power','Ph3Power',
-                'Ph1ACVolt','Ph2ACVolt','Ph3ACVolt',
-                'Ph1ACCurrent','Ph2ACCurrent','Ph3ACCurrent',
-                'ACGridFreq','DCPower1','TotalYield',
-                'DayYield','OperatingTime','FeedInTime' ]
-
+            c.rssi=0
 
             self._log.debug("Returning cargo")
             return c

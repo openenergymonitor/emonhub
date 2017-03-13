@@ -4,6 +4,12 @@ This is an interface between SMA Solar inverters (http://www.sma-uk.com/) and em
 
 emonHub is used to communicate over bluetooth to the solar inverter and retrieve various generation values, which are posted into emonCMS.
 
+Currently tested on SMA models:
+
+* SB3000
+* SB3000HF
+
+
 ##Installation##
 
 Note that you will need to have a bluetooth USB device installed - recommend a class 1 device with a longer range if your inverter is more than 10 metres away.
@@ -37,6 +43,7 @@ Sample configuration for SMA Solar interface, add these settings under the [inte
         inverterpincode = 0000
         timeinverval = 5
         nodeid = 29
+        readdcvalues = 1
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
 ```
@@ -56,3 +63,6 @@ Time in seconds between samples, defaults to 10 seconds
 Starting node id number to assign to inputs into emonCMS, defaults to 29 for the first inverter, 30 for second, 31 for third etc.
 
 Note, you do *NOT* have to manually enter the nodes into the "[nodes]" section of the config file.
+
+###readdcvalues###
+Some inverters don't support reading of DC values, configure this to zero to skip requesting this information

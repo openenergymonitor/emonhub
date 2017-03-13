@@ -145,30 +145,30 @@ def spotvaluelist_dictionary():
 
     SpotValue=namedtuple("spotvalue", ["Description", "Units", "Scale"])
 
-    spotvaluelist[0x0001] = SpotValue("Inverter Serial","",1)
-    spotvaluelist[0x0002] = SpotValue("Inverter Name","",None)
-    spotvaluelist[0x263f] = SpotValue("AC Total Power","Watts", 1)
-    spotvaluelist[0x411e] = SpotValue("AC Max Phase 1","Watts", 1)
-    spotvaluelist[0x411f] = SpotValue("AC Max Phase 2","Watts", 1)
-    spotvaluelist[0x4120] = SpotValue("AC Max Phase 3","Watts", 1)
-    spotvaluelist[0x4640] = SpotValue("AC Output Phase 1","Watts",1)
-    spotvaluelist[0x4641] = SpotValue("AC Output Phase 2","Watts",1)
-    spotvaluelist[0x4642] = SpotValue("AC Output Phase 3","Watts",1)
-    spotvaluelist[0x4648] = SpotValue("AC Line Voltage Phase 1","Volts",100)
-    spotvaluelist[0x4649] = SpotValue("AC Line Voltage Phase 2","Volts",100)
-    spotvaluelist[0x464a] = SpotValue("AC Line Voltage Phase 3","Volts",100)
-    spotvaluelist[0x4650] = SpotValue("AC Line Current Phase 1","Amps",1000)
-    spotvaluelist[0x4651] = SpotValue("AC Line Current Phase 1","Amps",1000)
-    spotvaluelist[0x4652] = SpotValue("AC Line Current Phase 1","Amps",1000)
-    spotvaluelist[0x4657] = SpotValue("AC Grid Frequency","Hz",100)
+    spotvaluelist[0x0001] = SpotValue("InverterSerial","",1)
+    spotvaluelist[0x0002] = SpotValue("InverterName","",None)
+    spotvaluelist[0x263f] = SpotValue("ACTotalPower","Watts", 1)
+    spotvaluelist[0x411e] = SpotValue("Ph1ACMax","Watts", 1)
+    spotvaluelist[0x411f] = SpotValue("Ph2ACMax","Watts", 1)
+    spotvaluelist[0x4120] = SpotValue("Ph3ACMax","Watts", 1)
+    spotvaluelist[0x4640] = SpotValue("Ph1Power","Watts",1)
+    spotvaluelist[0x4641] = SpotValue("Ph2Power","Watts",1)
+    spotvaluelist[0x4642] = SpotValue("Ph3Power","Watts",1)
+    spotvaluelist[0x4648] = SpotValue("Ph1ACVolt","Volts",100)
+    spotvaluelist[0x4649] = SpotValue("Ph2ACVolt","Volts",100)
+    spotvaluelist[0x464a] = SpotValue("Ph3ACVolt","Volts",100)
+    spotvaluelist[0x4650] = SpotValue("Ph1ACCurrent","Amps",1000)
+    spotvaluelist[0x4651] = SpotValue("Ph2ACCurrent","Amps",1000)
+    spotvaluelist[0x4652] = SpotValue("Ph3ACCurrent","Amps",1000)
+    spotvaluelist[0x4657] = SpotValue("ACGridFreq","Hz",100)
     spotvaluelist[0x821e] = SpotValue("Inverter Name","TEXT",None)
-    spotvaluelist[0x2601] = SpotValue("Total Yield","Wh",1)
-    spotvaluelist[0x2622] = SpotValue("Day Yield","Wh",1)
-    spotvaluelist[0x462f] = SpotValue("Feed in time","hours",3600)
-    spotvaluelist[0x462e] = SpotValue("Operating time","hours",3600)
-    spotvaluelist[0x251e] = SpotValue("DC Power","Watts",1)
-    spotvaluelist[0x451f] = SpotValue("DC Voltage","Volts",100)
-    spotvaluelist[0x4521] = SpotValue("DC Current","Amps",1)
+    spotvaluelist[0x2601] = SpotValue("TotalYield","Wh",1)
+    spotvaluelist[0x2622] = SpotValue("DayYield","Wh",1)
+    spotvaluelist[0x462f] = SpotValue("FeedInTime","hours",3600)
+    spotvaluelist[0x462e] = SpotValue("OperatingTime","hours",3600)
+    spotvaluelist[0x251e] = SpotValue("DCPower1","Watts",1)
+    spotvaluelist[0x451f] = SpotValue("DCVoltage1","Volts",100)
+    spotvaluelist[0x4521] = SpotValue("DCCurrent1","Amps",1)
 
     spotvaluelist["unknown"]  = SpotValue("??","??",1)
     return spotvaluelist
@@ -178,15 +178,18 @@ def extract_spot_values(level2Packet, gap=40):
 
     spotvaluelist = spotvaluelist_dictionary()
 
-    outputlist = list() #{}
+    SpotValueOutput=namedtuple("SpotValueOutput", ["Label", "Value"])
+
+    #Return a dictionary
+    outputlist = {}
 
     if len(powdata) > 0:
         for i in range(40, len(powdata), gap):
             # LogMessageWithByteArray("PowData", powdata[i:i+gap])
 
             valuetype = level2Packet.getTwoByteLong(i + 1)
-            idate = level2Packet.getFourByteLong(i + 4)
-            t = time.localtime(long(idate))
+            #idate = level2Packet.getFourByteLong(i + 4)
+            #t = time.localtime(long(idate))
 
             if valuetype in spotvaluelist:
                 spotvalue = spotvaluelist[valuetype]
@@ -195,7 +198,7 @@ def extract_spot_values(level2Packet, gap=40):
                 valuetype = 0
 
             if spotvalue.Units == "TEXT":
-                value = powdata[i + 8:i + 8 + 14].decode("utf-8")
+                value = powdata[i + 8:i + 22].decode("utf-8")
             elif spotvalue.Units == "hours":
                 value = level2Packet.getFourByteDouble(i + 8)
                 if value is not None:
@@ -207,15 +210,16 @@ def extract_spot_values(level2Packet, gap=40):
                 if value is not None:
                     value = value / spotvalue.Scale
 
-            if i == 40:
-                outputlist.append( (0, time.strftime("%Y-%m-%d %H:%M:%S",t))  )
+            #if i == 40:
+            #    outputlist.append( (0, time.strftime("%Y-%m-%d %H:%M:%S",t))  )
 
             #print "{0} {1:04x} {2} '{3}' {4} {5}".format(time.asctime(t), valuetype, spotvalue.Description, value, spotvalue.Units, level2Packet.getThreeByteDouble(i + 8 + 4))
 
             if value is None:
                 value=0.0
 
-            outputlist.append( (valuetype, value)  )
+            #outputlist.append( SpotValueOutput(valuetype,spotvalue.Description, value)  )
+            outputlist[valuetype] = SpotValueOutput(spotvalue.Description, value)
     return outputlist
 
 def spotvalues_ac(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
