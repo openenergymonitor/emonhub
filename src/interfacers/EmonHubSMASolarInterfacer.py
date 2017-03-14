@@ -53,6 +53,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._time_inverval =  int(timeinverval)
 
         self._reset_duration_timer()
+        self._reset_time_to_disconnect_timer();
 
         # Open serial port
         self._login_inverter()
@@ -126,6 +127,8 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         #Build list of inverters we communicate with
         self._Inverters = [ SMAInverterTuple( str(inverterserialnumber),invName,self._nodeid, nodeName) ]
 
+        self._reset_time_to_disconnect_timer();
+
         self._log.info("Connected to SMA inverter named [" + self._Inverters[0].Name + "] with serial number ["+self._Inverters[0].SerialNumber+"] using NodeId="+str(self._Inverters[0].NodeId)+" and name="+self._Inverters[0].NodeName)
 
 
@@ -175,6 +178,19 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         """
         duration_of_delay = time.time() - self._last_time_reading
         return (int(duration_of_delay) > self._time_inverval)
+
+    def _is_it_time_to_disconnect(self):
+        """Checks to see if 8 minutes has passed, if so, force a disconnect
+
+        Return true or false
+
+        """
+        duration_of_delay = time.time() - self._last_time_auto_disconnect
+        return (int(duration_of_delay) > 480)
+
+    def _reset_time_to_disconnect_timer(self):
+        """Reset timer to current date/time"""
+        self._last_time_auto_disconnect = time.time()
 
     #Override base _process_rx code from emonhub_interfacer
     def _process_rx(self, rxc):
@@ -271,6 +287,15 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
             #TODO: We should be able to populate the rssi number from the bluetooth signal strength
             c.rssi=0
+
+            #Inverter appears to kill our connection every 10 minutes, so disconnect after 8 minutes
+            #to avoid errors in log files
+            if (self._is_it_time_to_disconnect() == True):
+                self._log.info("Disconnecting Bluetooth after timer expired")
+                self._reset_time_to_disconnect_timer()
+                self._btSocket.close()
+                self._btSocket = None
+
 
             self._log.debug("Returning cargo")
             return c
