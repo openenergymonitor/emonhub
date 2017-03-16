@@ -1,10 +1,10 @@
-#BMW Connected Drive Interface#
+# BMW Connected Drive Interface #
 
 This is an interface between BMW Connected Drive cars (https://www.bmw-connecteddrive.co.uk) and emonCMS.
 
 Tested with BMW i3 electric car.  This input emulates the same API calls that the www.bmw-connecteddrive.co.uk site uses.
 
-##Readings##
+## Readings ##
 
 The following values are extracted from the BMW API.
 
@@ -24,7 +24,7 @@ The following values are extracted from the BMW API.
 * ChargingActive
 * rssi
 
-##Sample config for emonhub.conf ##
+## Sample config for emonhub.conf ##
 
 Sample configuration, add these settings under the [interfacers] tag.   Changing username and password to match those on https://www.bmw-connecteddrive.co.uk
 
@@ -44,22 +44,22 @@ Sample configuration, add these settings under the [interfacers] tag.   Changing
 
 ```
 
-##Settings##
+## Settings ##
 
-###timeinverval###
+### timeinverval ###
 Interval between taking readings from API.  Normally 10 minutes (600 seconds) - the car only updates every few hours so dont flood BMW servers
 
-###duringchargetimeinterval###
+### duringchargetimeinterval ###
 When charging the API updates more frequently, so update every 1 minute when charging is detected (60 seconds)
 
-###nodeid###
+### nodeid ###
 The emonHub/emonCMS nodeId to use
 
-###tempcredentialfile###
+### tempcredentialfile ###
 File where temporary access credentials are persisted across emonHub restarts.
 
-###bmwapiusername###
+### bmwapiusername ###
 Username as used in the https://www.bmw-connecteddrive.co.uk site
 
-###bmwapipassword###
+### bmwapipassword ###
 Password as used in the https://www.bmw-connecteddrive.co.uk site
