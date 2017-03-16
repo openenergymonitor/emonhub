@@ -36,6 +36,7 @@ import interfacers.EmonHubEmoncmsHTTPInterfacer
 import interfacers.EmonHubSmilicsInterfacer
 import interfacers.EmonHubVEDirectInterfacer
 import interfacers.EmonHubGraphiteInterfacer
+import interfacers.EmonHubTx3eInterfacer
 if pymodbus_found:
         import interfacers.EmonModbusTcpInterfacer
         import interfacers.EmonFroniusModbusTcpInterfacer
@@ -51,6 +52,7 @@ ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.Emon
 ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
 ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
 ehi.EmonHubGraphiteInterfacer = interfacers.EmonHubGraphiteInterfacer.EmonHubGraphiteInterfacer
+ehi.EmonHubTx3eInterfacer = interfacers.EmonHubTx3eInterfacer.EmonHubTx3eInterfacer
 if pymodbus_found:
         ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
         ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
