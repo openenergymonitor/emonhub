@@ -9,21 +9,20 @@ Tested with BMW i3 electric car.  This input emulates the same API calls that th
 The following values are extracted from the BMW API.
 
 * battery_size_max
-* 	beMaxRangeElectricKm
-* 	beMaxRangeElectricMile
-* 	beRemainingRangeElectricKm
-* 	beRemainingRangeElectricMile
-* 	beRemainingRangeFuelKm
-* 	beRemainingRangeFuelMile
-* 	fuelPercent
-* 	kombi_current_remaining_range_fuel
-* 	chargingLevelHv
-* 	mileage
-* 	remaining_fuel
-* 	soc_hv_percent
-* 	ChargingActive
-* 	rssi
-﻿
+* beMaxRangeElectricKm
+* beMaxRangeElectricMile
+* beRemainingRangeElectricKm
+* beRemainingRangeElectricMile
+* beRemainingRangeFuelKm
+* beRemainingRangeFuelMile
+* fuelPercent
+* kombi_current_remaining_range_fuel
+* chargingLevelHv
+* mileage
+* remaining_fuel
+* soc_hv_percent
+* ChargingActive
+* rssi
 
 ##Sample config for emonhub.conf ##
 
