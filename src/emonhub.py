@@ -43,6 +43,7 @@ import interfacers.EmonHubEmoncmsHTTPInterfacer
 import interfacers.EmonHubSmilicsInterfacer
 import interfacers.EmonHubVEDirectInterfacer
 import interfacers.EmonHubGraphiteInterfacer
+import interfacers.EmonHubBMWInterfacer
 
 if bluetooth:
     import interfacers.EmonHubSMASolarInterfacer
@@ -61,6 +62,7 @@ ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.Emon
 ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
 ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
 ehi.EmonHubGraphiteInterfacer = interfacers.EmonHubGraphiteInterfacer.EmonHubGraphiteInterfacer
+ehi.EmonHubBMWInterfacer = interfacers.EmonHubBMWInterfacer.EmonHubBMWInterfacer
 
 if bluetooth:
     ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
