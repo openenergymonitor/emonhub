@@ -1,0 +1,7 @@
+[[14]]
+    nodename = emontx3e
+    [[[rx]]]
+       names = power1, power2, power3, power4, vrms, pulse, temp1, temp2, temp3, temp4, temp5, temp6
+       scales = 1,1,1,1,0.01,1,0.1,0.1,0.1,0.1,0.1,0.1
+       units =W,W,W,W,V,p,C,C,C,C,C,C
+
