@@ -3,16 +3,14 @@
 [[SerialTx3e]]
      Type = EmonHubTx3eInterfacer
       [[[init_settings]]]
-           com_port = /dev/ttyRS485-0
+           # Un-comment line below if using RS485 adapter
+           #com_port = /dev/ttyRS485-0
+
+           # default comd port if using USB to UART adapter
+           com_port= /dev/ttyUSB0
+
            com_baud = 115200
       [[[runtimesettings]]]
            pubchannels = ToEmonCMS,
-        subchannels = ToSerial,
-
-        nodeoffset=14
-        baseid = 14                             # emonPi / emonBase nodeID
-        quiet = true                            # Report incomplete RF packets (no implemented on emonPi)
-        calibration = 230V                      # (UK/EU: 230V, US: 110V)
-        # interval =  0                         # Interval to transmit time to emonGLCD (seconds)
 
 
