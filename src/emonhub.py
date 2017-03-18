@@ -45,7 +45,7 @@ import interfacers.EmonHubVEDirectInterfacer
 import interfacers.EmonHubGraphiteInterfacer
 import interfacers.EmonHubBMWInterfacer
 
-if bluetooth:
+if bluetooth_found:
     import interfacers.EmonHubSMASolarInterfacer
 
 if pymodbus_found:
@@ -64,7 +64,7 @@ ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVED
 ehi.EmonHubGraphiteInterfacer = interfacers.EmonHubGraphiteInterfacer.EmonHubGraphiteInterfacer
 ehi.EmonHubBMWInterfacer = interfacers.EmonHubBMWInterfacer.EmonHubBMWInterfacer
 
-if bluetooth:
+if bluetooth_found:
     ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
 
 if pymodbus_found:
