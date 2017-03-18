@@ -1,4 +1,6 @@
-# Serial emonTx V3 (emoneESP formatt direct serial)
+# Direct Serial emonTx V3
+
+Using emoneESP format direct serial
 
 by @owenduffy
 
