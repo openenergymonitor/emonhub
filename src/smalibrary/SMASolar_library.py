@@ -6,6 +6,7 @@ import time
 from __builtin__ import long
 from SMABluetoothPacket import SMABluetoothPacket
 from SMANET2PlusPacket import SMANET2PlusPacket
+from datetime import datetime
 
 __author__ = 'Stuart Pittaway'
 
@@ -46,7 +47,6 @@ def Read_Level1_Packet_From_BT_Stream(btSocket,mylocalBTAddress=bytearray([0x00,
     return packet
 
 def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, mylocalBTAddress=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])):
-
     #if waitForPacket:
     #    print "Waiting for reply to packet number {0:02x}".format(waitPacketNumber)
     #else:
@@ -82,7 +82,6 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
             raise Exception("Failed to grab all the bytes needed for a Level 2 packet")
 
         if not level2Packet.validateChecksum(bluetoothbuffer.getLevel2Checksum()):
-            # print level2Packet.debugViewPacket()
             raise Exception("Invalid checksum on Level 2 packet")
 
         v.leveltwo = level2Packet
@@ -173,6 +172,14 @@ def spotvaluelist_dictionary():
     spotvaluelist["unknown"]  = SpotValue("??","??",1)
     return spotvaluelist
 
+def extract_data(level2Packet, gap=40):
+    #Return a dictionary
+    outputlist = {}
+
+    powdata = level2Packet.getArray()
+
+    return outputlist
+
 def extract_spot_values(level2Packet, gap=40):
     powdata = level2Packet.getArray()
 
@@ -223,11 +230,8 @@ def extract_spot_values(level2Packet, gap=40):
     return outputlist
 
 def spotvalues_ac(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-
     send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-
     pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-
     pluspacket9.pushRawByteArray( bytearray([0x00, 0x02, 0x00,
                                              0x51, 0x00, 0x40, 0x46,
                                              0x00, 0xFF, 0x40, 0x57,
@@ -297,7 +301,7 @@ def spotvalues_dcwatts(btSocket, packet_send_counter, mylocalBTAddress, Inverter
     bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
     if bluetoothbuffer.leveltwo.errorCode() > 0:
         print("Error code returned from inverter")
-    return extract_spot_values(bluetoothbuffer.leveltwo, 28)
+    return
 
 
 def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
@@ -323,6 +327,28 @@ def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCod
         value = ""
 
     return value
+
+def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_send_counter, InverterPasswordArray):
+    # Logon to inverter
+    pluspacket1 = SMANET2PlusPacket(0x0e, 0xa0, packet_send_counter, InverterCodeArray,  0x00,  0x01, 0x01)
+    pluspacket1.pushLong(0xFFFD040c)
+    #0x07 = User logon, 0x0a = installer logon
+    pluspacket1.pushLong(0x00000007)
+    pluspacket1.pushLong(0x00000384)
+    pluspacket1.pushRawByteArray( floattobytearray(time.mktime(datetime.today().timetuple())))
+    pluspacket1.pushLong(0x00000000)
+    pluspacket1.pushRawByteArray(InverterPasswordArray)
+    send = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    send.pushRawByteArray(pluspacket1.getBytesForSending())
+    send.finish()
+    send.sendPacket(btSocket)
+
+    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True, mylocalBTAddress)
+
+    checkPacketReply(bluetoothbuffer, 0x0001)
+    if bluetoothbuffer.leveltwo.errorCode() > 0:
+        raise Exception("Error code returned from inverter - during logon - wrong password?")
+
 
 
 def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_send_counter):
@@ -359,7 +385,9 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
 
     send = SMABluetoothPacket(0x3f, 0x00, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket1 = SMANET2PlusPacket(0x09, 0xa0, packet_send_counter, InverterCodeArray, 0, 0, 0)
-    pluspacket1.pushRawByteArray(bytearray([0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]))
+    pluspacket1.pushRawByteArray(bytearray([0x00, 0x02, 0x00, 0x00]))
+    pluspacket1.pushLong(0x00000000)
+    pluspacket1.pushLong(0x00000000)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
     send.sendPacket(btSocket)
@@ -386,7 +414,28 @@ def checkPacketReply(bluetoothbuffer,commandcode):
     if bluetoothbuffer.levelone.CommandCode() != commandcode:
         raise Exception("Expected command 0x{0:04x} received 0x{1:04x}".format(commandcode,bluetoothbuffer.levelone.CommandCode()))
 
-def pause():
-    # Sleep to half second to prevent SMA inverter being drowned by our traffic
-    # (seems to work okay without delay but older inverters may suffer)
-    time.sleep(0.5)
+#def pause():
+#    # Sleep to half second to prevent SMA inverter being drowned by our traffic
+#    # (seems to work okay without delay but older inverters may suffer)
+#    time.sleep(0.5)
+
+def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, cmd, first, last):
+    send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
+    pluspacket9.pushLong(cmd)
+    pluspacket9.pushLong(first)
+    pluspacket9.pushLong(last)
+    send9.pushRawByteArray(pluspacket9.getBytesForSending())
+    send9.finish()
+    send9.sendPacket(btSocket)
+    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
+
+    if bluetoothbuffer.leveltwo.errorCode() > 0:
+        return None
+
+    leveltwo=bluetoothbuffer.leveltwo
+
+    if leveltwo.errorCode() == 0:
+        return leveltwo
+
+    return None
