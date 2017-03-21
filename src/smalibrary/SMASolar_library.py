@@ -228,7 +228,7 @@ def spotvalues_ac(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeA
 
     pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
 
-    pluspacket9.pushRawByteArray( bytearray([0x80, 0x00, 0x02, 0x00,
+    pluspacket9.pushRawByteArray( bytearray([0x00, 0x02, 0x00,
                                              0x51, 0x00, 0x40, 0x46,
                                              0x00, 0xFF, 0x40, 0x57,
                                              0x00
@@ -249,7 +249,7 @@ def spotvalues_ac(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeA
 def spotvalues_yield(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
     send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray(bytearray([0x80, 0x00, 0x02, 0x00,
+    pluspacket9.pushRawByteArray(bytearray([0x00, 0x02, 0x00,
                                             0x54, 0x00, 0x26, 0x01,
                                             0x00, 0xFF, 0x2f, 0x46,
                                             0x00 ]))
@@ -266,7 +266,7 @@ def spotvalues_dc(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeA
     #print "Asking inverter for its DC spot value data...."
     send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket9 = SMANET2PlusPacket(0x09, 0xE0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray( bytearray([0x83, 0x00, 0x02, 0x00,
+    pluspacket9.pushRawByteArray( bytearray([0x00, 0x02, 0x00,
                                              0x53, 0x00, 0x1f, 0x45,
                                              0x00, 0xFF, 0x21, 0x45,
                                              0x00]))
@@ -287,7 +287,7 @@ def spotvalues_dc(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeA
 def spotvalues_dcwatts(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
     send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket9 = SMANET2PlusPacket(0x09, 0xE0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray(bytearray([0x83, 0x00, 0x02, 0x80,
+    pluspacket9.pushRawByteArray(bytearray([0x00, 0x02, 0x80,
                                             0x53, 0x00, 0x00, 0x25,
                                             0x00, 0xFF, 0xFF, 0x25,
                                             0x00]))
@@ -303,7 +303,7 @@ def spotvalues_dcwatts(btSocket, packet_send_counter, mylocalBTAddress, Inverter
 def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
     send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray(bytearray([0x80, 0x00, 0x02, 0x00,
+    pluspacket9.pushRawByteArray(bytearray([0x00, 0x02, 0x00,
                                             0x58, 0x00, 0x1e, 0x82,
                                             0x00, 0xFF, 0x1e, 0x82
                                            ,0x00]))
@@ -359,7 +359,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
 
     send = SMABluetoothPacket(0x3f, 0x00, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket1 = SMANET2PlusPacket(0x09, 0xa0, packet_send_counter, InverterCodeArray, 0, 0, 0)
-    pluspacket1.pushRawByteArray(bytearray([ 0x80, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]))
+    pluspacket1.pushRawByteArray(bytearray([0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00 ]))
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
     send.sendPacket(btSocket)
@@ -375,7 +375,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
 
     send = SMABluetoothPacket(0x3b, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket1 = SMANET2PlusPacket(0x08, 0xa0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
-    pluspacket1.pushRawByteArray(bytearray([ 0x80, 0x0E, 0x01, 0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]))
+    pluspacket1.pushRawByteArray(bytearray([0x0E, 0x01, 0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]))
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
     send.sendPacket(btSocket)

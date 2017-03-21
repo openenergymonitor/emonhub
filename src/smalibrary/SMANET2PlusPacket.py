@@ -49,7 +49,8 @@ class SMANET2PlusPacket:
             self.pushRawByteArray(bytearray([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]))
             self.pushRawByteArray(bytearray([a, b]));
             self.pushRawByteArray(InverterCodeArray);
-            self.pushRawByteArray(bytearray([0x00, c, 0x00, 0x00, 0x00, 0x00, packetcount]))
+            self.pushRawByteArray(bytearray([0x00, c, 0x00, 0x00, 0x00, 0x00]))
+            self.pushShortByte(packetcount |  0x00008000)
 
     def getFourByteLong(self, offset):
         value = self.packet[offset] * math.pow(256, 0)
@@ -136,6 +137,23 @@ class SMANET2PlusPacket:
     def pushRawByte(self, value):
         self.FCSChecksum = (self.FCSChecksum >> 8) ^ self.fcstab[(self.FCSChecksum ^ value) & 0xff]
         self.packet.append(value)
+
+    def pushShortByte(self, value):
+        #Sends two byte short in little endian format
+        self.pushRawByte(value & 0xFF)
+        self.pushRawByte((value >> 8) & 0xFF)
+
+    def pushLongs(self, value1,value2,value3):
+        self.pushLong(value1)
+        self.pushLong(value2)
+        self.pushLong(value3)
+
+    def pushLong(self, value):
+        #Sends two byte short in little endian format
+        self.pushRawByte(value & 0xFF)
+        self.pushRawByte((value >> 8) & 0xFF)
+        self.pushRawByte((value >> 16) & 0xFF)
+        self.pushRawByte((value >> 24) & 0xFF)
 
     def getBytesForSending(self):
         outputpacket = bytearray()

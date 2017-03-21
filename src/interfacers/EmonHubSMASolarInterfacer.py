@@ -88,7 +88,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         # Logon to inverter
         pluspacket1 = SMASolar_library.SMANET2PlusPacket(0x0e, 0xa0, self._packet_send_counter, self.InverterCodeArray,  0x00,  0x01, 0x01)
-        pluspacket1.pushRawByteArray( bytearray([0x80, 0x0C, 0x04, 0xFD, 0xFF, 0x07, 0x00, 0x00, 0x00, 0x84, 0x03, 0x00, 0x00]))
+        pluspacket1.pushRawByteArray( bytearray([0x0C, 0x04, 0xFD, 0xFF, 0x07, 0x00, 0x00, 0x00, 0x84, 0x03, 0x00, 0x00]))
         pluspacket1.pushRawByteArray( SMASolar_library.floattobytearray(SMASolar_library.time.mktime(datetime.today().timetuple())))
         pluspacket1.pushRawByteArray(bytearray([0x00, 0x00, 0x00, 0x00]))
         pluspacket1.pushRawByteArray(InverterPasswordArray)
@@ -163,7 +163,9 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
     def _increment_packet_send_counter(self):
         """Increment the internal sequence number in SMA Packets"""
         self._packet_send_counter += 1
-        if self._packet_send_counter  > 200:
+
+        #Prevent roll over
+        if self._packet_send_counter >= 0x0FFF:
             self._packet_send_counter = 0
 
     def _reset_duration_timer(self):
