@@ -226,80 +226,61 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
 
-            self._log.debug("Reading TypeLabel")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x58000200,0x00821E00,0x008220FF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
-                self._log.debug(data.debugViewPacket())
+            #self._log.debug("Reading TypeLabel")
+            #data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x58000200,0x00821E00,0x008220FF)
+            #self._increment_packet_send_counter()
+            #if data is not None:
+            #    self._log.debug(data.debugViewPacket())
+            #    AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Reading Energy Production")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200,0x00260100,0x002622FF)
             self._increment_packet_send_counter()
             if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
-
+                AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Spot AC Voltage")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00464000,0x004642FF)
+            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00464000,0x004655FF)
             self._increment_packet_send_counter()
             if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
+                AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Spot AC Total Power")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00263F00,0x00263FFF)
             self._increment_packet_send_counter()
             if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
+                AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Spot Spot Grid Frequency")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00465700,0x004657FF)
             self._increment_packet_send_counter()
             if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
+                AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("OperationTime")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200, 0x00462E00, 0x00462FFF)
             self._increment_packet_send_counter()
             if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
+                AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Inverter Temperature")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x52000200, 0x00237700, 0x002377FF)
             self._increment_packet_send_counter()
             if data is not None:
-                AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
-
-            self._log.debug("Device Status")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51800200, 0x00214800, 0x002148FF)
-            self._increment_packet_send_counter()
-            if data is not None:
                 AC.update(SMASolar_library.extract_data(data))
-                self._log.debug(data.debugViewPacket())
 
-            #Read the AC values from the inverter
-            #self._log.debug("Reading spotvalues AC")
-            #AC = SMASolar_library.spotvalues_ac(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+            #self._log.debug("Device Status")
+            #data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51800200, 0x00214800, 0x002148FF)
             #self._increment_packet_send_counter()
-
-            #Yield and running hours
-            #self._log.debug("Reading spotvalues yield")
-            #Yield = SMASolar_library.spotvalues_yield(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
-            #self._increment_packet_send_counter()
-            #AC.update(Yield)
-
-            # DC power
-            #if (self._readdcvalues==1):
-            #    self._log.debug("Reading spotvalues DC")
-            #    DC = SMASolar_library.spotvalues_dcwatts(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
-            #    self._increment_packet_send_counter()
-            #    AC.update(DC)
+            #if data is not None:
+            #    self._log.debug(data.debugViewPacket())
+            #    AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Extracting data")
             # Output values which match these keys - note some inverters wont return all data requested particularly DC string values
@@ -319,10 +300,13 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             # 0x2622 Day Yield Wh
             # 0x462e Operating time (hours)
             # 0x462f Feed in time (hours)
-            for x in AC:
-                self._log.debug(x.Label + " "+str(x.Value))
-                names.append( x.Label )
-                values.append( x.Value )
+
+
+
+            for key, value in AC.items():
+                names.append( value.Label )
+                values.append( value.Value )
+                self._log.debug(value.Label + "= {0}".format(value.Value))
             #for key in [0x4640,0x4641,0x4642,0x4648,0x4649,0x464a,0x4650,0x4651,0x4652,0x4657,0x251e,0x2601,0x2622,0x462e,0x462f]:
             #    if key in AC:
             #        names.append( AC[key].Label )

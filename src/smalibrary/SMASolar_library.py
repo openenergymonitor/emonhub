@@ -10,6 +10,11 @@ from datetime import datetime
 
 __author__ = 'Stuart Pittaway'
 
+# Background Reading
+# https://groups.google.com/forum/#!topic/sma-bluetooth/UP4Tp8Ob3OA
+# https://github.com/Rincewind76/SMAInverter/blob/master/76_SMAInverter.pm
+# https://sbfspot.codeplex.com/ (credit back to myself!!)
+
 def Read_Level1_Packet_From_BT_Stream(btSocket,mylocalBTAddress=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])):
     while True:
         #print "Waiting for SMA level 1 packet from Bluetooth stream"
@@ -35,11 +40,6 @@ def Read_Level1_Packet_From_BT_Stream(btSocket,mylocalBTAddress=bytearray([0x00,
 
         # Tidy up the packet lengths
         packet.finish()
-
-        # Output some progress indicators
-        # print "Received Level 1 BT packet cmd={1:04x}h len={0:04x}h bytes".format(packet.TotalPayloadLength(), packet.CommandCode())
-        #print packet.DisplayPacketDebugInfo("Received")
-        #print ("*")
 
         if DestAdd == mylocalBTAddress and packet.ValidateHeaderChecksum():
             break
@@ -88,8 +88,6 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
 
         # Output the level2 payload (after its been combined from multiple packets if needed)
         #print level2Packet.debugViewPacket()
-
-    #print " "
     return v
 
 def LogMessageWithByteArray(message, ba):
@@ -172,14 +170,6 @@ def spotvaluelist_dictionary():
     spotvaluelist["unknown"]  = SpotValue("??","??",1)
     return spotvaluelist
 
-def extract_data(level2Packet, gap=40):
-    #Return a dictionary
-    outputlist = {}
-
-    powdata = level2Packet.getArray()
-
-    return outputlist
-
 def extract_spot_values(level2Packet, gap=40):
     powdata = level2Packet.getArray()
 
@@ -228,80 +218,6 @@ def extract_spot_values(level2Packet, gap=40):
             #outputlist.append( SpotValueOutput(valuetype,spotvalue.Description, value)  )
             outputlist[valuetype] = SpotValueOutput(spotvalue.Description, value)
     return outputlist
-
-def spotvalues_ac(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-    send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray( bytearray([0x00, 0x02, 0x00,
-                                             0x51, 0x00, 0x40, 0x46,
-                                             0x00, 0xFF, 0x40, 0x57,
-                                             0x00
-                                             ]))
-    send9.pushRawByteArray(pluspacket9.getBytesForSending())
-    send9.finish()
-    send9.sendPacket(btSocket)
-    #pluspacket9.debugViewPacket()
-    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
-
-    # This will be a multi packet reply so ignore this check
-    checkPacketReply(bluetoothbuffer,0x0001);
-    if bluetoothbuffer.leveltwo.errorCode() > 0:
-        print("Error code returned from inverter")
-
-    return extract_spot_values(bluetoothbuffer.leveltwo, 28)
-
-def spotvalues_yield(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-    send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray(bytearray([0x00, 0x02, 0x00,
-                                            0x54, 0x00, 0x26, 0x01,
-                                            0x00, 0xFF, 0x2f, 0x46,
-                                            0x00 ]))
-    send9.pushRawByteArray(pluspacket9.getBytesForSending())
-    send9.finish()
-    send9.sendPacket(btSocket)
-    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
-    if bluetoothbuffer.leveltwo.errorCode() > 0:
-        print("Error code returned from inverter")
-    return extract_spot_values(bluetoothbuffer.leveltwo, 16)
-
-
-def spotvalues_dc(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-    #print "Asking inverter for its DC spot value data...."
-    send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xE0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray( bytearray([0x00, 0x02, 0x00,
-                                             0x53, 0x00, 0x1f, 0x45,
-                                             0x00, 0xFF, 0x21, 0x45,
-                                             0x00]))
-
-    send9.pushRawByteArray(pluspacket9.getBytesForSending())
-    send9.finish()
-    send9.sendPacket(btSocket)
-
-    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
-    # This will be a multi packet reply so ignore this check
-    checkPacketReply(bluetoothbuffer,0x0001);
-
-    if bluetoothbuffer.leveltwo.errorCode() > 0:
-        print("Error code returned from inverter")
-
-    return extract_spot_values(bluetoothbuffer.leveltwo, 28)
-
-def spotvalues_dcwatts(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-    send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xE0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray(bytearray([0x00, 0x02, 0x80,
-                                            0x53, 0x00, 0x00, 0x25,
-                                            0x00, 0xFF, 0xFF, 0x25,
-                                            0x00]))
-    send9.pushRawByteArray(pluspacket9.getBytesForSending())
-    send9.finish()
-    send9.sendPacket(btSocket)
-    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
-    if bluetoothbuffer.leveltwo.errorCode() > 0:
-        print("Error code returned from inverter")
-    return
 
 
 def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
@@ -439,3 +355,110 @@ def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeAr
         return leveltwo
 
     return None
+
+def toVolt(value):
+    return float(value) / float(100.0)
+
+def toHours(value):
+    return float(value) / float(3600)
+
+def extract_data(level2Packet):
+    #Return a dictionary
+    outputlist = {}
+
+    SpotValueOutput=namedtuple("SpotValueOutput", ["Label", "Value"])
+
+
+    #Start here
+    offset = 40
+
+    if (level2Packet.totalPayloadLength()==0):
+        return outputlist
+
+    while (offset < level2Packet.totalPayloadLength()):
+        recordSize=28
+        value=0
+        classtype = level2Packet.getByte(offset)
+        #classtype should always be =1
+        readingtype = level2Packet.getTwoByteLong(offset+1)
+        dataType = level2Packet.getByte(offset+3)
+        datetime = level2Packet.getFourByteLong(offset+4)
+
+        if (readingtype==0):
+            break;
+
+        if (dataType != 0x10) and (dataType != 0x08):
+            # Not TEXT or STATUS, so it should be DWORD
+            value = level2Packet.getTwoByteLong(offset+8)
+
+            #Check for NULLs
+            if (value == 0x8000) or (value == 0xFFFF):
+                value = 0;
+
+
+            #TODO MOVE THIS LOOP INTO A LOOK UP LIST TO AUTO READ THE VALUES AS NEEDED...
+
+            # DC voltage input (aka SPOT_UDC1 / SPOT_UDC2)
+            if (readingtype==0x451f):
+                if (classtype==1):
+                    outputlist["SPOT_UDC1"] = SpotValueOutput("SPOT_UDC1".format(readingtype), toVolt(value))
+                if (classtype==2):
+                    outputlist["SPOT_UDC2"] = SpotValueOutput("SPOT_UDC2".format(readingtype), toVolt(value))
+
+            # Power L1 (aka SPOT_PAC1)
+            if (readingtype==0x4640):
+                outputlist["SPOT_PAC1"] = SpotValueOutput("SPOT_PAC1".format(readingtype), toVolt(value))
+
+            # Power L2 (aka SPOT_PAC2)
+            if (readingtype==0x4641):
+                outputlist["SPOT_PAC2"] = SpotValueOutput("SPOT_PAC2".format(readingtype), toVolt(value))
+
+            # Power L3 (aka SPOT_PAC3)
+            if (readingtype==0x4642):
+                outputlist["SPOT_PAC3"] = SpotValueOutput("SPOT_PAC3".format(readingtype), toVolt(value))
+
+            # Grid frequency (aka SPOT_FREQ)
+            if (readingtype==0x4657):
+                outputlist["SPOT_FREQ"] = SpotValueOutput("SPOT_FREQ".format(readingtype), value)
+
+            # Power (aka SPOT_PACTOT)
+            if (readingtype==0x263F):
+                outputlist["SPOT_PACTOT"] = SpotValueOutput("SPOT_PACTOT".format(readingtype), value)
+
+            #Operating condition temperatures
+            if (readingtype==0x2377):
+                outputlist["OP_TEMP"] = SpotValueOutput("OP_TEMP".format(readingtype), value)
+
+            #  Total yield (aka SPOT_ETOTAL)
+            if (readingtype==0x2601):
+                value=level2Packet.get8ByteFloat(offset+8)
+                recordSize=16
+                outputlist["SPOT_ETOTAL"] = SpotValueOutput("SPOT_ETOTAL".format(readingtype), value)
+
+            # Day yield (aka SPOT_ETODAY)
+            if (readingtype==0x2622):
+                value=level2Packet.get8ByteFloat(offset+8)
+                recordSize=16
+                outputlist["SPOT_ETODAY"] = SpotValueOutput("SPOT_ETODAY".format(readingtype), value)
+
+            #Operating time (aka SPOT_OPERTM)
+            if (readingtype==0x462E):
+                value=level2Packet.get8ByteFloat(offset+8)
+                recordSize=16
+                outputlist["SPOT_OPERTM"] = SpotValueOutput("SPOT_OPERTM".format(readingtype), toHours(value))
+
+            #Feed-in time (aka SPOT_FEEDTM)
+            if (readingtype==0x462F):
+                value=level2Packet.get8ByteFloat(offset+8)
+                recordSize=16
+                outputlist["SPOT_FEEDTM"] = SpotValueOutput("SPOT_FEEDTM".format(readingtype), toHours(value))
+
+            #Output to caller
+            outputlist[readingtype] = SpotValueOutput("DebugX{0:04x}".format(readingtype), value)
+
+        offset+=recordSize
+
+    #Start 40 bytes into packet
+    #for i in range(40, len(powdata), gap):
+
+    return outputlist

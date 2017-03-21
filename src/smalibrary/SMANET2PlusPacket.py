@@ -76,6 +76,8 @@ class SMANET2PlusPacket:
             self.pushLong(0x00000000)
             self.pushShortByte(packetcount |  0x00008000)
 
+    def getByte(self, offset):
+        return self.packet[offset]
 
     def getTwoByteLong(self, offset):
         value = self.packet[offset] * math.pow(256, 0)
