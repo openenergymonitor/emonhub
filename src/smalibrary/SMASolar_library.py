@@ -138,24 +138,27 @@ def floattobytearray(value):
 
 
 def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
-    send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushByteArray(bytearray([0x00, 0x02, 0x00,
-                                            0x58, 0x00, 0x1e, 0x82,
-                                            0x00, 0xFF, 0x1e, 0x82
-                                           ,0x00]))
-    send9.pushRawByteArray(pluspacket9.getBytesForSending())
-    send9.finish()
-    send9.sendPacket(btSocket)
-    bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
-    if bluetoothbuffer.leveltwo.errorCode() > 0:
-        print("Error code returned from inverter")
 
-    valuetype = bluetoothbuffer.leveltwo.getTwoByte(40 + 1)
+
+    data=request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, 0x58000200, 0x00821e00, 0x00821eff)
+
+    #send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    #pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
+    #pluspacket1.pushLong(0x58000200)
+    #pluspacket1.pushLong(0x00821e00)
+    #pluspacket1.pushLong(0x00821eff)
+    #send9.pushRawByteArray(pluspacket9.getBytesForSending())
+    #send9.finish()
+    #send9.sendPacket(btSocket)
+    #bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
+    #if bluetoothbuffer.leveltwo.errorCode() > 0:
+    #    print("Error code returned from inverter")
+
+    valuetype = data.getTwoByte(40 + 1)
     # idate = bluetoothbuffer.leveltwo.getFourByteLong(40 + 4)
     # t = time.localtime(long(idate))
     if valuetype == 0x821e:
-        value = bluetoothbuffer.leveltwo.getArray()[40 + 8:40 + 8 + 14].decode("utf-8")
+        value = data.getArray()[48:62].decode("utf-8")
     else:
         value = ""
 
@@ -381,9 +384,5 @@ def extract_data(level2Packet):
 
                 #Guess offset/default
                 offset+=12
-
-
-    #Start 40 bytes into packet
-    #for i in range(40, len(powdata), gap):
 
     return outputlist
