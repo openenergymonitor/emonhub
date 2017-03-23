@@ -92,11 +92,13 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._increment_packet_send_counter()
 
         #TODO: We need to see what packets look like when we get multiple inverters talking to us
-        #inverterserialnumber = bluetoothbuffer.leveltwo.getFourByteLong(16)
-        inverterserialnumber = 0xefefefef
-
-        invName = SMASolar_library.getInverterName(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
+        dictInverterData = SMASolar_library.getInverterDetails(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
         self._increment_packet_send_counter()
+
+        self._log.debug(str(dictInverterData))
+
+        inverterserialnumber=dictInverterData["serialNumber"]
+        invName=dictInverterData["inverterName"]
 
         SMAInverterTuple = namedtuple('Inverter', 'SerialNumber Name NodeId NodeName')
 
@@ -221,86 +223,67 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             names= []
             values = []
 
-            AC= {}
+            output = {}
 
-            self._log.debug("Reading Spot DC Voltage")
+            #self._log.debug("Reading Spot DC Voltage")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x53800200,0x00451F00,0x004521FF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                AC.update(SMASolar_library.extract_data(data))
-                self._log.debug(data.debugViewPacket())
+                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
-            #self._log.debug("Reading TypeLabel")
-            #data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x58000200,0x00821E00,0x008220FF)
-            #self._increment_packet_send_counter()
-            #if data is not None:
-            #    self._log.debug(data.debugViewPacket())
-            #    AC.update(SMASolar_library.extract_data(data))
-
-            self._log.debug("Reading Energy Production")
+            #self._log.debug("Reading Energy Production")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200,0x00260100,0x002622FF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                self._log.debug(data.debugViewPacket())
-                AC.update(SMASolar_library.extract_data(data))
+                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
-            self._log.debug("Spot AC")
+            #self._log.debug("Spot AC")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00464000,0x004642FF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                self._log.debug(data.debugViewPacket())
-                AC.update(SMASolar_library.extract_data(data))
+                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
-            self._log.debug("Spot AC Total Power")
+            #self._log.debug("Spot AC Total Power")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00263F00,0x00263FFF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                self._log.debug(data.debugViewPacket())
-                AC.update(SMASolar_library.extract_data(data))
+                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
-            self._log.debug("Spot Spot Grid Frequency")
+            #self._log.debug("Spot Spot Grid Frequency")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00465700,0x004657FF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                self._log.debug(data.debugViewPacket())
-                AC.update(SMASolar_library.extract_data(data))
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
-            self._log.debug("OperationTime")
+            #self._log.debug("OperationTime")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200, 0x00462E00, 0x00462FFF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug(data.debugViewPacket())
-                AC.update(SMASolar_library.extract_data(data))
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
-            self._log.debug("Inverter Temperature")
+            #self._log.debug("Inverter Temperature")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x52000200, 0x00237700, 0x002377FF)
             self._increment_packet_send_counter()
             if data is not None:
-                self._log.debug(data.debugViewPacket())
-                AC.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("Device Status")
-            #data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51800200, 0x00214800, 0x002148FF)
-            #self._increment_packet_send_counter()
-            #if data is not None:
-            #    self._log.debug(data.debugViewPacket())
-            #    AC.update(SMASolar_library.extract_data(data))
+                #self._log.debug(data.debugViewPacket())
+                output.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Extracting data")
 
             #Sort the output to keep the keys in a consistant order
-            for key in sorted(AC):
-                names.append( AC[key].Label )
-                values.append( AC[key].Value )
-
-            #for key, value in AC.items():
-            #    names.append( value.Label )
-            #    values.append( value.Value )
+            for key in sorted(output):
+                names.append( output[key].Label )
+                values.append( output[key].Value )
 
             self._log.debug("Building cargo")
             c = Cargo.new_cargo()

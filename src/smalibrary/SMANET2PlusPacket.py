@@ -126,6 +126,12 @@ class SMANET2PlusPacket:
     def getDestinationAddress(self):
         return self.packet[14:20]
 
+    def getDestinationSusyid(self):
+        return self.getTwoByte(14)
+
+    def getDestinationSerial(self):
+        return self.getFourByteLong(16)
+
     def totalPayloadLength(self):
         return len(self.packet)
 
