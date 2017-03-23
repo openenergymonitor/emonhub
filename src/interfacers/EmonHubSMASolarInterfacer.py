@@ -319,6 +319,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             #to avoid errors in log files
             if (self._is_it_time_to_disconnect() == True):
                 self._log.info("Disconnecting Bluetooth after timer expired")
+                SMASolar_library.logoff(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF)
                 self._reset_time_to_disconnect_timer()
                 self._btSocket.close()
                 self._btSocket = None

@@ -237,26 +237,28 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
 
     inverterSerial = bluetoothbuffer.leveltwo.getDestinationAddress()
 
-    send = SMABluetoothPacket(0x3B, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket1 = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
-    pluspacket1.pushLong(0xFFFD010E)
-    pluspacket1.pushLong(0xFFFFFFFF)
-    send.pushRawByteArray(pluspacket1.getBytesForSending())
-    send.finish()
-    send.sendPacket(btSocket)
-    packet_send_counter += 1
+    #This is a logoff command..
+    #send = SMABluetoothPacket(0x3B, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    #pluspacket1 = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
+    #pluspacket1.pushLong(0xFFFD010E)
+    #pluspacket1.pushLong(0xFFFFFFFF)
+    #send.pushRawByteArray(pluspacket1.getBytesForSending())
+    #send.finish()
+    #send.sendPacket(btSocket)
+    #packet_send_counter += 1
 
 def checkPacketReply(bluetoothbuffer,commandcode):
     if bluetoothbuffer.levelone.CommandCode() != commandcode:
         raise Exception("Expected command 0x{0:04x} received 0x{1:04x}".format(commandcode,bluetoothbuffer.levelone.CommandCode()))
 
-def logoff():
-    #    writePacketHeader(pcktBuf, 0x01, addr_unknown);
-    #    writePacket(pcktBuf, 0x08, 0xA0, 0x0300, anySUSyID, anySerial);
-    #    writeLong(pcktBuf, 0xFFFD010E);
-    #    writeLong(pcktBuf, 0xFFFFFFFF);
-    #    writePacketTrailer(pcktBuf);
-    #    writePacketLength(pcktBuf);
+def logoff(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
+    p1 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    data = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x00)
+    data.pushLong(0xFFFD010E)
+    data.pushLong(0xFFFFFFFF)
+    p1.pushRawByteArray(data.getBytesForSending())
+    p1.finish()
+    p1.sendPacket(btSocket)
     return
 
 def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, cmd, first, last):
