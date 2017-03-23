@@ -62,20 +62,19 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
         level2Packet = SMANET2PlusPacket()
 
         # Write the payload into a level2 class structure
-        level2Packet.pushRawByteArray(bluetoothbuffer.getLevel2Payload())
+        level2Packet.pushByteArray(bluetoothbuffer.getLevel2Payload())
 
         if waitForPacket == True and level2Packet.getPacketCounter() != waitPacketNumber:
-            print("Received packet number {0:02x} expected {1:02x}".format(level2Packet.getPacketCounter(),
-                                                                           waitPacketNumber))
+            #print("Received packet number {0:02x} expected {1:02x}".format(level2Packet.getPacketCounter(),waitPacketNumber))
             raise Exception("Wrong Level 2 packet returned!")
 
         # if bluetoothbuffer.CommandCode() == 0x0008:
             # print "Level 2 packet length (according to packet): %d" % level2Packet.totalCalculatedPacketLength()
 
-        # Loop until we have the entire packet rebuilt (may take several/hundreds of level 1 packets)
+        # Loop until we have the entire packet rebuilt (may take several level 1 packets)
         while (bluetoothbuffer.CommandCode() != 0x0001) and (bluetoothbuffer.lastByte() != 0x7e):
             bluetoothbuffer = Read_Level1_Packet_From_BT_Stream(btSocket,mylocalBTAddress)
-            level2Packet.pushRawByteArray(bluetoothbuffer.getLevel2Payload())
+            level2Packet.pushByteArray(bluetoothbuffer.getLevel2Payload())
             v.levelone = bluetoothbuffer
 
         if not level2Packet.isPacketFull():
@@ -137,93 +136,11 @@ def floattobytearray(value):
     b.reverse()
     return b
 
-def spotvaluelist_dictionary():
-    spotvaluelist = {}
-
-    SpotValue=namedtuple("spotvalue", ["Description", "Units", "Scale"])
-
-    spotvaluelist[0x0001] = SpotValue("InverterSerial","",1)
-    spotvaluelist[0x0002] = SpotValue("InverterName","",None)
-    spotvaluelist[0x263f] = SpotValue("ACTotalPower","Watts", 1)
-    spotvaluelist[0x411e] = SpotValue("Ph1ACMax","Watts", 1)
-    spotvaluelist[0x411f] = SpotValue("Ph2ACMax","Watts", 1)
-    spotvaluelist[0x4120] = SpotValue("Ph3ACMax","Watts", 1)
-    spotvaluelist[0x4640] = SpotValue("Ph1Power","Watts",1)
-    spotvaluelist[0x4641] = SpotValue("Ph2Power","Watts",1)
-    spotvaluelist[0x4642] = SpotValue("Ph3Power","Watts",1)
-    spotvaluelist[0x4648] = SpotValue("Ph1ACVolt","Volts",100)
-    spotvaluelist[0x4649] = SpotValue("Ph2ACVolt","Volts",100)
-    spotvaluelist[0x464a] = SpotValue("Ph3ACVolt","Volts",100)
-    spotvaluelist[0x4650] = SpotValue("Ph1ACCurrent","Amps",1000)
-    spotvaluelist[0x4651] = SpotValue("Ph2ACCurrent","Amps",1000)
-    spotvaluelist[0x4652] = SpotValue("Ph3ACCurrent","Amps",1000)
-    spotvaluelist[0x4657] = SpotValue("ACGridFreq","Hz",100)
-    spotvaluelist[0x821e] = SpotValue("Inverter Name","TEXT",None)
-    spotvaluelist[0x2601] = SpotValue("TotalYield","Wh",1)
-    spotvaluelist[0x2622] = SpotValue("DayYield","Wh",1)
-    spotvaluelist[0x462f] = SpotValue("FeedInTime","hours",3600)
-    spotvaluelist[0x462e] = SpotValue("OperatingTime","hours",3600)
-    spotvaluelist[0x251e] = SpotValue("DCPower1","Watts",1)
-    spotvaluelist[0x451f] = SpotValue("DCVoltage1","Volts",100)
-    spotvaluelist[0x4521] = SpotValue("DCCurrent1","Amps",1)
-
-    spotvaluelist["unknown"]  = SpotValue("??","??",1)
-    return spotvaluelist
-
-def extract_spot_values(level2Packet, gap=40):
-    powdata = level2Packet.getArray()
-
-    spotvaluelist = spotvaluelist_dictionary()
-
-    SpotValueOutput=namedtuple("SpotValueOutput", ["Label", "Value"])
-
-    #Return a dictionary
-    outputlist = {}
-
-    if len(powdata) > 0:
-        for i in range(40, len(powdata), gap):
-            # LogMessageWithByteArray("PowData", powdata[i:i+gap])
-
-            valuetype = level2Packet.getTwoByteLong(i + 1)
-            #idate = level2Packet.getFourByteLong(i + 4)
-            #t = time.localtime(long(idate))
-
-            if valuetype in spotvaluelist:
-                spotvalue = spotvaluelist[valuetype]
-            else:
-                spotvalue = spotvaluelist["unknown"]
-                valuetype = 0
-
-            if spotvalue.Units == "TEXT":
-                value = powdata[i + 8:i + 22].decode("utf-8")
-            elif spotvalue.Units == "hours":
-                value = level2Packet.getFourByteDouble(i + 8)
-                if value is not None:
-                    value = value / spotvalue.Scale
-            elif spotvalue.Units == "Wh":
-                value = level2Packet.getFourByteDouble(i + 8)
-            else:
-                value = level2Packet.getThreeByteDouble(i + 8)
-                if value is not None:
-                    value = value / spotvalue.Scale
-
-            #if i == 40:
-            #    outputlist.append( (0, time.strftime("%Y-%m-%d %H:%M:%S",t))  )
-
-            #print "{0} {1:04x} {2} '{3}' {4} {5}".format(time.asctime(t), valuetype, spotvalue.Description, value, spotvalue.Units, level2Packet.getThreeByteDouble(i + 8 + 4))
-
-            if value is None:
-                value=0.0
-
-            #outputlist.append( SpotValueOutput(valuetype,spotvalue.Description, value)  )
-            outputlist[valuetype] = SpotValueOutput(spotvalue.Description, value)
-    return outputlist
-
 
 def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
     send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    pluspacket9.pushRawByteArray(bytearray([0x00, 0x02, 0x00,
+    pluspacket9.pushByteArray(bytearray([0x00, 0x02, 0x00,
                                             0x58, 0x00, 0x1e, 0x82,
                                             0x00, 0xFF, 0x1e, 0x82
                                            ,0x00]))
@@ -234,7 +151,7 @@ def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCod
     if bluetoothbuffer.leveltwo.errorCode() > 0:
         print("Error code returned from inverter")
 
-    valuetype = bluetoothbuffer.leveltwo.getTwoByteLong(40 + 1)
+    valuetype = bluetoothbuffer.leveltwo.getTwoByte(40 + 1)
     # idate = bluetoothbuffer.leveltwo.getFourByteLong(40 + 4)
     # t = time.localtime(long(idate))
     if valuetype == 0x821e:
@@ -250,10 +167,11 @@ def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_sen
     pluspacket1.pushLong(0xFFFD040c)
     #0x07 = User logon, 0x0a = installer logon
     pluspacket1.pushLong(0x00000007)
+    #Timeout = 900sec ?
     pluspacket1.pushLong(0x00000384)
-    pluspacket1.pushRawByteArray( floattobytearray(time.mktime(datetime.today().timetuple())))
+    pluspacket1.pushByteArray( floattobytearray(time.mktime(datetime.today().timetuple())))
     pluspacket1.pushLong(0x00000000)
-    pluspacket1.pushRawByteArray(InverterPasswordArray)
+    pluspacket1.pushByteArray(InverterPasswordArray)
     send = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
@@ -277,10 +195,12 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     inverterAddress = bluetoothbuffer.levelone.SourceAddress;
 
     # Reply to 0x0002 cmd with our data
-    send = SMABluetoothPacket(0x1f, 0x00, 0x00, 0x02, 0x00, mylocalBTAddress, inverterAddress);
-    send.pushUnescapedByteArray( bytearray([0x00, 0x04, 0x70, 0x00, netid, 0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00]) )
+    send = SMABluetoothPacket(0x1F, 0x00, 0x00, 0x02, 0x00, mylocalBTAddress, inverterAddress);
+    send.pushUnescapedByteArray( bytearray([0x00, 0x04, 0x70, 0x00,
+                                netid,
+                                0x00, 0x00, 0x00, 0x00,
+                                0x01, 0x00, 0x00, 0x00]) )
     send.finish()
-    # print send.DisplayPacketDebugInfo("Reply to 0x02 cmd")
     send.sendPacket(btSocket);
 
     # Receive 0x000a cmd
@@ -290,7 +210,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     # Receive 0x000c cmd (sometimes this doesnt turn up!)
     bluetoothbuffer = read_SMA_BT_Packet(btSocket,mylocalBTAddress);
     if bluetoothbuffer.levelone.CommandCode() != 0x0005 and bluetoothbuffer.levelone.CommandCode() != 0x000c:
-        print ("Expected different command 0x0005 or 0x000c");
+        raise Exception("Expected different command 0x0005 or 0x000c");
 
     # Receive 0x0005 if we didnt get it above
     if bluetoothbuffer.levelone.CommandCode() != 0x0005:
@@ -301,7 +221,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
 
     send = SMABluetoothPacket(0x3f, 0x00, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     pluspacket1 = SMANET2PlusPacket(0x09, 0xa0, packet_send_counter, InverterCodeArray, 0, 0, 0)
-    pluspacket1.pushRawByteArray(bytearray([0x00, 0x02, 0x00, 0x00]))
+    pluspacket1.pushLong(0x00000200)
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushLong(0x00000000)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
@@ -311,29 +231,33 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
     checkPacketReply(bluetoothbuffer,0x0001)
     if bluetoothbuffer.leveltwo.errorCode() > 0:
-        print("Error code returned from inverter")
+        raise Exception("Error code returned from inverter")
 
     packet_send_counter += 1
 
     inverterSerial = bluetoothbuffer.leveltwo.getDestinationAddress()
 
-    send = SMABluetoothPacket(0x3b, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket1 = SMANET2PlusPacket(0x08, 0xa0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
-    pluspacket1.pushRawByteArray(bytearray([0x0E, 0x01, 0xFD, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF ]))
+    send = SMABluetoothPacket(0x3B, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    pluspacket1 = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
+    pluspacket1.pushLong(0xFFFD010E)
+    pluspacket1.pushLong(0xFFFFFFFF)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
     send.sendPacket(btSocket)
-
     packet_send_counter += 1
 
 def checkPacketReply(bluetoothbuffer,commandcode):
     if bluetoothbuffer.levelone.CommandCode() != commandcode:
         raise Exception("Expected command 0x{0:04x} received 0x{1:04x}".format(commandcode,bluetoothbuffer.levelone.CommandCode()))
 
-#def pause():
-#    # Sleep to half second to prevent SMA inverter being drowned by our traffic
-#    # (seems to work okay without delay but older inverters may suffer)
-#    time.sleep(0.5)
+def logoff():
+    #    writePacketHeader(pcktBuf, 0x01, addr_unknown);
+    #    writePacket(pcktBuf, 0x08, 0xA0, 0x0300, anySUSyID, anySerial);
+    #    writeLong(pcktBuf, 0xFFFD010E);
+    #    writeLong(pcktBuf, 0xFFFFFFFF);
+    #    writePacketTrailer(pcktBuf);
+    #    writePacketLength(pcktBuf);
+    return
 
 def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, cmd, first, last):
     send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
@@ -366,8 +290,37 @@ def extract_data(level2Packet):
     #Return a dictionary
     outputlist = {}
 
-    SpotValueOutput=namedtuple("SpotValueOutput", ["Label", "Value"])
 
+    spotvaluelist = {}
+
+    SpotValue=namedtuple("spotvalue", ["Description", "Scale", "RecSize"])
+    spotvaluelist[0x263f] = SpotValue("ACTotalPower", 1, 28)
+    spotvaluelist[0x411e] = SpotValue("Ph1ACMax", 1, 28)
+    spotvaluelist[0x411f] = SpotValue("Ph2ACMax", 1, 28)
+    spotvaluelist[0x4120] = SpotValue("Ph3ACMax", 1, 28)
+    spotvaluelist[0x4640] = SpotValue("Ph1Power", 1, 28)
+    spotvaluelist[0x4641] = SpotValue("Ph2Power", 1, 28)
+    spotvaluelist[0x4642] = SpotValue("Ph3Power", 1, 28)
+    spotvaluelist[0x4648] = SpotValue("Ph1ACVolt",100, 28)
+    spotvaluelist[0x4649] = SpotValue("Ph2ACVolt",100, 28)
+    spotvaluelist[0x464a] = SpotValue("Ph3ACVolt",100, 28)
+    spotvaluelist[0x4650] = SpotValue("Ph1ACCurrent",1000, 28)
+    spotvaluelist[0x4651] = SpotValue("Ph2ACCurrent",1000, 28)
+    spotvaluelist[0x4652] = SpotValue("Ph3ACCurrent",1000, 28)
+    spotvaluelist[0x4657] = SpotValue("ACGridFreq",100, 28)
+
+    spotvaluelist[0x2601] = SpotValue("TotalYield",1, 16)   #8 byte word
+    spotvaluelist[0x2622] = SpotValue("DayYield",1, 16) #8 byte word
+    spotvaluelist[0x462f] = SpotValue("FeedInTime",3600, 16)#8 byte word
+    spotvaluelist[0x462e] = SpotValue("OperatingTime",3600, 16)#8 byte word
+    spotvaluelist[0x251e] = SpotValue("DCPower1",1, 28) #SPOT_PDC1, SPOT_PDC2
+    spotvaluelist[0x451f] = SpotValue("DCVoltage1",100, 28)
+    spotvaluelist[0x4521] = SpotValue("DCCurrent1",1, 28)
+
+    spotvaluelist[0x2377] = SpotValue("InvTemperature",100, 28)
+    #spotvaluelist[0x821e] = SpotValue("Inverter Name",0, 28)
+
+    SpotValueOutput=namedtuple("SpotValueOutput", ["Label", "Value"])
 
     #Start here
     offset = 40
@@ -380,7 +333,7 @@ def extract_data(level2Packet):
         value=0
         classtype = level2Packet.getByte(offset)
         #classtype should always be =1
-        readingtype = level2Packet.getTwoByteLong(offset+1)
+        readingtype = level2Packet.getTwoByte(offset+1)
         dataType = level2Packet.getByte(offset+3)
         datetime = level2Packet.getFourByteLong(offset+4)
 
@@ -389,74 +342,44 @@ def extract_data(level2Packet):
 
         if (dataType != 0x10) and (dataType != 0x08):
             # Not TEXT or STATUS, so it should be DWORD
-            value = level2Packet.getTwoByteLong(offset+8)
+            value = level2Packet.getTwoByte(offset+8)
 
             #Check for NULLs
             if (value == 0x8000) or (value == 0xFFFF):
                 value = 0;
 
-
             #TODO MOVE THIS LOOP INTO A LOOK UP LIST TO AUTO READ THE VALUES AS NEEDED...
 
-            # DC voltage input (aka SPOT_UDC1 / SPOT_UDC2)
-            if (readingtype==0x451f):
-                if (classtype==1):
-                    outputlist["SPOT_UDC1"] = SpotValueOutput("SPOT_UDC1".format(readingtype), toVolt(value))
-                if (classtype==2):
-                    outputlist["SPOT_UDC2"] = SpotValueOutput("SPOT_UDC2".format(readingtype), toVolt(value))
+            if readingtype in spotvaluelist:
+                v = spotvaluelist[readingtype]
 
-            # Power L1 (aka SPOT_PAC1)
-            if (readingtype==0x4640):
-                outputlist["SPOT_PAC1"] = SpotValueOutput("SPOT_PAC1".format(readingtype), toVolt(value))
+                #Check if its an 4 byte value (QWORD)
+                if (v.RecSize==16):
+                    value = level2Packet.getEightByte(offset+8)
+                    if (value == 0x80000000) or (value == 0xFFFFFFFF):
+                        value = 0;
 
-            # Power L2 (aka SPOT_PAC2)
-            if (readingtype==0x4641):
-                outputlist["SPOT_PAC2"] = SpotValueOutput("SPOT_PAC2".format(readingtype), toVolt(value))
 
-            # Power L3 (aka SPOT_PAC3)
-            if (readingtype==0x4642):
-                outputlist["SPOT_PAC3"] = SpotValueOutput("SPOT_PAC3".format(readingtype), toVolt(value))
+                # Special case for DC voltage input (aka SPOT_UDC1 / SPOT_UDC2)
+                #if (readingtype==0x451f):
+                #    if (classtype==1):
+                #        outputlist["DCVoltage1"] = SpotValueOutput("DCVoltage1".format(readingtype), toVolt(value))
+                #    if (classtype==2):
+                #        outputlist["DCVoltage2"] = SpotValueOutput("DCVoltage2".format(readingtype), toVolt(value))
+                #else:
+                #    outputlist[v.Description] = SpotValueOutput(v.Description, float(value) / float(v.Scale))
 
-            # Grid frequency (aka SPOT_FREQ)
-            if (readingtype==0x4657):
-                outputlist["SPOT_FREQ"] = SpotValueOutput("SPOT_FREQ".format(readingtype), value)
+                outputlist[v.Description] = SpotValueOutput(v.Description, float(value) / float(v.Scale))
 
-            # Power (aka SPOT_PACTOT)
-            if (readingtype==0x263F):
-                outputlist["SPOT_PACTOT"] = SpotValueOutput("SPOT_PACTOT".format(readingtype), value)
+                offset+=v.RecSize
 
-            #Operating condition temperatures
-            if (readingtype==0x2377):
-                outputlist["OP_TEMP"] = SpotValueOutput("OP_TEMP".format(readingtype), value)
+            else:
+                #Output to caller in raw format for debugging
+                outputlist[readingtype] = SpotValueOutput("DebugX{0:04x}".format(readingtype), value)
 
-            #  Total yield (aka SPOT_ETOTAL)
-            if (readingtype==0x2601):
-                value=level2Packet.get8ByteFloat(offset+8)
-                recordSize=16
-                outputlist["SPOT_ETOTAL"] = SpotValueOutput("SPOT_ETOTAL".format(readingtype), value)
+                #Guess offset/default
+                offset+=12
 
-            # Day yield (aka SPOT_ETODAY)
-            if (readingtype==0x2622):
-                value=level2Packet.get8ByteFloat(offset+8)
-                recordSize=16
-                outputlist["SPOT_ETODAY"] = SpotValueOutput("SPOT_ETODAY".format(readingtype), value)
-
-            #Operating time (aka SPOT_OPERTM)
-            if (readingtype==0x462E):
-                value=level2Packet.get8ByteFloat(offset+8)
-                recordSize=16
-                outputlist["SPOT_OPERTM"] = SpotValueOutput("SPOT_OPERTM".format(readingtype), toHours(value))
-
-            #Feed-in time (aka SPOT_FEEDTM)
-            if (readingtype==0x462F):
-                value=level2Packet.get8ByteFloat(offset+8)
-                recordSize=16
-                outputlist["SPOT_FEEDTM"] = SpotValueOutput("SPOT_FEEDTM".format(readingtype), toHours(value))
-
-            #Output to caller
-            outputlist[readingtype] = SpotValueOutput("DebugX{0:04x}".format(readingtype), value)
-
-        offset+=recordSize
 
     #Start 40 bytes into packet
     #for i in range(40, len(powdata), gap):

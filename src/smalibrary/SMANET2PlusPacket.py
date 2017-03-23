@@ -60,37 +60,36 @@ class SMANET2PlusPacket:
         ])
 
         if (ctrl1 != 0 or ctrl2 != 0):
-            self.pushLong(0x656003ff)
-            #self.pushRawByteArray(bytearray([0xff, 0x03, 0x60, 0x65]));
-            self.pushRawByte(ctrl1);
-            self.pushRawByte(ctrl2);
+            self.pushLong(0x656003FF)
+            self.pushByte(ctrl1);
+            self.pushByte(ctrl2);
             #SusyID (FFFFF = any SusyID)
-            self.pushShortByte(0xFFFF)
+            self.pushShort(0xFFFF)
             #Serial (FFFFFFFF is any)
             self.pushLong(0xFFFFFFFF)
-            self.pushRawByte(a);
-            self.pushRawByte(b);
-            self.pushRawByteArray(InverterCodeArray);
-            self.pushRawByte(0x00);
-            self.pushRawByte(c);
+            self.pushByte(a);
+            self.pushByte(b);
+            self.pushByteArray(InverterCodeArray);
+            self.pushByte(0x00);
+            self.pushByte(c);
             self.pushLong(0x00000000)
-            self.pushShortByte(packetcount |  0x00008000)
+            self.pushShort(packetcount |  0x8000)
 
     def getByte(self, offset):
         return self.packet[offset]
 
-    def getTwoByteLong(self, offset):
+    def getTwoByte(self, offset):
         value = self.packet[offset] * math.pow(256, 0)
         value += self.packet[offset + 1] * math.pow(256, 1)
         return long(value);
 
-    def getThreeByteDouble(self, offset):
-        # check if all FFs which is a null value
-        if self.packet[offset + 0] == 0xff and self.packet[offset + 1] == 0xff and self.packet[offset + 2] == 0xff:
-            return None
-        else:
-            return self.packet[offset + 0] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1) + \
-                   self.packet[offset + 2] * math.pow(256, 2)
+    #def getThreeByteDouble(self, offset):
+    #    # check if all FFs which is a null value
+    #    if self.packet[offset + 0] == 0xff and self.packet[offset + 1] == 0xff and self.packet[offset + 2] == 0xff:
+    #        return None
+    #    else:
+    #        return self.packet[offset + 0] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1) + \
+    #               self.packet[offset + 2] * math.pow(256, 2)
 
     def getFourByteLong(self, offset):
         value = self.packet[offset] * math.pow(256, 0)
@@ -99,15 +98,15 @@ class SMANET2PlusPacket:
         value += self.packet[offset + 3] * math.pow(256, 3)
         return long(value);
 
-    def getFourByteDouble(self, offset):
-        # check if all FFs which is a null value
-        if self.packet[offset + 0] == 0xff and self.packet[offset + 1] == 0xff and self.packet[offset + 2] == 0xff and self.packet[offset + 3] == 0xff:
-            return None
-        else:
-            return self.packet[offset + 0] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1) + \
-                   self.packet[offset + 2] * math.pow(256, 2) + self.packet[offset + 3] * math.pow(256,3)
+    #def getFourByteDouble(self, offset):
+    #    # check if all FFs which is a null value
+    #    if self.packet[offset + 0] == 0xff and self.packet[offset + 1] == 0xff and self.packet[offset + 2] == 0xff and self.packet[offset + 3] == 0xff:
+    #        return None
+    #    else:
+    #        return self.packet[offset + 0] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1) + \
+    #               self.packet[offset + 2] * math.pow(256, 2) + self.packet[offset + 3] * math.pow(256,3)
 
-    def get8ByteFloat(self, offset):
+    def getEightByte(self, offset):
         value = self.packet[offset] * math.pow(256, 0)
         value += self.packet[offset + 1] * math.pow(256, 1)
         value += self.packet[offset + 2] * math.pow(256, 2)
@@ -122,8 +121,7 @@ class SMANET2PlusPacket:
         return self.packet
 
     def getPacketCounter(self):
-        #self.packet[26]
-        return self.getTwoByteLong(26) & 0x0FFF
+        return self.getTwoByte(26) & 0x7FFF
 
     def getDestinationAddress(self):
         return self.packet[14:20]
@@ -158,17 +156,17 @@ class SMANET2PlusPacket:
 
         myfcs ^= 0xffff
 
-    def pushRawByteArray(self, barray):
-        for bte in barray: self.pushRawByte(bte)
+    def pushByteArray(self, barray):
+        for bte in barray: self.pushByte(bte)
 
-    def pushRawByte(self, value):
+    def pushByte(self, value):
         self.FCSChecksum = (self.FCSChecksum >> 8) ^ self.fcstab[(self.FCSChecksum ^ value) & 0xff]
-        self.packet.append(value)
+        self.packet.append(value & 0xFF)
 
-    def pushShortByte(self, value):
+    def pushShort(self, value):
         #Sends two byte short in little endian format
-        self.pushRawByte(value & 0xFF)
-        self.pushRawByte((value >> 8) & 0xFF)
+        self.pushByte((value >> 0) & 0xFF)
+        self.pushByte((value >> 8) & 0xFF)
 
     def pushLongs(self, value1,value2,value3):
         self.pushLong(value1)
@@ -176,11 +174,11 @@ class SMANET2PlusPacket:
         self.pushLong(value3)
 
     def pushLong(self, value):
-        #Sends two byte short in little endian format
-        self.pushRawByte(value & 0xFF)
-        self.pushRawByte((value >> 8) & 0xFF)
-        self.pushRawByte((value >> 16) & 0xFF)
-        self.pushRawByte((value >> 24) & 0xFF)
+        #Sends four byte long value in little endian format
+        self.pushByte((value >>  0) & 0xFF)
+        self.pushByte((value >>  8) & 0xFF)
+        self.pushByte((value >> 16) & 0xFF)
+        self.pushByte((value >> 24) & 0xFF)
 
     def getBytesForSending(self):
         outputpacket = bytearray()
@@ -224,7 +222,7 @@ class SMANET2PlusPacket:
 
         pos = 0;
 
-        str_list.append("L2  ARRAY LENGTH = {0}".format(len(self.packet)))
+        #str_list.append("L2  ARRAY LENGTH = {0}".format(len(self.packet)))
         str_list.append("L2 {0:04x}  START = {1:02x}".format(pos, 0x7e))
         pos += 0
         str_list.append("L2 {0:04x}  Header= {1:02x} {2:02x} {3:02x} {4:02x}".format(pos, self.packet[pos + 0],
@@ -261,7 +259,7 @@ class SMANET2PlusPacket:
         pos += 1
         str_list.append("L2 {0:04x}       ?= {1:02x}".format(pos, self.packet[pos]))
         pos += 1
-        str_list.append("L2 {0:04x} Counter= {1:02x}{2:02x}".format(pos, self.packet[pos], self.packet[pos + 1]))
+        str_list.append("L2 {0:04x} Counter= {1:04x}".format(pos, self.getPacketCounter()))
         pos += 2
         str_list.append("Command= {0:04x}".format(self.getFourByteLong(pos)))
         pos += 4

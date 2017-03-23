@@ -48,7 +48,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._nodeid=int(nodeid)
         self._readdcvalues=int(readdcvalues)
 
-        self.InverterCodeArray = bytearray([0x5c, 0xaf, 0xf0, 0x1d, 0x50, 0x00]);
+        self.InverterCodeArray = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd]);
 
         # Dummy arrays
         self.AddressFFFFFFFF = bytearray([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
@@ -77,16 +77,17 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         if self._btSocket is None:
             return
 
-        #error_count = 0
         self._packet_send_counter = 0
 
         self.mylocalBTAddress = SMASolar_library.BTAddressToByteArray(self._btSocket.getsockname()[0], ":")
         self.mylocalBTAddress.reverse()
 
+        self._log.debug("initaliseSMAConnection")
         SMASolar_library.initaliseSMAConnection(self._btSocket, self.mylocalBTAddress, self.AddressFFFFFFFF, self.InverterCodeArray, self._packet_send_counter)
         self._increment_packet_send_counter()
         self._increment_packet_send_counter()
 
+        self._log.debug("logon")
         SMASolar_library.logon(self._btSocket, self.mylocalBTAddress, self.AddressFFFFFFFF, self.InverterCodeArray, self._packet_send_counter, self._InverterPasswordArray)
         self._increment_packet_send_counter()
 
@@ -146,6 +147,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         #Prevent roll over
         if self._packet_send_counter >= 0x0FFF:
             self._packet_send_counter = 0
+
+        #Appears that comms hangs on certain numbers
+        #simple reset for now to resolve
+        if self._packet_send_counter >= 0x70:
+            self._packet_send_counter=1
 
         self._log.debug("packet count = {0:04x}".format(self._packet_send_counter))
 
@@ -220,9 +226,8 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             self._log.debug("Reading Spot DC Voltage")
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x53800200,0x00451F00,0x004521FF)
             self._increment_packet_send_counter()
-
-            #data is now bluetoothbuffer.leveltwo
             if data is not None:
+                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
                 AC.update(SMASolar_library.extract_data(data))
                 self._log.debug(data.debugViewPacket())
 
@@ -237,13 +242,15 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200,0x00260100,0x002622FF)
             self._increment_packet_send_counter()
             if data is not None:
+                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
                 self._log.debug(data.debugViewPacket())
                 AC.update(SMASolar_library.extract_data(data))
 
-            self._log.debug("Spot AC Voltage")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00464000,0x004655FF)
+            self._log.debug("Spot AC")
+            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00464000,0x004642FF)
             self._increment_packet_send_counter()
             if data is not None:
+                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
                 self._log.debug(data.debugViewPacket())
                 AC.update(SMASolar_library.extract_data(data))
 
@@ -251,6 +258,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00263F00,0x00263FFF)
             self._increment_packet_send_counter()
             if data is not None:
+                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
                 self._log.debug(data.debugViewPacket())
                 AC.update(SMASolar_library.extract_data(data))
 
@@ -258,6 +266,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00465700,0x004657FF)
             self._increment_packet_send_counter()
             if data is not None:
+                self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
                 self._log.debug(data.debugViewPacket())
                 AC.update(SMASolar_library.extract_data(data))
 
@@ -283,34 +292,15 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             #    AC.update(SMASolar_library.extract_data(data))
 
             self._log.debug("Extracting data")
-            # Output values which match these keys - note some inverters wont return all data requested particularly DC string values
-            # Output 10 parameters for AC values
-            # 0x4640 AC Output Phase 1
-            # 0x4641 AC Output Phase 2
-            # 0x4642 AC Output Phase 3
-            # 0x4648 AC Line Voltage Phase 1
-            # 0x4649 AC Line Voltage Phase 2
-            # 0x464a AC Line Voltage Phase 3
-            # 0x4650 AC Line Current Phase 1
-            # 0x4651 AC Line Current Phase 2
-            # 0x4652 AC Line Current Phase 3
-            # 0x4657 AC Grid Frequency
-            # 0x251e DC Power Watts L3[1][1]
-            # 0x2601 Total Yield Wh
-            # 0x2622 Day Yield Wh
-            # 0x462e Operating time (hours)
-            # 0x462f Feed in time (hours)
 
+            #Sort the output to keep the keys in a consistant order
+            for key in sorted(AC):
+                names.append( AC[key].Label )
+                values.append( AC[key].Value )
 
-
-            for key, value in AC.items():
-                names.append( value.Label )
-                values.append( value.Value )
-                self._log.debug(value.Label + "= {0}".format(value.Value))
-            #for key in [0x4640,0x4641,0x4642,0x4648,0x4649,0x464a,0x4650,0x4651,0x4652,0x4657,0x251e,0x2601,0x2622,0x462e,0x462f]:
-            #    if key in AC:
-            #        names.append( AC[key].Label )
-            #        values.append( AC[key].Value )
+            #for key, value in AC.items():
+            #    names.append( value.Label )
+            #    values.append( value.Value )
 
             self._log.debug("Building cargo")
             c = Cargo.new_cargo()
