@@ -137,32 +137,91 @@ def floattobytearray(value):
     return b
 
 
-def getInverterName(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
+def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
 
+    DeviceClass={}
+    DeviceClass['8000']='AllDevices'
+    DeviceClass['8001']='SolarInverter'
+    DeviceClass['8002']='WindTurbineInverter'
+    DeviceClass['8007']='BatteryInverter'
+    DeviceClass['8033']='Consumer'
+    DeviceClass['8064']='SensorSystem'
+    DeviceClass['8065']='ElectricityMeter'
+    DeviceClass['8128']='CommunicationProduct'
 
-    data=request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, 0x58000200, 0x00821e00, 0x00821eff)
+    DeviceType={}
+    DeviceType['9073']='SB 3000HF-30'
+    DeviceType['9074']='SB 3000TL-21'
+    DeviceType['9075']='SB 4000TL-21'
+    DeviceType['9076']='SB 5000TL-21'
+    DeviceType['9119']='Sunny HomeManager'
 
-    #send9 = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    #pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
-    #pluspacket1.pushLong(0x58000200)
-    #pluspacket1.pushLong(0x00821e00)
-    #pluspacket1.pushLong(0x00821eff)
-    #send9.pushRawByteArray(pluspacket9.getBytesForSending())
-    #send9.finish()
-    #send9.sendPacket(btSocket)
-    #bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True,mylocalBTAddress)
-    #if bluetoothbuffer.leveltwo.errorCode() > 0:
-    #    print("Error code returned from inverter")
+    data=request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, 0x58000200, 0x00821E00, 0x008220FF)
 
-    valuetype = data.getTwoByte(40 + 1)
+    reply = {}
+
+    reply["susyid"] = data.getDestinationSusyid()
+    reply["serialNumber"] = data.getDestinationSerial()
+
     # idate = bluetoothbuffer.leveltwo.getFourByteLong(40 + 4)
     # t = time.localtime(long(idate))
-    if valuetype == 0x821e:
-        value = data.getArray()[48:62].decode("utf-8")
-    else:
-        value = ""
 
-    return value
+    offset=40
+
+    valuetype = data.getTwoByte(offset + 1)
+    if valuetype == 0x821e:
+        reply["inverterName"] = data.getArray()[48:62].decode("utf-8")
+        offset+=40
+
+    valuetype = data.getTwoByte(offset + 1)
+
+    #INV_CLASS
+    if valuetype == 0x821F:
+        idx=8
+        while idx < 40:
+            attribute = data.getFourByteLong(offset + idx) & 0x00FFFFFF
+            status = data.getByte(offset + idx + 3)
+
+            if (attribute == 0xFFFFFE):
+                break
+
+            if (status == 1):
+                reply["Class"]=attribute & 0x0000FFFF
+                if str(attribute & 0x0000FFFF) in DeviceClass:
+                    reply["ClassName"]=DeviceClass[str(attribute & 0x0000FFFF)]
+                else:
+                    reply["ClassName"]="Unknown"
+                break
+
+            idx+=4
+
+        offset+=40
+
+    #INV_TYPE
+    valuetype = data.getTwoByte(offset + 1)
+    if valuetype == 0x8220:
+        idx=8
+        while idx < 40:
+            attribute = data.getFourByteLong(offset + idx) & 0x00FFFFFF
+            status = data.getByte(offset + idx + 3)
+
+            if (attribute == 0xFFFFFE):
+                break
+
+            if (status == 1):
+                reply["Type"]=attribute & 0x0000FFFF
+                if str(attribute & 0x0000FFFF) in DeviceType:
+                    reply["TypeName"]=DeviceType[str(attribute & 0x0000FFFF)]
+                else:
+                    reply["TypeName"]="Unknown"
+                break
+
+            idx+=4
+
+        offset+=40
+
+
+    return reply
 
 def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_send_counter, InverterPasswordArray):
     # Logon to inverter
