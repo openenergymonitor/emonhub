@@ -379,10 +379,13 @@ def extract_data(level2Packet):
     spotvaluelist[0x462e] = SpotValue("OperatingTime",3600, 16)#8 byte word
     spotvaluelist[0x251e] = SpotValue("DCPower1",1, 28) #SPOT_PDC1, SPOT_PDC2
     spotvaluelist[0x451f] = SpotValue("DCVoltage1",100, 28)
-    spotvaluelist[0x4521] = SpotValue("DCCurrent1",1, 28)
+    spotvaluelist[0x4521] = SpotValue("DCCurrent1",1000, 28)
 
     spotvaluelist[0x2377] = SpotValue("InvTemperature",100, 28)
     #spotvaluelist[0x821e] = SpotValue("Inverter Name",0, 28)
+
+    spotvaluelist[0x295A] = SpotValue("ChargeStatus",1, 28)
+
 
     SpotValueOutput=namedtuple("SpotValueOutput", ["Label", "Value"])
 
@@ -442,6 +445,6 @@ def extract_data(level2Packet):
                 outputlist[readingtype] = SpotValueOutput("DebugX{0:04x}".format(readingtype), value)
 
                 #Guess offset/default
-                offset+=12
+                offset+=28
 
     return outputlist
