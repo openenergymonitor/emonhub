@@ -6,6 +6,7 @@
 __author__ = 'Stuart Pittaway'
 
 import time
+from time import sleep
 import argparse
 import sys
 import string
@@ -220,67 +221,45 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             if self._btSocket is None:
                 return
 
-            names= []
-            values = []
+
+
+            readingsToMake= {}
+
+            readingsToMake["EnergyProduction"]=[0x54000200, 0x00260100, 0x002622FF]
+
+            #This causes problems with some inverters
+            #readingsToMake["SpotDCPower"]=[0x53800200, 0x00251E00, 0x00251EFF]
+            readingsToMake["SpotACPower"]=[0x51000200, 0x00464000, 0x004642FF]
+            readingsToMake["SpotACTotalPower"]=[0x51000200, 0x00263F00, 0x00263FFF]
+            readingsToMake["SpotDCVoltage"]=[0x53800200, 0x00451F00, 0x004521FF]
+            readingsToMake["SpotACVoltage"]=[0x51000200, 0x00464800, 0x004655FF]
+            readingsToMake["SpotGridFrequency"]=[0x51000200, 0x00465700, 0x004657FF]
+            readingsToMake["OperationTime"]=[0x54000200, 0x00462E00, 0x00462FFF]
+            readingsToMake["InverterTemperature"]=[0x52000200, 0x00237700, 0x002377FF]
+
+            #Not very useful for reporting
+            #readingsToMake["MaxACPower"]=[0x51000200, 0x00411E00, 0x004120FF]
+            #readingsToMake["MaxACPower2"]=[0x51000200, 0x00832A00, 0x00832AFF]
+            #readingsToMake["GridRelayStatus"]=[0x51800200, 0x00416400, 0x004164FF]
+
+            #Only useful on off grid battery systems
+            #readingsToMake["ChargeStatus"]=[0x51000200, 0x00295A00, 0x00295AFF]
+            #readingsToMake["BatteryInfo"]=[0x51000200, 0x00491E00, 0x00495DFF]
 
             output = {}
+            for key in readingsToMake:
+                self._log.debug(key)
+                data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,readingsToMake[key][0],readingsToMake[key][1],readingsToMake[key][2])
+                self._increment_packet_send_counter()
+                if data is not None:
+                    #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                    #self._log.debug(data.debugViewPacket())
+                    output.update(SMASolar_library.extract_data(data))
 
-            #self._log.debug("Reading Spot DC Voltage")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x53800200,0x00451F00,0x004521FF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("Reading Energy Production")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200,0x00260100,0x002622FF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("Spot AC")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00464000,0x004642FF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("Spot AC Total Power")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00263F00,0x00263FFF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("Spot Spot Grid Frequency")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x51000200,0x00465700,0x004657FF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("OperationTime")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x54000200, 0x00462E00, 0x00462FFF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            #self._log.debug("Inverter Temperature")
-            data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.InverterCodeArray, self.AddressFFFFFFFF,0x52000200, 0x00237700, 0x002377FF)
-            self._increment_packet_send_counter()
-            if data is not None:
-                #self._log.debug(data.debugViewPacket())
-                output.update(SMASolar_library.extract_data(data))
-
-            self._log.debug("Extracting data")
 
             #Sort the output to keep the keys in a consistant order
+            names= []
+            values = []
             for key in sorted(output):
                 names.append( output[key].Label )
                 values.append( output[key].Value )
