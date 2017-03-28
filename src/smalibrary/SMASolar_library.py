@@ -15,7 +15,7 @@ __author__ = 'Stuart Pittaway'
 # https://github.com/Rincewind76/SMAInverter/blob/master/76_SMAInverter.pm
 # https://sbfspot.codeplex.com/ (credit back to myself!!)
 
-def Read_Level1_Packet_From_BT_Stream(btSocket,mylocalBTAddress=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])):
+def Read_Level1_Packet_From_BT_Stream(btSocket,mylocalBTAddress):
     while True:
         #print "Waiting for SMA level 1 packet from Bluetooth stream"
         start = btSocket.recv(1)
@@ -84,19 +84,15 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
             raise Exception("Invalid checksum on Level 2 packet")
 
         v.leveltwo = level2Packet
-
-        # Output the level2 payload (after its been combined from multiple packets if needed)
-        #print level2Packet.debugViewPacket()
     return v
 
-def LogMessageWithByteArray(message, ba):
-    """Simple output of message and bytearray data in hex for debugging"""
-    print("{0}:{1}".format(message.rjust(21), ByteToHex(ba)))
+#def LogMessageWithByteArray(message, ba):
+#    """Simple output of message and bytearray data in hex for debugging"""
+#    print("{0}:{1}".format(message.rjust(21), ByteToHex(ba)))
 
-
-def ByteToHex(byteStr):
-    """Convert a byte string to it's hex string representation e.g. for output."""
-    return ''.join(["%02X " % x  for x in byteStr])
+#def ByteToHex(byteStr):
+#    """Convert a byte string to it's hex string representation e.g. for output."""
+#    return ''.join(["%02X " % x  for x in byteStr])
 
 def BTAddressToByteArray(hexStr, sep):
     """Convert a  hex string containing seperators to a bytearray object"""
@@ -122,20 +118,6 @@ def encodeInverterPassword(InverterPassword):
             a[i] = (a[i] + 0x88) % 0xff
 
     return a
-
-def floattobytearray(value):
-    # Converts an float value into 4 single bytes inside a bytearray
-    # useful for converting epoch dates
-    b = bytearray()
-    hexStr = "{0:08x}".format(long(value))
-    b.append(chr(int (hexStr[0:2], 16)))
-    b.append(chr(int (hexStr[2:4], 16)))
-    b.append(chr(int (hexStr[4:6], 16)))
-    b.append(chr(int (hexStr[6:8], 16)))
-
-    b.reverse()
-    return b
-
 
 def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber):
 
@@ -231,7 +213,9 @@ def logon(btSocket,mylocalBTAddress,MySerialNumber,packet_send_counter, Inverter
     pluspacket1.pushLong(0x00000007)
     #Timeout = 900sec ?
     pluspacket1.pushLong(0x00000384)
-    pluspacket1.pushByteArray( floattobytearray(time.mktime(datetime.today().timetuple())))
+
+    pluspacket1.pushLong(long(time.mktime(datetime.today().timetuple())))
+
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushByteArray(InverterPasswordArray)
 
