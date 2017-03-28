@@ -363,8 +363,8 @@ def extract_data(level2Packet):
 
     spotvaluelist[0x2601] = SpotValue("TotalYield",1, 16)   #8 byte word
     spotvaluelist[0x2622] = SpotValue("DayYield",1, 16) #8 byte word
-    spotvaluelist[0x462f] = SpotValue("FeedInTime",1, 16)#8 byte word
-    spotvaluelist[0x462e] = SpotValue("OperatingTime",1, 16)#8 byte word
+    spotvaluelist[0x462f] = SpotValue("FeedInTime",3600, 16)#8 byte word
+    spotvaluelist[0x462e] = SpotValue("OperatingTime",3600, 16)#8 byte word
 
     spotvaluelist[0x251e] = SpotValue("DCPower1",1, 28)
     spotvaluelist[0x451f] = SpotValue("DCVoltage1",100, 28)
