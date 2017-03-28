@@ -95,14 +95,14 @@ class SMANET2PlusPacket:
         return long(value);
 
     def getEightByte(self, offset):
-        return self.packet[offset] * math.pow(256, 0)
-        + self.packet[offset + 1] * math.pow(256, 1)
-        + self.packet[offset + 2] * math.pow(256, 2)
-        + self.packet[offset + 3] * math.pow(256, 3)
-        + self.packet[offset + 4] * math.pow(256, 4)
-        + self.packet[offset + 5] * math.pow(256, 5)
-        + self.packet[offset + 6] * math.pow(256, 6)
-        + self.packet[offset + 7] * math.pow(256, 7)
+        return self.packet[offset] * math.pow(256, 0) \
+                    + self.packet[offset + 1] * math.pow(256, 1) \
+                    + self.packet[offset + 2] * math.pow(256, 2) \
+                    + self.packet[offset + 3] * math.pow(256, 3) \
+                    + self.packet[offset + 4] * math.pow(256, 4) \
+                    + self.packet[offset + 5] * math.pow(256, 5) \
+                    + self.packet[offset + 6] * math.pow(256, 6) \
+                    + self.packet[offset + 7] * math.pow(256, 7)
 
     def getArray(self):
         return self.packet

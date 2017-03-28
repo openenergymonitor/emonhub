@@ -208,7 +208,7 @@ def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, MySerial
 def logon(btSocket,mylocalBTAddress,MySerialNumber,packet_send_counter, InverterPasswordArray):
     # Logon to inverter
     pluspacket1 = SMANET2PlusPacket(0x0e, 0xa0, packet_send_counter, MySerialNumber,  0x00,  0x01, 0x01)
-    pluspacket1.pushLong(0xFFFD040c)
+    pluspacket1.pushLong(0xFFFD040C)
     #0x07 = User logon, 0x0a = installer logon
     pluspacket1.pushLong(0x00000007)
     #Timeout = 900sec ?
@@ -219,6 +219,7 @@ def logon(btSocket,mylocalBTAddress,MySerialNumber,packet_send_counter, Inverter
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushByteArray(InverterPasswordArray)
 
+    #Broadcast logon to all inverters
     send = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
@@ -362,8 +363,8 @@ def extract_data(level2Packet):
 
     spotvaluelist[0x2601] = SpotValue("TotalYield",1, 16)   #8 byte word
     spotvaluelist[0x2622] = SpotValue("DayYield",1, 16) #8 byte word
-    spotvaluelist[0x462f] = SpotValue("FeedInTime",3600, 16)#8 byte word
-    spotvaluelist[0x462e] = SpotValue("OperatingTime",3600, 16)#8 byte word
+    spotvaluelist[0x462f] = SpotValue("FeedInTime",1, 16)#8 byte word
+    spotvaluelist[0x462e] = SpotValue("OperatingTime",1, 16)#8 byte word
 
     spotvaluelist[0x251e] = SpotValue("DCPower1",1, 28)
     spotvaluelist[0x451f] = SpotValue("DCVoltage1",100, 28)
@@ -402,6 +403,7 @@ def extract_data(level2Packet):
             if (value == 0x8000) or (value == 0xFFFF):
                 value = 0;
 
+
             if readingtype in spotvaluelist:
                 v = spotvaluelist[readingtype]
 
@@ -410,6 +412,8 @@ def extract_data(level2Packet):
                     value = level2Packet.getEightByte(offset+8)
                     if (value == 0x80000000) or (value == 0xFFFFFFFF):
                         value = 0;
+
+
 
 
                 # Special case for DC voltage input (aka SPOT_UDC1 / SPOT_UDC2)
@@ -422,7 +426,6 @@ def extract_data(level2Packet):
                 #    outputlist[v.Description] = SpotValueOutput(v.Description, float(value) / float(v.Scale))
 
                 outputlist[v.Description] = SpotValueOutput(v.Description, round( float(value) / float(v.Scale) ,4)  )
-
                 offset+=v.RecSize
 
             else:
