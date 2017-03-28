@@ -46,7 +46,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd]);
 
         # Dummy arrays
-        self.AddressFFFFFFFF = bytearray([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
+        #self.AddressFFFFFFFF = bytearray([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
         self.Address00000000 = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
         self._reset_packet_send_counter()
@@ -78,12 +78,12 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self.mylocalBTAddress.reverse()
 
         self._log.debug("initaliseSMAConnection")
-        SMASolar_library.initaliseSMAConnection(self._btSocket, self.mylocalBTAddress, self.AddressFFFFFFFF, self.MySerialNumber, self._packet_send_counter)
+        SMASolar_library.initaliseSMAConnection(self._btSocket, self.mylocalBTAddress, self.MySerialNumber, self._packet_send_counter)
         self._increment_packet_send_counter()
         self._increment_packet_send_counter()
 
         self._log.debug("logon")
-        SMASolar_library.logon(self._btSocket, self.mylocalBTAddress, self.AddressFFFFFFFF, self.MySerialNumber, self._packet_send_counter, self._InverterPasswordArray)
+        SMASolar_library.logon(self._btSocket, self.mylocalBTAddress, self.MySerialNumber, self._packet_send_counter, self._InverterPasswordArray)
         self._increment_packet_send_counter()
 
         self._reset_time_to_disconnect_timer();
@@ -91,7 +91,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._Inverters={}
 
         #TODO: We need to see what packets look like when we get multiple inverters talking to us
-        dictInverterData = SMASolar_library.getInverterDetails(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber, self.AddressFFFFFFFF)
+        dictInverterData = SMASolar_library.getInverterDetails(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber)
         self._increment_packet_send_counter()
 
         #Returns dictionary like
@@ -247,12 +247,10 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 self._packet_send_counter,
                 self.mylocalBTAddress,
                 self.MySerialNumber,
-                self.AddressFFFFFFFF,
                 readingsToMake[key][0],
                 readingsToMake[key][1],
                 readingsToMake[key][2],
                 inverter["susyid"],inverter["serialNumber"])
-
 
                 self._increment_packet_send_counter()
                 if data is not None:
@@ -285,7 +283,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             #to avoid errors in log files
             if (self._is_it_time_to_disconnect() == True):
                 self._log.info("Disconnecting Bluetooth after timer expired")
-                SMASolar_library.logoff(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber, self.AddressFFFFFFFF)
+                SMASolar_library.logoff(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber)
                 self._reset_time_to_disconnect_timer()
                 self._btSocket.close()
                 self._btSocket = None
