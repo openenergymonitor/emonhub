@@ -415,8 +415,6 @@ def extract_data(level2Packet):
             if (value == 0x8000) or (value == 0xFFFF):
                 value = 0;
 
-            #TODO MOVE THIS LOOP INTO A LOOK UP LIST TO AUTO READ THE VALUES AS NEEDED...
-
             if readingtype in spotvaluelist:
                 v = spotvaluelist[readingtype]
 
@@ -436,7 +434,7 @@ def extract_data(level2Packet):
                 #else:
                 #    outputlist[v.Description] = SpotValueOutput(v.Description, float(value) / float(v.Scale))
 
-                outputlist[v.Description] = SpotValueOutput(v.Description, float(value) / float(v.Scale))
+                outputlist[v.Description] = SpotValueOutput(v.Description, round( float(value) / float(v.Scale) ,4)  )
 
                 offset+=v.RecSize
 
