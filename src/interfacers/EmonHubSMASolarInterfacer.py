@@ -55,7 +55,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self.AddressFFFFFFFF = bytearray([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
         self.Address00000000 = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
 
-        self._packet_send_counter = 0
+        self._reset_packet_send_counter()
         self._Inverters = None
         #Duration in seconds
         self._time_inverval =  int(timeinverval)
@@ -78,7 +78,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         if self._btSocket is None:
             return
 
-        self._packet_send_counter = 0
+        self._reset_packet_send_counter()
 
         self.mylocalBTAddress = SMASolar_library.BTAddressToByteArray(self._btSocket.getsockname()[0], ":")
         self.mylocalBTAddress.reverse()
@@ -143,6 +143,10 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         else:
             return btSocket
 
+    def _reset_packet_send_counter(self):
+        """Reset the internal sequence number in SMA Packets"""
+        self._packet_send_counter = 0x0100
+
     def _increment_packet_send_counter(self):
         """Increment the internal sequence number in SMA Packets"""
         self._packet_send_counter += 1
@@ -153,8 +157,8 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         #Appears that comms hangs on certain numbers
         #simple reset for now to resolve
-        if self._packet_send_counter >= 0x70:
-            self._packet_send_counter=1
+        if self._packet_send_counter >= 0x0170:
+            self._reset_packet_send_counter()
 
         self._log.debug("packet count = {0:04x}".format(self._packet_send_counter))
 
@@ -221,14 +225,13 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             if self._btSocket is None:
                 return
 
-
-
             readingsToMake= {}
 
             readingsToMake["EnergyProduction"]=[0x54000200, 0x00260100, 0x002622FF]
 
             #This causes problems with some inverters
             #readingsToMake["SpotDCPower"]=[0x53800200, 0x00251E00, 0x00251EFF]
+
             readingsToMake["SpotACPower"]=[0x51000200, 0x00464000, 0x004642FF]
             readingsToMake["SpotACTotalPower"]=[0x51000200, 0x00263F00, 0x00263FFF]
             readingsToMake["SpotDCVoltage"]=[0x53800200, 0x00451F00, 0x004521FF]
@@ -246,6 +249,8 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             #readingsToMake["ChargeStatus"]=[0x51000200, 0x00295A00, 0x00295AFF]
             #readingsToMake["BatteryInfo"]=[0x51000200, 0x00491E00, 0x00495DFF]
 
+
+            #Loop through dictionary and take readings, building "output" dictionary as we go
             output = {}
             for key in readingsToMake:
                 self._log.debug(key)
@@ -264,7 +269,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 names.append( output[key].Label )
                 values.append( output[key].Value )
 
-            self._log.debug("Building cargo")
+            #self._log.debug("Building cargo")
             c = Cargo.new_cargo()
             c.rawdata = None
             c.realdata = values
@@ -293,7 +298,6 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         except bluetooth.btcommon.BluetoothError as err1:
             self._log.error("Bluetooth Error")
             self._log.error(err1)
-            #self._btSocket.close()
             self._btSocket = None
 
         except Exception as err2:
