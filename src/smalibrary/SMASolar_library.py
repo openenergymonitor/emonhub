@@ -344,11 +344,6 @@ def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeAr
 
     return None
 
-def toVolt(value):
-    return float(value) / float(100.0)
-
-def toHours(value):
-    return float(value) / float(3600)
 
 def extract_data(level2Packet):
     #Return a dictionary
@@ -377,13 +372,13 @@ def extract_data(level2Packet):
     spotvaluelist[0x2622] = SpotValue("DayYield",1, 16) #8 byte word
     spotvaluelist[0x462f] = SpotValue("FeedInTime",3600, 16)#8 byte word
     spotvaluelist[0x462e] = SpotValue("OperatingTime",3600, 16)#8 byte word
-    spotvaluelist[0x251e] = SpotValue("DCPower1",1, 28) #SPOT_PDC1, SPOT_PDC2
+
+    spotvaluelist[0x251e] = SpotValue("DCPower1",1, 28)
     spotvaluelist[0x451f] = SpotValue("DCVoltage1",100, 28)
     spotvaluelist[0x4521] = SpotValue("DCCurrent1",1000, 28)
 
     spotvaluelist[0x2377] = SpotValue("InvTemperature",100, 28)
     #spotvaluelist[0x821e] = SpotValue("Inverter Name",0, 28)
-
     spotvaluelist[0x295A] = SpotValue("ChargeStatus",1, 28)
 
 
