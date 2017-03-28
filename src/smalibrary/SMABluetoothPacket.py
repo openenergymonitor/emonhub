@@ -118,7 +118,7 @@ class SMABluetoothPacket:
         # for this checksum information !!
         return  (self.header[0] ^ self.header[1] ^ self.header[2] ^ self.header[3]) == 0
 
-    def __init__(self, length1, length2, checksum=0, cmd1=0, cmd2=0, SourceAddress=bytearray, DestinationAddress=bytearray()):
+    def __init__(self, length1, length2, checksum=0, cmd1=0, cmd2=0, SourceAddress=bytearray(), DestinationAddress=bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])):
         self.headerlength = 18
         self.SourceAddress = SourceAddress
         self.DestinationAddress = DestinationAddress

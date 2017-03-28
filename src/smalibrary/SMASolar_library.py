@@ -234,6 +234,7 @@ def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,MySerialNumber,packet_send_c
     pluspacket1.pushByteArray( floattobytearray(time.mktime(datetime.today().timetuple())))
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushByteArray(InverterPasswordArray)
+
     send = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
