@@ -26,7 +26,7 @@ Monitors a SMA Solar inverter over bluetooth
 """
 class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, inverteraddress='', inverterpincode='0000', timeinverval=10, nodeid=29):
+    def __init__(self, name, inverteraddress='', inverterpincode='0000', timeinverval=10, nodeid=29, packettrace=0):
         """Initialize interfacer"""
 
         # Initialization
@@ -37,6 +37,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._inverterpincode=inverterpincode
         self._port=1
         self._nodeid=int(nodeid)
+
+        if packettrace==0:
+            self._packettrace=False
+        else:
+            self._packettrace=True
 
         self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd]);
 
@@ -91,9 +96,6 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         invName=dictInverterData["inverterName"]
 
         SMAInverterTuple = namedtuple('Inverter', 'SerialNumber Name NodeId NodeName')
-
-        #valid_characters = string.ascii_letters + string.digits
-        #allowed_characters =''.join(ch for ch in string.printable if ch in valid_characters)
 
         nodeName=re.sub(r'[^a-zA-Z0-9]','', invName)
 
@@ -157,18 +159,15 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
     def _is_it_time(self):
         """Checks to see if the duration has expired
-
         Return true or false
-
         """
+
         duration_of_delay = time.time() - self._last_time_reading
         return (int(duration_of_delay) > self._time_inverval)
 
     def _is_it_time_to_disconnect(self):
         """Checks to see if 8 minutes has passed, if so, force a disconnect
-
         Return true or false
-
         """
         duration_of_delay = time.time() - self._last_time_auto_disconnect
         return (int(duration_of_delay) > 480)
@@ -179,17 +178,8 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
     #Override base _process_rx code from emonhub_interfacer
     def _process_rx(self, rxc):
-
         if not rxc:
             return False
-
-        self._log.debug(str(rxc.uri) + " Timestamp : " + str(rxc.timestamp))
-        self._log.debug(str(rxc.uri) + " From Node : " + str(rxc.nodeid))
-        if rxc.target:
-            self._log.debug(str(rxc.uri) + " To Target : " + str(rxc.target))
-        self._log.debug(str(rxc.uri) + "    Values : " + str(rxc.realdata))
-        if rxc.rssi:
-            self._log.debug(str(rxc.uri) + "      RSSI : " + str(rxc.rssi))
 
         return rxc
 
@@ -246,10 +236,10 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 data=SMASolar_library.request_data(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber, self.AddressFFFFFFFF,readingsToMake[key][0],readingsToMake[key][1],readingsToMake[key][2])
                 self._increment_packet_send_counter()
                 if data is not None:
-                    #self._log.debug("Packet from {0:02x}/{1:04x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
-                    #self._log.debug(data.debugViewPacket())
                     output.update(SMASolar_library.extract_data(data))
-
+                    if (self._packettrace):
+                        self._log.debug("Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                        self._log.debug(data.debugViewPacket())
 
             #Sort the output to keep the keys in a consistant order
             names= []

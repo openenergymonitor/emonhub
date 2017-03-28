@@ -24,6 +24,8 @@ sudo service bluetooth start
 sudo service bluetooth status
 sudo hciconfig hci0 up
 ```
+
+
 ### Finding inverter bluetooth address ###
 
 Run the command "hcitool scan", which should list the bluetooth devices/addresses it can see.
@@ -43,7 +45,7 @@ Sample configuration for SMA Solar interface, add these settings under the [inte
         inverterpincode = 0000
         timeinverval = 5
         nodeid = 29
-        readdcvalues = 1
+        packettrace = 0
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
 ```
@@ -64,5 +66,5 @@ Starting node id number to assign to inputs into emonCMS, defaults to 29 for the
 
 Note, you do *NOT* have to manually enter the nodes into the "[nodes]" section of the config file.
 
-### readdcvalues ###
-Some inverters don't support reading of DC values, configure this to zero to skip requesting this information
+### packettrace ###
+If needed, set to 1 to enable debug logging of the bluetooth communication packets.  You will also need to set the debug level for emonHub to DEBUG.
