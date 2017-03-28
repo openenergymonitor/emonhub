@@ -15,7 +15,8 @@ class SMANET2PlusPacket:
         self.packet = bytearray()
         self.FCSChecksum = 0xffff
 
-        self.fcstab = array.array("i", [
+        #I=Represents unsigned integer of size 2 bytes
+        self.fcstab = array.array("I", [
             0x0000, 0x1189, 0x2312, 0x329b, 0x4624, 0x57ad,
             0x6536, 0x74bf, 0x8c48, 0x9dc1, 0xaf5a, 0xbed3,
             0xca6c, 0xdbe5, 0xe97e, 0xf8f7, 0x1081, 0x0108,
@@ -83,14 +84,6 @@ class SMANET2PlusPacket:
         value += self.packet[offset + 1] * math.pow(256, 1)
         return long(value);
 
-    #def getThreeByteDouble(self, offset):
-    #    # check if all FFs which is a null value
-    #    if self.packet[offset + 0] == 0xff and self.packet[offset + 1] == 0xff and self.packet[offset + 2] == 0xff:
-    #        return None
-    #    else:
-    #        return self.packet[offset + 0] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1) + \
-    #               self.packet[offset + 2] * math.pow(256, 2)
-
     def getFourByteLong(self, offset):
         value = self.packet[offset] * math.pow(256, 0)
         value += self.packet[offset + 1] * math.pow(256, 1)
@@ -98,24 +91,15 @@ class SMANET2PlusPacket:
         value += self.packet[offset + 3] * math.pow(256, 3)
         return long(value);
 
-    #def getFourByteDouble(self, offset):
-    #    # check if all FFs which is a null value
-    #    if self.packet[offset + 0] == 0xff and self.packet[offset + 1] == 0xff and self.packet[offset + 2] == 0xff and self.packet[offset + 3] == 0xff:
-    #        return None
-    #    else:
-    #        return self.packet[offset + 0] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1) + \
-    #               self.packet[offset + 2] * math.pow(256, 2) + self.packet[offset + 3] * math.pow(256,3)
-
     def getEightByte(self, offset):
-        value = self.packet[offset] * math.pow(256, 0)
-        value += self.packet[offset + 1] * math.pow(256, 1)
-        value += self.packet[offset + 2] * math.pow(256, 2)
-        value += self.packet[offset + 3] * math.pow(256, 3)
-        value += self.packet[offset + 4] * math.pow(256, 4)
-        value += self.packet[offset + 5] * math.pow(256, 5)
-        value += self.packet[offset + 6] * math.pow(256, 6)
-        value += self.packet[offset + 7] * math.pow(256, 7)
-        return value
+        return self.packet[offset] * math.pow(256, 0)
+        + self.packet[offset + 1] * math.pow(256, 1)
+        + self.packet[offset + 2] * math.pow(256, 2)
+        + self.packet[offset + 3] * math.pow(256, 3)
+        + self.packet[offset + 4] * math.pow(256, 4)
+        + self.packet[offset + 5] * math.pow(256, 5)
+        + self.packet[offset + 6] * math.pow(256, 6)
+        + self.packet[offset + 7] * math.pow(256, 7)
 
     def getArray(self):
         return self.packet
@@ -197,7 +181,7 @@ class SMANET2PlusPacket:
         # //Copy packet to output escaping values along the way
         for value in self.packet:
             if (value == 0x7d) or (value == 0x7e) or (value == 0x11) or (value == 0x12) or (value == 0x13):
-                outputpacket.append(0x7d)  # //byte to indicate escape character
+                outputpacket.append(0x7d)  # byte to indicate escape character
                 outputpacket.append(value ^ 0x20)
                 realLength += 1
             else:
