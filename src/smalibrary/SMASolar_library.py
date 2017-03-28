@@ -297,7 +297,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,MySerialNum
 
     packet_send_counter += 1
 
-    inverterSerial = bluetoothbuffer.leveltwo.getDestinationAddress()
+    #inverterSerial = bluetoothbuffer.leveltwo.getDestinationAddress()
 
     #This is a logoff command..
     #send = SMABluetoothPacket(0x3B, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
@@ -323,9 +323,10 @@ def logoff(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, Addr
     p1.sendPacket(btSocket)
     return
 
-def request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, AddressFFFFFFFF, cmd, first, last):
+def request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, AddressFFFFFFFF, cmd, first, last, susyid=0xFFFF, destinationAddress=0xFFFFFFFF):
+
     send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, MySerialNumber, 0x00, 0x00, 0x00)
+    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, MySerialNumber, 0x00, 0x00, 0x00, susyid, destinationAddress)
     pluspacket9.pushLong(cmd)
     pluspacket9.pushLong(first)
     pluspacket9.pushLong(last)
@@ -339,10 +340,17 @@ def request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber
 
     leveltwo=bluetoothbuffer.leveltwo
 
-    if leveltwo.errorCode() == 0:
-        return leveltwo
+    if (susyid!=0xFFFF and leveltwo.getDestinationSusyid() != susyid):
+        raise Exception("request_data reply susy id mismatch")
 
-    return None
+    if (destinationAddress!=0xFFFFFFFF and leveltwo.getDestinationSerial() != destinationAddress):
+        raise Exception("request_data reply destination address mismatch")
+
+    if leveltwo.errorCode() != 0:
+        raise Exception("request_data error in packet")
+
+    #If no errors return packet
+    return leveltwo
 
 
 def extract_data(level2Packet):

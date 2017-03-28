@@ -10,7 +10,7 @@ __author__ = 'Stuart Pittaway'
 class SMANET2PlusPacket:
     """Holds a second type of SMA protocol packet"""
 
-    def __init__(self, ctrl1=0, ctrl2=0, packetcount=0, InverterCodeArray=bytearray(), a=0, b=0, c=0):
+    def __init__(self, ctrl1=0, ctrl2=0, packetcount=0, InverterCodeArray=bytearray(), a=0, b=0, c=0,SusyID=0xFFFF,DestinationAddress=0xFFFFFFFF  ):
 
         self.packet = bytearray()
         self.FCSChecksum = 0xffff
@@ -64,10 +64,13 @@ class SMANET2PlusPacket:
             self.pushLong(0x656003FF)
             self.pushByte(ctrl1);
             self.pushByte(ctrl2);
+
+            #Who are we sending this packet to?
             #SusyID (FFFFF = any SusyID)
-            self.pushShort(0xFFFF)
+            self.pushShort(SusyID)
             #Serial (FFFFFFFF is any)
-            self.pushLong(0xFFFFFFFF)
+            self.pushLong(DestinationAddress)
+
             self.pushByte(a);
             self.pushByte(b);
             self.pushByteArray(InverterCodeArray);
@@ -107,8 +110,8 @@ class SMANET2PlusPacket:
     def getPacketCounter(self):
         return self.getTwoByte(26) & 0x7FFF
 
-    def getDestinationAddress(self):
-        return self.packet[14:20]
+    #def getDestinationAddress(self):
+    #    return self.packet[14:20]
 
     def getDestinationSusyid(self):
         return self.getTwoByte(14)
