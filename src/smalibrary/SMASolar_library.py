@@ -137,7 +137,7 @@ def floattobytearray(value):
     return b
 
 
-def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
+def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, AddressFFFFFFFF):
 
     DeviceClass={}
     DeviceClass['8000']='AllDevices'
@@ -156,7 +156,7 @@ def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, Inverter
     DeviceType['9076']='SB 5000TL-21'
     DeviceType['9119']='Sunny HomeManager'
 
-    data=request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, 0x58000200, 0x00821E00, 0x008220FF)
+    data=request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, AddressFFFFFFFF, 0x58000200, 0x00821E00, 0x008220FF)
 
     reply = {}
 
@@ -223,9 +223,9 @@ def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, Inverter
 
     return reply
 
-def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_send_counter, InverterPasswordArray):
+def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,MySerialNumber,packet_send_counter, InverterPasswordArray):
     # Logon to inverter
-    pluspacket1 = SMANET2PlusPacket(0x0e, 0xa0, packet_send_counter, InverterCodeArray,  0x00,  0x01, 0x01)
+    pluspacket1 = SMANET2PlusPacket(0x0e, 0xa0, packet_send_counter, MySerialNumber,  0x00,  0x01, 0x01)
     pluspacket1.pushLong(0xFFFD040c)
     #0x07 = User logon, 0x0a = installer logon
     pluspacket1.pushLong(0x00000007)
@@ -234,7 +234,7 @@ def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_sen
     pluspacket1.pushByteArray( floattobytearray(time.mktime(datetime.today().timetuple())))
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushByteArray(InverterPasswordArray)
-    send = SMABluetoothPacket(1, 1, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
+    send = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
     send.pushRawByteArray(pluspacket1.getBytesForSending())
     send.finish()
     send.sendPacket(btSocket)
@@ -247,7 +247,7 @@ def logon(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_sen
 
 
 
-def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCodeArray,packet_send_counter):
+def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,MySerialNumber,packet_send_counter):
     # Wait for 1st message from inverter to arrive (should be an 0002 command)
     bluetoothbuffer = read_SMA_BT_Packet(btSocket,mylocalBTAddress)
     checkPacketReply(bluetoothbuffer,0x0002);
@@ -282,7 +282,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
     # Now the fun begins...
 
     send = SMABluetoothPacket(0x3f, 0x00, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket1 = SMANET2PlusPacket(0x09, 0xa0, packet_send_counter, InverterCodeArray, 0, 0, 0)
+    pluspacket1 = SMANET2PlusPacket(0x09, 0xa0, packet_send_counter, MySerialNumber, 0, 0, 0)
     pluspacket1.pushLong(0x00000200)
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushLong(0x00000000)
@@ -301,7 +301,7 @@ def initaliseSMAConnection(btSocket,mylocalBTAddress,AddressFFFFFFFF,InverterCod
 
     #This is a logoff command..
     #send = SMABluetoothPacket(0x3B, 0, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    #pluspacket1 = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x03)
+    #pluspacket1 = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, MySerialNumber, 0x00, 0x03, 0x03)
     #pluspacket1.pushLong(0xFFFD010E)
     #pluspacket1.pushLong(0xFFFFFFFF)
     #send.pushRawByteArray(pluspacket1.getBytesForSending())
@@ -313,9 +313,9 @@ def checkPacketReply(bluetoothbuffer,commandcode):
     if bluetoothbuffer.levelone.CommandCode() != commandcode:
         raise Exception("Expected command 0x{0:04x} received 0x{1:04x}".format(commandcode,bluetoothbuffer.levelone.CommandCode()))
 
-def logoff(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF):
+def logoff(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, AddressFFFFFFFF):
     p1 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    data = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x03, 0x00)
+    data = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, MySerialNumber, 0x00, 0x03, 0x00)
     data.pushLong(0xFFFD010E)
     data.pushLong(0xFFFFFFFF)
     p1.pushRawByteArray(data.getBytesForSending())
@@ -323,9 +323,9 @@ def logoff(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, A
     p1.sendPacket(btSocket)
     return
 
-def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeArray, AddressFFFFFFFF, cmd, first, last):
+def request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, AddressFFFFFFFF, cmd, first, last):
     send9 = SMABluetoothPacket(0x01, 0x01, 0x00, 0x01, 0x00, mylocalBTAddress, AddressFFFFFFFF)
-    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, InverterCodeArray, 0x00, 0x00, 0x00)
+    pluspacket9 = SMANET2PlusPacket(0x09, 0xA0, packet_send_counter, MySerialNumber, 0x00, 0x00, 0x00)
     pluspacket9.pushLong(cmd)
     pluspacket9.pushLong(first)
     pluspacket9.pushLong(last)
@@ -348,7 +348,6 @@ def request_data(btSocket, packet_send_counter, mylocalBTAddress, InverterCodeAr
 def extract_data(level2Packet):
     #Return a dictionary
     outputlist = {}
-
 
     spotvaluelist = {}
 
