@@ -45,10 +45,6 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd]);
 
-        # Dummy arrays
-        #self.AddressFFFFFFFF = bytearray([0xff, 0xff, 0xff, 0xff, 0xff, 0xff]);
-        self.Address00000000 = bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00]);
-
         self._reset_packet_send_counter()
         self._Inverters = None
         #Duration in seconds
