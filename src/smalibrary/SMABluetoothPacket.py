@@ -24,11 +24,7 @@ class SMABluetoothPacket:
             skipendbytes = 3
 
         # Skip the first 3 bytes, they are the command code 0x0001 and 0x7E start byte
-        # print "FirstByte={0:02x} LastByte={1:02x}  startbyte={2} skipendbytes={3}".format(self.UnescapedArray[0],self.lastByte(),startbyte,skipendbytes)
-
         l = len(self.UnescapedArray) - skipendbytes
-        # print "Copying array from {0} to {1}".format(startbyte,l)
-        # LogMessageWithByteArray("Copy Array", self.UnescapedArray[startbyte:l])
         return self.UnescapedArray[startbyte:l]
 
     def pushRawByteArray(self, barray):
@@ -37,7 +33,6 @@ class SMABluetoothPacket:
 
     def pushRawByte(self, value):
         # Accept a byte of ESCAPED data (ie. raw byte from Bluetooth)
-        # //Store the raw byte
         self.UnescapedArray.append(value)
         self.RawByteArray.append(value)
 
@@ -62,6 +57,7 @@ class SMABluetoothPacket:
         self.header[1] = len(self.RawByteArray) + self.headerlength
         self.header[2] = 0
         self.setChecksum()
+
         # Just in case!
         if self.ValidateHeaderChecksum() == False:
             raise Exception("Invalid header checksum when finishing!")
@@ -77,66 +73,13 @@ class SMABluetoothPacket:
 
         # did we receive the escape char in previous byte?
         if (len(self.RawByteArray) > 0 and previousUnescapedByte == 0x7d):
-            # print "Escaped {0:02x} into {1:02x}".format(value,value ^ 0x20)
             self.UnescapedArray[len(self.UnescapedArray) - 1] = value ^ 0x20
         else:
             # Unescaped array is same as raw array
             self.UnescapedArray.append(value)
 
     def sendPacket(self, btSocket):
-        m = bytearray(str(self.header) + str(self.SourceAddress) + str(self.DestinationAddress) + str(self.cmdcode) + str(self.RawByteArray))
-        # LogMessageWithByteArray("Send message", m)
         l = btSocket.send(str(self.header) + str(self.SourceAddress) + str(self.DestinationAddress) + str(self.cmdcode) + str(self.RawByteArray))
-        # print "Sent message containing %d bytes" % l
-
-
-    # def DisplayPacketDebugInfo(self, Message):
-    #     s = ""
-    #     i = 0
-    #     s += "[{0}] [{1}]\n".format(Message, "**RAW** Packet dump")
-    #     s += "    {0:08x}: {1:x} Header\n".format(i, self.header[i])
-    #     i += 1
-    #     s += "    {0:08x}: {2:02x} {1:02x} Length\n".format(i, self.header[i], self.header[i + 1])
-    #     i += 2
-    #     s += "    {0:08x}: {1:02x} Checksum\n".format(i, self.header[i])
-    #     i += 1
-    #     s += "    {0:08x}: {6:02x}{5:02x}{4:02x}{3:02x}{2:02x}{1:02x} Source address\n".format(i, self.SourceAddress[0],
-    #                                                                                            self.SourceAddress[1],
-    #                                                                                            self.SourceAddress[2],
-    #                                                                                            self.SourceAddress[3],
-    #                                                                                            self.SourceAddress[4],
-    #                                                                                            self.SourceAddress[5])
-    #     i += 6
-    #     s += "    {0:08x}: {6:02x}{5:02x}{4:02x}{3:02x}{2:02x}{1:02x} Destination address\n".format(i,
-    #                                                                                                 self.DestinationAddress[
-    #                                                                                                 0],
-    #                                                                                                 self.DestinationAddress[
-    #                                                                                                 1],
-    #                                                                                                 self.DestinationAddress[
-    #                                                                                                 2],
-    #                                                                                                 self.DestinationAddress[
-    #                                                                                                 3],
-    #                                                                                                 self.DestinationAddress[
-    #                                                                                                 4],
-    #                                                                                                 self.DestinationAddress[
-    #                                                                                                 5])
-    #     i += 6
-    #     s += "    {0:08x}: {1:04x} Command\n".format(i, self.CommandCode())
-    #     i += 2
-    #
-    #     for j in range(0, len(self.RawByteArray)):
-    #         if (j % 16 == 0):
-    #             s += "\n    %08x: " % j
-    #
-    #         s += "%02x " % self.RawByteArray[j]
-    #         i += 1
-    #
-    #     s += "\n"
-    #
-    #     if self.containsLevel2Packet():
-    #         s += "*** LEVEL 2 PACKET IDENTIFIED ****\n"
-    #
-    #     return s
 
     def containsLevel2Packet(self):
         if len(self.UnescapedArray) < 5:
@@ -163,14 +106,11 @@ class SMABluetoothPacket:
     def TotalUnescapedPacketLength(self):
         return len(self.UnescapedArray) + self.headerlength
 
-
     def TotalRawPacketLength(self):
         return self.header[1] + (self.header[2] * 256)
 
-
     def TotalPayloadLength(self):
         return self.TotalRawPacketLength() - self.headerlength
-
 
     def ValidateHeaderChecksum(self):
         # Thanks to
@@ -178,7 +118,7 @@ class SMABluetoothPacket:
         # for this checksum information !!
         return  (self.header[0] ^ self.header[1] ^ self.header[2] ^ self.header[3]) == 0
 
-    def __init__(self, length1, length2, checksum=0, cmd1=0, cmd2=0, SourceAddress=bytearray, DestinationAddress=bytearray()):
+    def __init__(self, length1, length2, checksum=0, cmd1=0, cmd2=0, SourceAddress=bytearray(), DestinationAddress=bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])):
         self.headerlength = 18
         self.SourceAddress = SourceAddress
         self.DestinationAddress = DestinationAddress
