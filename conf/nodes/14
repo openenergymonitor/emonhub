@@ -1,5 +1,5 @@
-[[11]]
-    nodename = 3phase
+[[14]]
+    nodename = 3phase4
     [[[rx]]]
        names = powerL1, powerL2, powerL3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
        datacode = h,h,h,h,h,h,h,h,h,h,h,L
