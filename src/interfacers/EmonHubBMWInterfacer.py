@@ -126,9 +126,9 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         return
 
     def saveCredentials(self):
-    	"""
-    	Save current state to the JSON file.
-    	"""
+        """
+        Save current state to the JSON file.
+        """
         credentials = {
             #"auth_basic": self.auth_basic,
             "access_token": self._AccessToken,
