@@ -31,7 +31,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         # Initialize RX buffer
         self._rx_buf = ''
 
-	#VE Direct requirements
+        #VE Direct requirements
         self.header1 = '\r'
         self.header2 = '\n'
         self.delimiter = '\t'
@@ -40,8 +40,8 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         self.bytes_sum = 0;
         self.state = self.WAIT_HEADER
         self.dict = {}
-	self.poll_interval = int(poll_interval)
-	self.last_read = time.time()
+        self.poll_interval = int(poll_interval)
+        self.last_read = time.time()
 
         #Parser requirments
         self._extract = toextract
@@ -50,8 +50,8 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
 
     def input(self, byte):
         """
-	Parse serial byte code from VE.Direct
-	"""
+        Parse serial byte code from VE.Direct
+        """
         if self.state == self.WAIT_HEADER:
             self.bytes_sum += ord(byte)
             if byte == self.header1:
@@ -132,29 +132,29 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         for key in self._extract:
             if data.has_key(key):
                     #Emonhub doesn't like strings so we convert them to ints
-                    tempval = 0
-                    try:
-                        tempval = float(data[key])
-                    except Exception,e:
-			tempval = data[key]
-                    if not isinstance(tempval,float):
-                       if data[key] == "OFF":
-                          data[key] = 0
-                       else:
-                          data[key] = 1
+                tempval = 0
+                try:
+                    tempval = float(data[key])
+                except Exception,e:
+                    tempval = data[key]
+                if not isinstance(tempval,float):
+                    if data[key] == "OFF":
+                        data[key] = 0
+                    else:
+                        data[key] = 1
 
-		    clean_data = clean_data + " " + str(data[key])
-	return clean_data
+                clean_data = clean_data + " " + str(data[key])
+        return clean_data
 
 
     def _read_serial(self):
         self._log.debug(" Starting Serial read")
         try:
             while self._rx_buf == '':
-		    byte = self._ser.read(1)
-		    packet = self.input(byte)
-		    if packet != None:
-			self._rx_buf = packet
+                byte = self._ser.read(1)
+                packet = self.input(byte)
+                if packet != None:
+                    self._rx_buf = packet
 
         except Exception,e:
             self._log.error(e)
@@ -173,7 +173,7 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         if not (now - self.last_read) > self.poll_interval:
             #self._log.debug(" Waiting for %s seconds "%(str(now - self.last_read)))
             # Wait to read based on poll_interval
-	        return
+            return
 
         # Read from serial
         self._read_serial()
@@ -194,12 +194,11 @@ class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
         self._rx_buf = ''
 
         if f:
-	        if int(self._settings['nodeoffset']):
-                    c.nodeid = int(self._settings['nodeoffset'])
-                    c.realdata = f[1:]
-                else:
-                    self._log.error("nodeoffset needed in emonhub configuratio, make sure it exits ans is integer ")
-                    pass
+            if int(self._settings['nodeoffset']):
+                c.nodeid = int(self._settings['nodeoffset'])
+                c.realdata = f[1:]
+            else:
+                self._log.error("nodeoffset needed in emonhub configuratio, make sure it exits ans is integer ")
+                pass
 
         return c
-

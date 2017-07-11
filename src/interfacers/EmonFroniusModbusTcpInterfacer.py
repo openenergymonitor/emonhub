@@ -23,11 +23,11 @@ class EmonFroniusModbusTcpInterfacer(ehi.EmonModbusTcpInterfacer):
 
     # Connection opened by parent class INIT
     # Retrieve fronius specific inverter info if connection successfull if connection successfull
-	self._log.debug("Fronius args: " + str(modbus_IP) + " - " + str(modbus_port) )
-	self._log.debug("EmonFroniusModbusTcpInterfacer: Init")
-	if self._modcon :
+        self._log.debug("Fronius args: " + str(modbus_IP) + " - " + str(modbus_port) )
+        self._log.debug("EmonFroniusModbusTcpInterfacer: Init")
+        if self._modcon :
             # Display device firmware version and current settings
-	    self.info =["",""]
+            self.info =["",""]
             #self._log.info("Modtcp Connected")
             r2= self._con.read_holding_registers(40005-1,4,unit=1)
             r3= self._con.read_holding_registers(40021-1,4,unit=1)
