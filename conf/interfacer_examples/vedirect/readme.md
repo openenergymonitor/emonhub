@@ -12,33 +12,32 @@ A VE.Direct to USB converter is available from Victron which would allow direct 
 
 Each supported product has it's own set of data that can be read over VE.Direct called 'fields' . The full list of available fields can be found in the VE.Direct Protocol white paper found [here](https://www.victronenergy.com/support-and-downloads/whitepapers). This information can be used to adapt the provided configurations for your device.
 
-### Sample interfacer config within emonhub.conf
+### Sample interfacer config for a BMV700
     # Sample configuration for Victron Product with VEDirect connection over USB
     # Configuration is for BMV 700
     [[VEDirect]]
     Type = EmonHubVEDirectInterfacer
-    [[[init_settings]]]
-    com_port = /dev/ttyUSB0 # Where to find our device
-        com_baud = 19200      # Baud rate needed to decode
-        toextract = SOC,CE,TTG,V,I,Relay,Alarm 
-        poll_interval = 10 # How often to get data in seconds
-    [[[runtimesettings]]]
-        nodeoffset = 9 #make sure this matches with nodename below
-        pubchannels = ToEmonCMS,
-        subchannels = ToBMV,
-        basetopic = emonhub/
+        [[[init_settings]]]
+            com_port = /dev/ttyUSB0 # Where to find our device
+            com_baud = 19200      # Baud rate needed to decode
+            toextract = SOC,CE,TTG,V,I,Relay,Alarm 
+            poll_interval = 10 # How often to get data in seconds
+        [[[runtimesettings]]]
+            nodeoffset = 9 #make sure this matches with nodename below
+            pubchannels = ToEmonCMS,
+            subchannels = ToBMV,
+            basetopic = emonhub/
 
 
-### Followed by a  corresponding Node declaration in emonhub.conf
-In this example our battery monitor will be designated node id 9 
+    # Followed by a  corresponding Node declaration 
 
-    [[9]]
-    nodename = emonDC
+    [[9]] # This node name should be consistent with the nodeoffset parameter above
+        nodename = VictronBMV700
     [[[rx]]]
-       names = SOC,CE,TTG,V,I,Relay,Alarm # Make sure this matches 'toextract' in interfacer
+       names = SOC,CE,TTG,V,I,Relay,Alarm # Make sure this matches 'toextract' in interfacer definition above
        datacode = 0 #no need to decode values
        scales = 0.1,1,1,0.001,1,1,1 # Some scaling necassary
-       units =%,Ah,s,V,A,S,S 
+       units = %,Ah,s,V,A,S,S 
 
 
 With this config in place you just need to restart emonhub on your emonPi by rebooting it or ssh'ing into it and typing 
