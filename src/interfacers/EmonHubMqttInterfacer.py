@@ -70,7 +70,9 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 # Check for data in sub channel buffer
                 
                 if channel in self._sub_channels:
-                    for cargo in self._sub_channels[channel]:
+                    while len(self._sub_channels[channel])>0:
+                        cargo = self._sub_channels[channel].pop(0)
+                        
                         # ----------------------------------------------------------
                         # General MQTT format: emonhub/rx/emonpi/power1 ... 100
                         # ----------------------------------------------------------
@@ -127,10 +129,6 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                             
                             if result[0]==4:
                                 self._log.info("Publishing error? returned 4")
-                            
-                # Clear sub channel
-                # Is there a risk of deleting entries here that have been recieved during the above itteration time??
-                self._sub_channels[channel] = []
                 
         self._mqttc.loop(0)
         
