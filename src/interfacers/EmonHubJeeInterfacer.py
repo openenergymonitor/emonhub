@@ -1,7 +1,5 @@
 
 import time
-from pydispatch import dispatcher
-
 import datetime
 import Cargo
 import EmonHubSerialInterfacer as ehi
@@ -49,6 +47,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
+        
+        # Initialize message queue
+        self._sub_channels = {}
+        self._pub_channels = {}
+        
         self._ser.flushInput()
 
         # Initialize settings
@@ -67,6 +70,36 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
 
+    def run(self):
+        """
+        Run the interfacer.
+        Any regularly performed tasks actioned here along with passing received values
+
+        """
+
+        while not self.stop:
+            # Read the input and process data if available
+            rxc = self.read()
+            if rxc:
+                rxc = self._process_rx(rxc)
+                if rxc:
+                    for channel in self._settings["pubchannels"]:
+                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                       
+                        # Initialize channel if needed
+                        if not channel in self._pub_channels:
+                            self._pub_channels[channel] = []
+                            
+                        # Add cargo item to channel
+                        self._pub_channels[channel].append(rxc)
+                        
+                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+
+            # Don't loop to fast
+            time.sleep(0.1)
+            # Action reporter tasks
+            self.action()
+            
     def read(self):
         """Read data from serial port and process if complete line received.
 
@@ -257,4 +290,3 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
         self._ser.write(payload)
-

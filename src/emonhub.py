@@ -139,6 +139,29 @@ class EmonHub(object):
                     #I.start()
                     self._log.warning(I.name + " thread is dead") # had to be restarted")
 
+                # Read each interfacers pub channels
+                for pub_channel in I._settings['pubchannels']:
+                    # Post to each subscriber interface
+                    for sub_interfacer in self._interfacers.itervalues():
+                        # For each subsciber channel
+                        for sub_channel in sub_interfacer._settings['subchannels']:
+                            # If channel names match
+                            if sub_channel==pub_channel:
+                                # Copy over each entry
+                                if pub_channel in I._pub_channels:
+                                    for cargo in I._pub_channels[pub_channel]:
+                                        # init if empty
+                                        if not sub_channel in sub_interfacer._sub_channels:
+                                            sub_interfacer._sub_channels[sub_channel] = []
+                                        # append cargo item
+                                        sub_interfacer._sub_channels[sub_channel].append(cargo)
+                    
+                    # Clear pub channel
+                    # What happens if the channel was written to part way through the above
+                    # do we risk data loss here!?
+                    I._pub_channels[pub_channel] = []
+                    
+
             # Sleep until next iteration
             time.sleep(0.2)
 
