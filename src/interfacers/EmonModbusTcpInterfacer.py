@@ -1,6 +1,4 @@
 import time
-from pydispatch import dispatcher
-
 import datetime
 import Cargo
 import logging

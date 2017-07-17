@@ -46,6 +46,7 @@ class EmonHubInterfacer(threading.Thread):
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
                           'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"]}
+        
         self._settings = {}
 
         # Initialize message queue
@@ -69,31 +70,28 @@ class EmonHubInterfacer(threading.Thread):
         Any regularly performed tasks actioned here along with passing received values
 
         """
-
         while not self.stop:
             # Read the input and process data if available
             rxc = self.read()
-            # if 'pause' in self._settings and \
-            #                 str.lower(self._settings['pause']) in ['all', 'in']:
-            #     pass
-            # else:
             if rxc:
                 rxc = self._process_rx(rxc)
-                # if rxc:
-                    # for channel in self._settings["pubchannels"]:
-                        # self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                        # dispatcher.send(channel, cargo=rxc)
-                        # self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+                if rxc:
+                    for channel in self._settings["pubchannels"]:
+                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                       
+                        # Initialize channel if needed
+                        if not channel in self._pub_channels:
+                            self._pub_channels[channel] = []
+                            
+                        # Add cargo item to channel
+                        self._pub_channels[channel].append(rxc)
+                        
+                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
-
-    # Subscribed channels entry
-    def receiver(self, cargo):
-        txc = self._process_tx(cargo)
-        self.send(txc)
 
     def read(self):
         """Read raw data from interface and pass for processing.
@@ -483,11 +481,6 @@ class EmonHubInterfacer(threading.Thread):
                 continue
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
-
-            # Is there a better place to put this?
-            # for channel in self._settings["subchannels"]:
-                # dispatcher.connect(self.receiver, channel)
-                # self._log.debug("Interfacer: Subscribed to channel' : " + str(channel))
 
 
 """class EmonHubInterfacerInitError

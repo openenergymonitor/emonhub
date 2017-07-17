@@ -21,9 +21,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         self._connected = False
         
         self._settings = {
-            'subchannels':['ch1'],
-            'pubchannels':['ch2'],
-            
+            'pubchannels':[],
+            'subchannels':[],
             # emonhub/rx/10/values format - default emoncms nodes module
             'node_format_enable': 1,
             'node_format_basetopic': 'emonhub/',
@@ -31,11 +30,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # nodes/emontx/power1 format
             'nodevar_format_enable': 0,
             'nodevar_format_basetopic': "nodes/"
-        };
-        
-        # Initialize message queue
-        self._pub_channels = {}
-        self._sub_channels = {}
+        }
                     
         self._mqttc = mqtt.Client()
         self._mqttc.on_connect = self.on_connect
@@ -43,18 +38,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         self._mqttc.on_message = self.on_message
         self._mqttc.on_subscribe = self.on_subscribe
 
-    def run(self):
-        """
-        Run the interfacer.
-        Any regularly performed tasks actioned here along with passing received values
-
-        """
-        while not self.stop:
-            # Action reporter tasks
-            self.action()
-            # Don't loop to fast
-            time.sleep(0.1)
-               
+    # The action method is called from emonhub_interfacer.py method run               
     def action(self):
         if not self._connected:
             self._log.info("Connecting to MQTT Server")

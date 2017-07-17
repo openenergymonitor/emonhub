@@ -48,10 +48,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
         
-        # Initialize message queue
-        self._sub_channels = {}
-        self._pub_channels = {}
-        
         self._ser.flushInput()
 
         # Initialize settings
@@ -69,36 +65,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
-
-    def run(self):
-        """
-        Run the interfacer.
-        Any regularly performed tasks actioned here along with passing received values
-
-        """
-
-        while not self.stop:
-            # Read the input and process data if available
-            rxc = self.read()
-            if rxc:
-                rxc = self._process_rx(rxc)
-                if rxc:
-                    for channel in self._settings["pubchannels"]:
-                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                       
-                        # Initialize channel if needed
-                        if not channel in self._pub_channels:
-                            self._pub_channels[channel] = []
-                            
-                        # Add cargo item to channel
-                        self._pub_channels[channel].append(rxc)
-                        
-                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
-
-            # Don't loop to fast
-            time.sleep(0.1)
-            # Action reporter tasks
-            self.action()
             
     def read(self):
         """Read data from serial port and process if complete line received.
@@ -179,12 +145,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         return c
 
-        # # unix timestamp
-        # t = round(time.time(), 2)
-        #
-        # # Process data frame
-        # self._r	xq.put(self._process_rx(f, t))
-
     def set(self, **kwargs):
         """Send configuration parameters to the "Jee" type device through COM port
 
@@ -254,26 +214,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
     def send (self, cargo):
-        """
-        """
-        #self._process_tx(self._txq.get())
-        #self._rxq.put( self._process_rx(f, t))
-        #dest = f[1]
-        #packet = f[2:-1]
-        #self.send_packet(packet, dest)
-        # TODO amalgamate into 1 send
 
-    #def send_packet(self, packet, id=0, cmd="s"):
-        """
-
-        """
         f = cargo
         cmd = "s"
 
-        # # If the use of acks gets implemented
-        # ack = False
-        # if ack:
-        #     cmd = "a"
         if self.getName() in f.encoded:
             data = f.encoded[self.getName()]
         else:
