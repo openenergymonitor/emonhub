@@ -4,7 +4,6 @@ import time
 import json
 import urllib2
 import httplib
-from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -26,7 +25,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'sendinterval': 30
         }
         
-        self.buffer = []
+        # Initialize message queue
+        self._pub_channels = {}
+        self._sub_channels = {}
+        
         self.lastsent = time.time()
         self.lastsentstatus = time.time()
 
@@ -56,8 +58,15 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self.lastsent = now
             # print json.dumps(self.buffer)
             if int(self._settings['senddata']):
-                self.bulkpost(self.buffer)
-            self.buffer = []
+                # It might be better here to combine the output from all sub channels 
+                # into a single bulk post, most of the time there is only one sub channel
+                for channel in self._settings["subchannels"]:
+                    if channel in self._sub_channels:
+                        # Send the data
+                        self.bulkpost(self._sub_channels[channel])
+                        # Clear channel 
+                        # This needs to only happen if bulk post is successful
+                        self._sub_channels[channel] = []
             
         if (now-self.lastsentstatus)> (int(self._settings['sendinterval'])):
             self.lastsentstatus = now
@@ -159,7 +168,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 self._settings[key] = kwargs[key]
         
         # Subscribe to internal channels
-        for channel in self._settings["subchannels"]:
-            dispatcher.connect(self.receiver, channel)
-            self._log.debug(self._name+" Subscribed to channel' : " + str(channel))
+        # for channel in self._settings["subchannels"]:
+        #    dispatcher.connect(self.receiver, channel)
+        #    self._log.debug(self._name+" Subscribed to channel' : " + str(channel))
 
