@@ -62,11 +62,21 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 # into a single bulk post, most of the time there is only one sub channel
                 for channel in self._settings["subchannels"]:
                     if channel in self._sub_channels:
-                        # Send the data
-                        self.bulkpost(self._sub_channels[channel])
-                        # Clear channel 
-                        # This needs to only happen if bulk post is successful
-                        self._sub_channels[channel] = []
+                        
+                        # Make a temporary copy of the data to be sent
+                        bulkdata = self._sub_channels[channel]
+                        
+                        # Get the length of the data to be sent
+                        bulkdata_length = len(bulkdata)
+                        
+                        # Attempt to send the data
+                        success = self.bulkpost(bulkdata)
+                        
+                        # if bulk post is successful delete the range posted
+                        if success:
+                            for i in range(0,bulkdata_length):
+                                self._sub_channels[channel].pop(0)
+                        
             
         if (now-self.lastsentstatus)> (int(self._settings['sendinterval'])):
             self.lastsentstatus = now
@@ -77,7 +87,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
     
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
                 or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
-            return
+            return False
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
@@ -109,6 +119,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return True
         else:
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
+            return False
             
     def _send_post(self, post_url, post_body=None):
         """
