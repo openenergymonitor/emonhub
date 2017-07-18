@@ -17,6 +17,7 @@ import threading
 import urllib2
 import json
 import uuid
+import queue
 
 import paho.mqtt.client as mqtt
 
@@ -44,6 +45,8 @@ class EmonHubInterfacer(threading.Thread):
         threading.Thread.__init__(self)
         self.setName(name)
 
+        self.exec_queue=None
+
         # Initialise settings
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
@@ -68,25 +71,33 @@ class EmonHubInterfacer(threading.Thread):
 
         """
 
-        while not self.stop:
-            # Read the input and process data if available
-            rxc = self.read()
-            # if 'pause' in self._settings and \
-            #                 str.lower(self._settings['pause']) in ['all', 'in']:
-            #     pass
-            # else:
-            if rxc:
-                rxc = self._process_rx(rxc)
-                if rxc:
-                    for channel in self._settings["pubchannels"]:
-                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                        dispatcher.send(channel, cargo=rxc)
-                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+        if self.exec_queue is None:
+            self.exec_queue=queue.Queue()
 
-            # Don't loop to fast
-            time.sleep(0.1)
-            # Action reporter tasks
-            self.action()
+        try:
+            while not self.stop:
+                # Read the input and process data if available
+                rxc = self.read()
+                # if 'pause' in self._settings and \
+                #                 str.lower(self._settings['pause']) in ['all', 'in']:
+                #     pass
+                # else:
+                if rxc:
+                    rxc = self._process_rx(rxc)
+                    if rxc:
+                        for channel in self._settings["pubchannels"]:
+                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                            dispatcher.send(channel, cargo=rxc)
+                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+
+                # Don't loop to fast
+                time.sleep(0.1)
+                # Action reporter tasks
+                self.action()
+
+        except BaseException:
+            self.exec_queue.put({'name':self.name,'exc':sys.exc_info()})
+            self.stop=True
 
     # Subscribed channels entry
     def receiver(self, cargo):
