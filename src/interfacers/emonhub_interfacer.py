@@ -17,7 +17,7 @@ import threading
 import urllib2
 import json
 import uuid
-import queue
+import traceback
 
 import paho.mqtt.client as mqtt
 
@@ -33,6 +33,15 @@ This almost empty class is meant to be inherited by subclasses specific to
 their data source.
 
 """
+def log_exceptions_from_class_method(f):
+    def wrapper(*args):
+        self=args[0]
+        try:
+            return f(*args)
+        except BaseException:
+            self._log.warning("Exception caught in "+self.name+" thread. "+traceback.format_exc())
+            return
+    return wrapper
 
 class EmonHubInterfacer(threading.Thread):
 
@@ -44,8 +53,6 @@ class EmonHubInterfacer(threading.Thread):
         # Initialise thread
         threading.Thread.__init__(self)
         self.setName(name)
-
-        self.exec_queue=None
 
         # Initialise settings
         self.init_settings = {}
@@ -64,6 +71,7 @@ class EmonHubInterfacer(threading.Thread):
         # create a stop
         self.stop = False
 
+    @log_exceptions_from_class_method
     def run(self):
         """
         Run the interfacer.
@@ -71,33 +79,26 @@ class EmonHubInterfacer(threading.Thread):
 
         """
 
-        if self.exec_queue is None:
-            self.exec_queue=queue.Queue()
-
-        try:
-            while not self.stop:
-                # Read the input and process data if available
-                rxc = self.read()
-                # if 'pause' in self._settings and \
-                #                 str.lower(self._settings['pause']) in ['all', 'in']:
-                #     pass
-                # else:
+        while not self.stop:
+            raise Exception
+            # Read the input and process data if available
+            rxc = self.read()
+            # if 'pause' in self._settings and \
+            #                 str.lower(self._settings['pause']) in ['all', 'in']:
+            #     pass
+            # else:
+            if rxc:
+                rxc = self._process_rx(rxc)
                 if rxc:
-                    rxc = self._process_rx(rxc)
-                    if rxc:
-                        for channel in self._settings["pubchannels"]:
-                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                            dispatcher.send(channel, cargo=rxc)
-                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+                    for channel in self._settings["pubchannels"]:
+                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                        dispatcher.send(channel, cargo=rxc)
+                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
-                # Don't loop to fast
-                time.sleep(0.1)
-                # Action reporter tasks
-                self.action()
-
-        except BaseException:
-            self.exec_queue.put({'name':self.name,'exc':sys.exc_info()})
-            self.stop=True
+            # Don't loop to fast
+            time.sleep(0.1)
+            # Action reporter tasks
+            self.action()
 
     # Subscribed channels entry
     def receiver(self, cargo):

@@ -16,7 +16,6 @@ import logging.handlers
 import signal
 import argparse
 import pprint
-import queue
 
 try:
       import pymodbus
@@ -115,8 +114,7 @@ class EmonHub(object):
         # Update settings
         self._update_settings(settings)
 
-        # Queue for passing messages between threads
-        self._exec_queue=queue.Queue()
+        self.restart_limit=5
 
     def run(self):
         """Launch the hub.
@@ -129,8 +127,10 @@ class EmonHub(object):
         # Set signal handler to catch SIGINT and shutdown gracefully
         signal.signal(signal.SIGINT, self._sigint_handler)
 
+        # Initialise thread restart counters
+        restart_count={}
         for I in self._interfacers.itervalues():
-            kill_list[I.name]=0
+            restart_count[I.name]=0
 
         # Until asked to stop
         while not self._exit:
@@ -140,41 +140,25 @@ class EmonHub(object):
             if self._setup.check_settings():
                 self._update_settings(self._setup.settings)
 
-            # Empty thread message queue
-            while True:
-                try:
-                    exc = self._exec_queue.get(block=False)
-                except Queue.Empty:
-                    break
-                else:
-                    exc_type, exc_obj, exc_trace = exc['exc']
-                    self._log.warning("Exception caught in "+exc['name']+" thread. Traceback is: "+exc_trace)
-                    # Don't need to test if thread is alive as this
-                    # will happen next...
-
             # For all Interfacers
             kill_list=[]
             for I in self._interfacers.itervalues():
                 # Check threads are still running
                 if not I.isAlive():
-                    restart_count[I.name]+=1
-                    kill_list.append(I.name)
+                    kill_list.append(I.name) # <-avoid modification of iterable within loop
 
+            # ->avoid modification of iterable within loop
             for name in kill_list:
                 self._log.warning(name + " thread is dead.")
 
-                # The following should trigger a restart ...it will also
-                # update runtime settings if these have changed...
+                # The following should trigger a restart ... unless the
+                # interfacer is also removed from the settings table.
                 del(self._interfacers[name])
 
-                # If restart limit is present
-                if self.restart_limit >= 0:
-                    if restart_count[name]>restart_limit:
-                        self._log.warning(name + " thread has exceeded restart limit.")
-                        del(settings['interfacers'][name])
-
-
-            self._update_settings(self._setup.settings)
+                # Trigger restart by calling update settings
+                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
+                restart_count[name]+=1
+                self._update_settings(self._setup.settings)
 
             # Sleep until next iteration
             time.sleep(0.2)
@@ -248,7 +232,6 @@ class EmonHub(object):
                     interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
-                    interfacer.exec_queue = self._exec_queue
                     interfacer.start()
                 except ehi.EmonHubInterfacerInitError as e:
                     # If interfacer can't be created, log error and skip to next

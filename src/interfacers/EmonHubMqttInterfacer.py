@@ -9,7 +9,7 @@ import Cargo
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name,exec_queue, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883):
+    def __init__(self, name, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883):
         # Initialization
         super(EmonHubMqttInterfacer, self).__init__(name)
 
