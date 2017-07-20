@@ -80,7 +80,7 @@ class EmonHubInterfacer(threading.Thread):
         """
 
         while not self.stop:
-            raise Exception
+
             # Read the input and process data if available
             rxc = self.read()
             # if 'pause' in self._settings and \
