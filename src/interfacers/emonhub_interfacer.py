@@ -38,7 +38,7 @@ def log_exceptions_from_class_method(f):
         self=args[0]
         try:
             return f(*args)
-        except BaseException:
+        except:
             self._log.warning("Exception caught in "+self.name+" thread. "+traceback.format_exc())
             return
     return wrapper
