@@ -114,8 +114,6 @@ class EmonHub(object):
         # Update settings
         self._update_settings(settings)
 
-        self.restart_limit=5
-
     def run(self):
         """Launch the hub.
 
