@@ -5,6 +5,9 @@ from pydispatch import dispatcher
 import datetime
 import Cargo
 import EmonHubSerialInterfacer as ehi
+import urllib
+import struct
+import json
 
 """class EmonHubJeeInterfacer
 
@@ -62,6 +65,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Jee specific settings to be picked up as changes not defaults to initialise "Jee" device
         self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True', 'calibration': '230V'})
         self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q', 'calibration': 'p'})
+
+		# Set default
+		self._interval_timestamp = 0
+		self._feed_interval_timestamp = 0
 
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
@@ -202,6 +209,22 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # include kwargs from parent
         super(EmonHubJeeInterfacer, self).set(**kwargs)
 
+    def emoncmsfeedvalues(self,url,api,feedid):
+	"""read multiple feed values from EMONCMS parse the JSON reply into Python array
+	"""
+        
+	data_url=str(url)+"?apikey=" + str(api) + "&ids=" + str(feedid)
+
+        try:
+                sock = urllib.urlopen(data_url)
+                data_str = sock.read()
+                sock.close
+                return json.loads(data_str)
+        except Exception, detail:
+                self._log.debug(detail)
+
+
+
     def action(self):
         """Actions that need to be done on a regular basis. 
         
@@ -220,41 +243,42 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
                 self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
-    def send (self, cargo):
-        """
-        """
-        #self._process_tx(self._txq.get())
-        #self._rxq.put( self._process_rx(f, t))
-        #dest = f[1]
-        #packet = f[2:-1]
-        #self.send_packet(packet, dest)
-        # TODO amalgamate into 1 send
 
-    #def send_packet(self, packet, id=0, cmd="s"):
-        """
+	feedbroadcastinterval = int(self._settings['feedbroadcastinterval'])
 
-        """
-        f = cargo
-        cmd = "s"
+	if feedbroadcastinterval:
+		if (t - self._feed_interval_timestamp) > feedbroadcastinterval:
+			self._feed_interval_timestamp = t
 
-        # # If the use of acks gets implemented
-        # ack = False
-        # if ack:
-        #     cmd = "a"
-        if self.getName() in f.encoded:
-            data = f.encoded[self.getName()]
-        else:
-            data = f.realdata
+			self._log.debug(self.name + " transmitting feed values over RFM")
 
-        payload = ""
-        for value in data:
-            if int(value) < 0 or int(value) > 255:
-                self._log.warning(self.name + " discarding Tx packet: values out of scope" )
-                return
-            payload += str(int(value))+","
-                
-        payload += cmd
-        
-        self._log.debug(str(f.uri) + " sent TX packet: " + payload)
-        self._ser.write(payload)
+			try:
+
+				output=""
+
+				#Spit out the current time EPOC as 4 bytes
+				#Note this only returns UTC based date/time values
+				now = datetime.datetime.now()
+				stamp = time.mktime(now.timetuple())
+				for b in bytearray( struct.pack('<L', stamp)  ):
+					output+="%02d," % (b)
+
+
+				feed_values=self.emoncmsfeedvalues(self._settings['feedurl'], 
+					self._settings['feedreadonlyapikey'], 
+					self._settings['feedlist'])			
+
+				for value in feed_values:
+					# convert float value to 4 byte array and output as decimal bytes
+					barray = bytearray(struct.pack("f", float(value)))
+					for b in barray:
+						output+="%02d," % (b)
+
+				#Specify the receiver of our message
+				output+="04s"
+				self._ser.write(output)
+				#self._log.debug(output)
+
+		        except Exception, detail:
+	                	self._log.debug(detail)
 
