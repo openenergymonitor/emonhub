@@ -145,19 +145,6 @@ class EmonHub(object):
                 if not I.isAlive():
                     kill_list.append(I.name) # <-avoid modification of iterable within loop
 
-            # ->avoid modification of iterable within loop
-            for name in kill_list:
-                self._log.warning(name + " thread is dead.")
-
-                # The following should trigger a restart ... unless the
-                # interfacer is also removed from the settings table.
-                del(self._interfacers[name])
-
-                # Trigger restart by calling update settings
-                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
-                restart_count[name]+=1
-                self._update_settings(self._setup.settings)
-
                 # Read each interfacers pub channels
                 for pub_channel in I._settings['pubchannels']:
                 
@@ -180,6 +167,19 @@ class EmonHub(object):
                                         # APPEND cargo item
                                         sub_interfacer._sub_channels[sub_channel].append(cargo)
 
+            # ->avoid modification of iterable within loop
+            for name in kill_list:
+                self._log.warning(name + " thread is dead.")
+
+                # The following should trigger a restart ... unless the
+                # interfacer is also removed from the settings table.
+                del(self._interfacers[name])
+
+                # Trigger restart by calling update settings
+                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
+                restart_count[name]+=1
+                self._update_settings(self._setup.settings)
+                
             # Sleep until next iteration
             time.sleep(0.2)
 
