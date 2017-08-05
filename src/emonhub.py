@@ -16,6 +16,7 @@ import logging.handlers
 import signal
 import argparse
 import pprint
+
 try:
       import pymodbus
       pymodbus_found = True
@@ -124,6 +125,11 @@ class EmonHub(object):
         # Set signal handler to catch SIGINT and shutdown gracefully
         signal.signal(signal.SIGINT, self._sigint_handler)
 
+        # Initialise thread restart counters
+        restart_count={}
+        for I in self._interfacers.itervalues():
+            restart_count[I.name]=0
+
         # Until asked to stop
         while not self._exit:
 
@@ -133,11 +139,24 @@ class EmonHub(object):
                 self._update_settings(self._setup.settings)
 
             # For all Interfacers
+            kill_list=[]
             for I in self._interfacers.itervalues():
-                # Check thread is still running
+                # Check threads are still running
                 if not I.isAlive():
-                    #I.start()
-                    self._log.warning(I.name + " thread is dead") # had to be restarted")
+                    kill_list.append(I.name) # <-avoid modification of iterable within loop
+
+            # ->avoid modification of iterable within loop
+            for name in kill_list:
+                self._log.warning(name + " thread is dead.")
+
+                # The following should trigger a restart ... unless the
+                # interfacer is also removed from the settings table.
+                del(self._interfacers[name])
+
+                # Trigger restart by calling update settings
+                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
+                restart_count[name]+=1
+                self._update_settings(self._setup.settings)
 
                 # Read each interfacers pub channels
                 for pub_channel in I._settings['pubchannels']:
@@ -230,7 +249,7 @@ class EmonHub(object):
                     if I['Type'] in ('EmonModbusTcpInterfacer','EmonFroniusModbusTcpInterfacer') and not pymodbus_found :
                         self._log.error("Python module pymodbus not installed. unable to load modbus interfacer")
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                     interfacer.start()

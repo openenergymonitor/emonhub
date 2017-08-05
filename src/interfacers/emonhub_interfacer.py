@@ -17,6 +17,7 @@ import threading
 import urllib2
 import json
 import uuid
+import traceback
 
 import paho.mqtt.client as mqtt
 
@@ -30,6 +31,15 @@ This almost empty class is meant to be inherited by subclasses specific to
 their data source.
 
 """
+def log_exceptions_from_class_method(f):
+    def wrapper(*args):
+        self=args[0]
+        try:
+            return f(*args)
+        except:
+            self._log.warning("Exception caught in "+self.name+" thread. "+traceback.format_exc())
+            return
+    return wrapper
 
 class EmonHubInterfacer(threading.Thread):
 
@@ -64,6 +74,7 @@ class EmonHubInterfacer(threading.Thread):
         # create a stop
         self.stop = False
 
+    @log_exceptions_from_class_method
     def run(self):
         """
         Run the interfacer.
@@ -71,6 +82,7 @@ class EmonHubInterfacer(threading.Thread):
 
         """
         while not self.stop:
+
             # Read the input and process data if available
             rxc = self.read()
             if rxc:
