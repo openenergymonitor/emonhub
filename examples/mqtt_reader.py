@@ -6,7 +6,7 @@ def on_connect(client, userdata, rc):
     client.subscribe("emonhub/#")
 
 def on_message(client, userdata, msg):
-	print(msg.topic+" "+str(msg.payload))
+    print(msg.topic+" "+str(msg.payload))
 
 client = mqtt.Client()
 client.on_connect = on_connect
