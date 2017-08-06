@@ -57,7 +57,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'feedbroadcastinterval': 0,
 'feedreadonlyapikey': '02baa0d005be8cde80236efd201e232e', 
 'feedurl':'http://localhost/emoncms/feed/fetch.json',
-'feedlisturl':'http://localhost/emoncms/feed/list.json', 'feedlist':'59,62,58,61'})
+'feedlisturl':'http://localhost/emoncms/feed/list.json', 'feedlist':'59,62,58,61,49,52'})
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
@@ -340,7 +340,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                                 output+="00,"
 
 
-				label=self.feed_name_to_energy_unit(feed["name"])
+				label=self.feed_name_to_energy_unit(feed["name"])[:5]
 				barray = bytearray(label.encode())
                                 for b in barray:
                                         output+="%02d," % (b)
@@ -369,6 +369,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 		'bmwi3-fuelPercent':'%',
 		'bmwi3-mileage':'miles',
 		'bmwi3-beRemainingRangeElectricMile':'miles',
-		'bmwi3-chargingLevelHv':'Batt%'
+		'bmwi3-chargingLevelHv':'% Bat'
 	}
 	return switcher.get(argument, "")
