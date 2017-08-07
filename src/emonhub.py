@@ -86,7 +86,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub(object):
 
-    __version__ = "emonHub 'emon-pi' variant v1.2"
+    __version__ = "emonHub 'emon-pi-develop' variant v2.0.0"
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
