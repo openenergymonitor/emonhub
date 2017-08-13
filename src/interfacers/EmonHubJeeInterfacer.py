@@ -67,13 +67,14 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 		, 'feedreadonlyapikey': ''
 		, 'feedurl':'http://localhost/emoncms/feed/fetch.json'
 		, 'feedlisturl':'http://localhost/emoncms/feed/list.json'
-		, 'feedlist':'0' })
+		, 'feedlist':'0', 'feednodeid':4 })
         self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q', 'calibration': 'p' 
 		,'feedbroadcastinterval':'' 
 		,'feedreadonlyapikey': '' 
 		,'feedurl':'' 
 		,'feedlisturl':'' 
-		,'feedlist':''})
+		,'feedlist':''
+		,'feednodeid':''})
 
 	# Set default
 	self._interval_timestamp = 0
@@ -207,9 +208,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 command = '2p'
 	    #Settings for emonNOTIFY dont get sent to JEELIB module
             elif key == 'feedbroadcastinterval' and str(setting).isdigit() and int(setting)>0:
-		setting = int(setting)
-	    elif (key in ['feedreadonlyapikey','feedlist','feedurl','feedlisturl','feedreadonlyapikey']):
-		command = ''
+                setting = int(setting)
+            elif key == 'feednodeid'  and str(setting).isdigit() and int(setting)>0:
+                setting = int(setting)
+            elif (key in ['feedreadonlyapikey','feedlist','feedurl','feedlisturl','feedreadonlyapikey']):
+                command = ''
             else:
                 self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
@@ -225,10 +228,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         # include kwargs from parent
         super(EmonHubJeeInterfacer, self).set(**kwargs)
-
-	self.resetEmonNotifyLabelList()
-
-	#self._log.debug("feedbroadcastinterval=%s feedreadonlyapikey=%s feedlist=%s" % ( self._settings['feedbroadcastinterval'],  self._settings['feedreadonlyapikey'], self._settings['feedlist']))
+        self.resetEmonNotifyLabelList()
 
     def resetEmonNotifyLabelList(self):
 	"""Reset the emonNotify feed settings and also re-transmit the labels"""
@@ -320,7 +320,8 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 						output+="%02d," % (b)
 
 				#Specify the receiver of our message
-				output+="04s"
+				output+="%02d," % ( self._settings['feednodeid'] )
+				output+="s"
 				self._ser.write(output)
 				#self._log.debug(output)
 
