@@ -39,6 +39,10 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 ### [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
+### emonNOTIFY
+
+emonNOTIFY is a small Arduino based display capable of receiving and displaying feed values over the air
+
 ### Installing Emonhub
 
 Emonhub requires the following dependencies:
