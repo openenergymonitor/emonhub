@@ -13,14 +13,11 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 
 *See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
-- Direct Serial: space seperated value format
-- Direct Serial (emontx3e): current emonTx V3 CSV key:value format (added by @owenduffy)
+- Direct Serial
 - Smilics energy monitors (added by @K0den)
 - Victron Products e.g  BMV 700 battery monitor (added by @jlark)
 - ModBus e.g. FRONIUS Solar inverter (added by @cjthuys)
 - Graphite timeseries DB (added by @hmm01i)
-- SMASolar (added by @stuartpittaway)
-- BMW EV API e.g state of charge, charging state etc. (added by @stuartpittaway)
 
 ***
 
@@ -37,11 +34,13 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - Rx and tx modes for node decoding/encoding provides improved control support.
 - json based config file option so that emonhub.conf can be loaded by emoncms
 
-### [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
-
 ### emonNOTIFY
 
-emonNOTIFY is a small Arduino based display capable of receiving and displaying feed values over the air
+This version of emonhub supports the emonNOTIFY device which is a small Arduino based display capable 
+of receiving and displaying feed values over the air via RFM modules
+
+
+### [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
 
 ### Installing Emonhub
 
@@ -56,7 +55,7 @@ Mosquitto: (see http://mosquitto.org/2013/01/mosquitto-debian-repository)
 Depending on which version of Debian you're using:
 
     sudo wget http://repo.mosquitto.org/debian/mosquitto-wheezy.list
-
+    
 or:
 
     sudo wget http://repo.mosquitto.org/debian/mosquitto-jessie.list
@@ -64,25 +63,25 @@ or:
 Update apt information:
 
     sudo apt-get update
-
+    
     sudo apt-get install -y mosquitto python-pip python-serial python-configobj
     sudo pip install paho-mqtt
     sudo pip install pydispatcher
-
+    
 
 It is recommended to turn off mosquitto persistence
 
     sudo nano /etc/mosquitto/mosquitto.conf
 
 Set
-
+    
     persistence false
 
 Install the emon-pi variant of emonhub:
 
     git clone https://github.com/openenergymonitor/emonhub.git && emonhub/install
     sudo service emonhub start
-
+    
 The emonhub configuration guide can be found here:
 
 [emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/blob/emon-pi/configuration.md)
@@ -90,10 +89,11 @@ The emonhub configuration guide can be found here:
 To view the emonhub log via terminal on the emonpi or emonbase:
 
     tail -f /var/log/emonhub.log
-
+    
 
 ### EmonHub Emoncms config module
 
 If you're using Emoncms on the same Raspberry Pi as emonhub, you may find the emoncms config module useful which provides in-browser access to `emonhub.conf` and `emonhub.log`:
 
 https://github.com/emoncms/config
+
