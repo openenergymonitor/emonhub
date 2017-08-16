@@ -16,7 +16,6 @@ import re
 import Cargo
 
 from time import sleep
-from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 from collections import namedtuple
 from smalibrary import SMASolar_library

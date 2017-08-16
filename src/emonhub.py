@@ -16,6 +16,7 @@ import logging.handlers
 import signal
 import argparse
 import pprint
+
 try:
       import pymodbus
       pymodbus_found = True
@@ -85,7 +86,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub(object):
 
-    __version__ = "emonHub 'emon-pi' variant v1.2"
+    __version__ = "emonHub emon-pi variant v2.0.0"
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
@@ -124,6 +125,11 @@ class EmonHub(object):
         # Set signal handler to catch SIGINT and shutdown gracefully
         signal.signal(signal.SIGINT, self._sigint_handler)
 
+        # Initialise thread restart counters
+        restart_count={}
+        for I in self._interfacers.itervalues():
+            restart_count[I.name]=0
+
         # Until asked to stop
         while not self._exit:
 
@@ -133,12 +139,47 @@ class EmonHub(object):
                 self._update_settings(self._setup.settings)
 
             # For all Interfacers
+            kill_list=[]
             for I in self._interfacers.itervalues():
-                # Check thread is still running
+                # Check threads are still running
                 if not I.isAlive():
-                    #I.start()
-                    self._log.warning(I.name + " thread is dead") # had to be restarted")
+                    kill_list.append(I.name) # <-avoid modification of iterable within loop
 
+                # Read each interfacers pub channels
+                for pub_channel in I._settings['pubchannels']:
+                
+                    if pub_channel in I._pub_channels:
+                        if len(I._pub_channels[pub_channel])>0:
+                        
+                            # POP cargo item (one at a time)
+                            cargo = I._pub_channels[pub_channel].pop(0)
+                            
+                            # Post to each subscriber interface
+                            for sub_interfacer in self._interfacers.itervalues():
+                                # For each subsciber channel
+                                for sub_channel in sub_interfacer._settings['subchannels']:
+                                    # If channel names match
+                                    if sub_channel==pub_channel:
+                                        # init if empty
+                                        if not sub_channel in sub_interfacer._sub_channels:
+                                            sub_interfacer._sub_channels[sub_channel] = []
+                                            
+                                        # APPEND cargo item
+                                        sub_interfacer._sub_channels[sub_channel].append(cargo)
+
+            # ->avoid modification of iterable within loop
+            for name in kill_list:
+                self._log.warning(name + " thread is dead.")
+
+                # The following should trigger a restart ... unless the
+                # interfacer is also removed from the settings table.
+                del(self._interfacers[name])
+
+                # Trigger restart by calling update settings
+                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
+                restart_count[name]+=1
+                self._update_settings(self._setup.settings)
+                
             # Sleep until next iteration
             time.sleep(0.2)
 
@@ -208,7 +249,7 @@ class EmonHub(object):
                     if I['Type'] in ('EmonModbusTcpInterfacer','EmonFroniusModbusTcpInterfacer') and not pymodbus_found :
                         self._log.error("Python module pymodbus not installed. unable to load modbus interfacer")
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                     interfacer.start()
