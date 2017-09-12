@@ -13,11 +13,14 @@ More generally: Emonhub consists of a series of interfacers that can read/subscr
 
 *See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
-- Direct Serial
+- Direct Serial: space seperated value format
+- Direct Serial (emontx3e): current emonTx V3 CSV key:value format (added by @owenduffy)
 - Smilics energy monitors (added by @K0den)
 - Victron Products e.g  BMV 700 battery monitor (added by @jlark)
 - ModBus e.g. FRONIUS Solar inverter (added by @cjthuys)
 - Graphite timeseries DB (added by @hmm01i)
+- SMASolar (added by @stuartpittaway)
+- BMW EV API e.g state of charge, charging state etc. (added by @stuartpittaway)
 
 ***
 
