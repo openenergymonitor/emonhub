@@ -6,7 +6,7 @@ from BaseHTTPServer import BaseHTTPRequestHandler
 from Queue import Queue
 from SocketServer import TCPServer, ThreadingMixIn
 from urlparse import parse_qs
-from pydispatch import dispatcher
+
 
 import Cargo
 import emonhub_coder as ehc
@@ -55,8 +55,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
 
     def run(self):
         """Starts the server on a new thread and processes the queue"""
-        server_thread = threading.Thread(
-            target=self._server.serve_forever, args=(self._queue,))
+        server_thread = threading.Thread(target=self._server.serve_forever, args=(self._queue,))
         server_thread.daemon = True
         server_thread.start()
 
@@ -66,11 +65,21 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                 self._queue.task_done()
 
                 if rxc:
-                    for channel in self._settings["pubchannels"]:
-                        dispatcher.send(channel, cargo=rxc)
-                        self._log.debug(
-                            str(rxc.uri) + " Sent to channel' : " +
-                            str(channel))
+                    rxc = self._process_rx(rxc)
+                    if rxc:
+                        for channel in self._settings["pubchannels"]:
+                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                           
+                            # Initialize channel if needed
+                            if not channel in self._pub_channels:
+                                self._pub_channels[channel] = []
+                                
+                            # Add cargo item to channel
+                            self._pub_channels[channel].append(rxc)
+                            
+                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+
+            # Don't loop to fast
             time.sleep(0.1)
 
         self.close()

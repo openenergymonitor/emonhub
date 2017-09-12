@@ -1,7 +1,6 @@
 import serial
 import time
 import Cargo
-from pydispatch import dispatcher
 import emonhub_interfacer as ehi
 
 """class EmonhubSerialInterfacer

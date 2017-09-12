@@ -20,8 +20,6 @@ import json
 import requests
 import os.path
 
-from pydispatch import dispatcher
-
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubBMWInterfacer

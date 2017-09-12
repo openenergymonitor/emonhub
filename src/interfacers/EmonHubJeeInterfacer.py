@@ -1,6 +1,4 @@
 import time
-from pydispatch import dispatcher
-
 import datetime
 import Cargo
 import EmonHubSerialInterfacer as ehi
@@ -51,6 +49,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
+        
         self._ser.flushInput()
 
         # Initialize settings
@@ -84,7 +83,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
-
 
     def read(self):
         """Read data from serial port and process if complete line received.
@@ -293,9 +291,8 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._feed_interval_timestamp = t
                 self.broadcast_feed_values()
 
-
-
-
+				
+				
     def broadcast_feed_values(self):
         self._log.debug(self.name + " transmitting feed values over RFM")
         try:
@@ -393,3 +390,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             'bmwi3-chargingLevelHv':'% Bat'
         }
         return switcher.get(argument, "")
+
+
+	
