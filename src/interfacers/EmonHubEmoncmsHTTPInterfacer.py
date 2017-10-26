@@ -39,50 +39,54 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         if (now-self.lastsent) > (int(self._settings['sendinterval'])):
             self.lastsent = now
             
-            if int(self._settings['senddata']):
-                # It might be better here to combine the output from all sub channels 
-                # into a single bulk post, most of the time there is only one sub channel
-                for channel in self._settings["subchannels"]:
-                    if channel in self._sub_channels:
-                    
-                        # only try to prepare and send data if there is any
-                        if len(self._sub_channels[channel])>0:
-                            
-                            bulkdata = []
-                            
-                            for cargo in self._sub_channels[channel]:
-                                # Create a frame of data in "emonCMS format"
-                                f = []
-                                try:
-                                    f.append(float(cargo.timestamp))
-                                    f.append(cargo.nodeid)
-                                    for i in cargo.realdata:
-                                        f.append(i)
-                                    if cargo.rssi:
-                                        f.append(cargo.rssi)
-                                    self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-                                except:
-                                    self._log.warning("Failed to create emonCMS frame " + str(f))
-                                    
-                                bulkdata.append(f)
-                            
-                            # Get the length of the data to be sent
-                            bulkdata_length = len(bulkdata)
+            # It might be better here to combine the output from all sub channels 
+            # into a single bulk post, most of the time there is only one sub channel
+            for channel in self._settings["subchannels"]:
+                if channel in self._sub_channels:
+
+                    # only try to prepare and send data if there is any
+                    if len(self._sub_channels[channel])>0:
+
+                        bulkdata = []
+
+                        for cargo in self._sub_channels[channel]:
+                            # Create a frame of data in "emonCMS format"
+                            f = []
+                            try:
+                                f.append(float(cargo.timestamp))
+                                f.append(cargo.nodeid)
+                                for i in cargo.realdata:
+                                    f.append(i)
+                                if cargo.rssi:
+                                    f.append(cargo.rssi)
+                                #self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
+                            except:
+                                self._log.warning("Failed to create emonCMS frame " + str(f))
+
+                            bulkdata.append(f)
+
+                        # Get the length of the data to be sent
+                        bulkdata_length = len(bulkdata)
+
+                        if int(self._settings['senddata']):
                             self._log.debug("Sending bulkdata, length: "+str(bulkdata_length))
-                            
                             # Attempt to send the data
                             success = self.bulkpost(bulkdata)
-                            
                             self._log.debug("Sending bulkdata, success: "+str(success))
+                        else:
+                            success = true
+
+
+                        # if bulk post is successful delete the range posted
+                        if success:
+                            for i in range(0,bulkdata_length):
+                                self._sub_channels[channel].pop(0)
+                            #self._log.debug("Deleted sent data from queue")
                             
-                            # if bulk post is successful delete the range posted
-                            if success:
-                                for i in range(0,bulkdata_length):
-                                    self._sub_channels[channel].pop(0)
-                                self._log.debug("Deleted sent data from queue")
-                            
-                            self._log.debug("New queue length: "+str(len(self._sub_channels[channel])))
                         
+                        if int(self._settings['senddata']):
+                            self._log.debug("Current queue length: "+str(len(self._sub_channels[channel])))
+
             
         if (now-self.lastsentstatus)> (int(self._settings['sendinterval'])):
             self.lastsentstatus = now
