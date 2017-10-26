@@ -74,7 +74,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                             success = self.bulkpost(bulkdata)
                             self._log.debug("Sending bulkdata, success: "+str(success))
                         else:
-                            success = true
+                            success = True
 
 
                         # if bulk post is successful delete the range posted
