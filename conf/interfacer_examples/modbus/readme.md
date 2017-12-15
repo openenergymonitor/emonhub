@@ -86,4 +86,4 @@ Node ID must match node ID set in interfacer definition above
 
 With this config in place, you simply need to restart emonhub on our emonpi by ssh'ing into it and typing 
 
-      $>sudo service emonhub restart
+      $ sudo service emonhub restart
