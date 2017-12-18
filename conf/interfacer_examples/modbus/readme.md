@@ -84,6 +84,3 @@ Node ID must match node ID set in interfacer definition above
             units = V,W,kWh,Wh,W,W,V,V,V,V,V
 ```
 
-With this config in place, you simply need to restart emonhub on our emonpi by ssh'ing into it and typing 
-
-      $ sudo service emonhub restart
