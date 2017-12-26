@@ -82,15 +82,24 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
             registerList = self._settings["register"]
             nRegList = self._settings["nReg"]
             rTypeList = self._settings["rType"]
+            if "nUnit" in self._settings:
+                nUnitList = self._settings["nUnit"]
+            else:
+                nUnitList = None
 
             for idx, rName in enumerate(rNameList):
                 register = int(registerList[idx])
                 qty = int(nRegList[idx])
                 rType = rTypeList[idx]
-                self._log.debug("register # : " + str(register))
+                if nUnitList is not None:
+                    unitId = int(nUnitList[idx])
+                else:
+                    unitId = 1
+
+                self._log.debug("register # :" + str(register) + ", qty #: " + str(qty) + ", unit #: " + str(unitId))
 
                 try:
-                    self.rVal = self._con.read_holding_registers(register-1,qty,unit=1)
+                    self.rVal = self._con.read_holding_registers(register-1,qty,unit=unitId)
                     assert(self.rVal.function_code < 0x80)
                 except Exception as e:
                     self._log.error("Connection failed on read of register: " +str(register) + " : " + str(e))
@@ -119,6 +128,7 @@ class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
                         f = f + list(t)
                     elif rType == "string":
                         rValD = decoder.decode_string(qty*2)
+                        t = rValD
                     elif rType == "float32":
                         rValD = decoder.decode_32bit_float()*10
                         t = emonhub_coder.encode('f',rValD)
