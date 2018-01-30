@@ -477,8 +477,12 @@ class EmonHubInterfacer(threading.Thread):
             elif key == 'scale' and (int(setting == 1) or not (int(setting % 10))):
                 pass
             elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
+                if setting=="True": setting = True
+                else: setting = False
                 pass
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
+                if setting=="True": setting = True
+                else: setting = False
                 pass
             elif key == 'pubchannels':
                 pass
