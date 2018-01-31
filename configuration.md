@@ -207,6 +207,20 @@ The following emonhub.conf interfacer definition will listen on the choosen sock
             [[[runtimesettings]]]
                     pubchannels = ToEmonCMS,
                     
+#### **1. Timestamped data**
+
+To set a timestamp for the posted data add the timestamped property to the emonhub.conf runtimesettings section:
+
+            [[[runtimesettings]]]
+                    pubchannels = ToEmonCMS,
+                    timestamped = True
+                    
+The python client example needs to include the timestamp e.g:
+
+    s.sendall(str(time.time())+' 98 3.8 1.6 5.2 80.3\r\n')
+
+
+                    
 ***
 
 # 3. 'nodes' Configuration
