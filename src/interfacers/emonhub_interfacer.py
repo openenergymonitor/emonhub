@@ -23,6 +23,8 @@ import paho.mqtt.client as mqtt
 
 import emonhub_coder as ehc
 
+import emonhub_buffer as ehb
+
 """class EmonHubInterfacer
 
 Monitors a data source.
@@ -55,7 +57,7 @@ class EmonHubInterfacer(threading.Thread):
         # Initialise settings
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
-                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"]}
+                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"], 'batchsize': '1'}
         
         self._settings = {}
 
@@ -70,7 +72,18 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
+        
+        buffer_type = "memory"
+        buffer_size = 1000
 
+        # Create underlying buffer implementation
+        self.buffer = ehb.getBuffer(buffer_type)(name, buffer_size)
+
+        # set an absolute upper limit for number of items to process per post
+        # number of items posted is the lower of this item limit, buffer_size, or the
+        # batchsize, as set in reporter settings or by the default value.
+        self._item_limit = buffer_size
+        
         # create a stop
         self.stop = False
 
@@ -100,10 +113,49 @@ class EmonHubInterfacer(threading.Thread):
                         
                         self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
+            # Subscriber channels
+            for channel in self._settings["subchannels"]:
+                if channel in self._sub_channels:
+                    for i in range(0,len(self._sub_channels[channel])):
+                        frame = self._sub_channels[channel].pop(0)
+                        self.add(frame)
+                    
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
+            
+    def add(self, cargo):
+        """Append data to buffer.
+
+        data (list): node and values (eg: '[node,val1,val2,...]')
+
+        """
+
+        # Create a frame of data in "emonCMS format"
+        f = []
+        try:
+            f.append(cargo.timestamp)
+            f.append(cargo.nodeid)
+            for i in cargo.realdata:
+                f.append(i)
+            if cargo.rssi:
+                f.append(cargo.rssi)
+                
+            self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
+            
+        except:
+            self._log.warning("Failed to create emonCMS frame " + str(f))
+            
+        # self._log.debug(str(carg.ref) + " added to buffer =>"
+        #                 + " time: " + str(carg.timestamp)
+        #                 + ", node: " + str(carg.node)
+        #                 + ", data: " + str(carg.data))
+
+        # databuffer is of format:
+        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+        # [[1399980731, 10, 150, 3450 ...]]
+        self.buffer.storeItem(f)
 
     def read(self):
         """Read raw data from interface and pass for processing.
@@ -122,12 +174,89 @@ class EmonHubInterfacer(threading.Thread):
 
 
     def action(self):
-        """Action any interfacer tasks,
-        Specific version to be created for each interfacer
+        """
+
+        :return:
+        """
+
+        # pause output if 'pause' set to 'all' or 'out'
+        if 'pause' in self._settings \
+                and str(self._settings['pause']).lower() in ['all', 'out']:
+            return
+
+        # If an interval is set, check if that time has passed since last post
+        if int(self._settings['interval']) \
+                and time.time() - self._interval_timestamp < int(self._settings['interval']):
+            return
+        else:
+            # Then attempt to flush the buffer
+            self.flush()
+
+    def flush(self):
+        """Send oldest data in buffer, if any."""
+        
+        # Buffer management
+        # If data buffer not empty, send a set of values
+        if self.buffer.hasItems():
+            max_items = int(self._settings['batchsize'])
+            if max_items > self._item_limit:
+                max_items = self._item_limit
+            elif max_items <= 0:
+                return
+
+            databuffer = self.buffer.retrieveItems(max_items)
+            retrievedlength = len(databuffer)
+            if self._process_post(databuffer):
+                # In case of success, delete sample set from buffer
+                self.buffer.discardLastRetrievedItems(retrievedlength)
+                # log the time of last succesful post
+                self._interval_timestamp = time.time()
+
+    def _process_post(self, data):
+        """
+        To be implemented in subclass.
+
+        :return: True if data posted successfully and can be discarded
         """
         pass
 
+    def _send_post(self, post_url, post_body=None):
+        """
 
+        :param post_url:
+        :param post_body:
+        :return: the received reply if request is successful
+        """
+        """Send data to server.
+
+        data (list): node and values (eg: '[node,val1,val2,...]')
+        time (int): timestamp, time when sample was recorded
+
+        return True if data sent correctly
+
+        """
+
+        reply = ""
+        request = urllib2.Request(post_url, post_body)
+        try:
+            response = urllib2.urlopen(request, timeout=60)
+        except urllib2.HTTPError as e:
+            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
+                              str(e.code))
+        except urllib2.URLError as e:
+            self._log.warning(self.name + " couldn't send to server, URLError: " +
+                              str(e.reason))
+        except httplib.HTTPException:
+            self._log.warning(self.name + " couldn't send to server, HTTPException")
+        except Exception:
+            import traceback
+            self._log.warning(self.name + " couldn't send to server, Exception: " +
+                              traceback.format_exc())
+        else:
+            reply = response.read()
+        finally:
+            return reply
+            
     def _process_rx(self, cargo):
         """Process a frame of data
 
@@ -461,14 +590,9 @@ class EmonHubInterfacer(threading.Thread):
                 setting = self._defaults[key]
             if key in self._settings and self._settings[key] == setting:
                 continue
-            #self.set(key, setting)
-
-    #def set(self, key, setting):
-
-            #if key == 'pause' and str(setting).lower() in ['all', 'in', 'out', 'off']:
             elif key == 'pause' and str(setting).lower() in ['all', 'in', 'out', 'off']:
                 pass
-            elif key == 'interval' and str(setting).isdigit():
+            elif key in ['interval', 'batchsize'] and setting.isdigit():
                 pass
             elif key == 'nodeoffset' and str(setting).isdigit():
                 pass
@@ -488,10 +612,6 @@ class EmonHubInterfacer(threading.Thread):
                 pass
             elif key == 'subchannels':
                 pass
-            # elif key == 'rxchannels' and int(setting) >= 0 and int(setting) < 256:
-            #     pass
-            # elif key == 'txchannels' and int(setting) >= 0 and int(setting) < 256:
-            #     pass
             else:
                 self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue

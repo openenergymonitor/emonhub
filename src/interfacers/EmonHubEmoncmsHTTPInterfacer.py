@@ -5,6 +5,7 @@ import json
 import urllib2
 import httplib
 from emonhub_interfacer import EmonHubInterfacer
+import emonhub_buffer as ehb
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
@@ -13,88 +14,30 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         super(EmonHubEmoncmsHTTPInterfacer, self).__init__(name)
         
         self._name = name
-        
+
+        # add or alter any default settings for this reporter
+        self._defaults.update({'batchsize': 100,'interval': 30})
         self._settings = {
-            'subchannels':['ch1'],
-            'pubchannels':['ch2'],
-            
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
             'sendstatus': 0,
-            'sendinterval': 30
+            'interval': 30
         }
         
-        # Initialize message queue
-        self._pub_channels = {}
-        self._sub_channels = {}
+        # This line will stop the default values printing to logfile at start-up
+        self._settings.update(self._defaults)
         
-        self.lastsent = time.time()
-        self.lastsentstatus = time.time()
+        # set an absolute upper limit for number of items to process per post
+        self._item_limit = 250
+                    
+    def _process_post(self, databuffer):
+        """Send data to server."""
+
+        # databuffer is of format:
+        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+        # [[1399980731, 10, 150, 250 ...]]
         
-    def action(self):
-    
-        now = time.time()
-        
-        if (now-self.lastsent) > (int(self._settings['sendinterval'])):
-            self.lastsent = now
-            
-            # It might be better here to combine the output from all sub channels 
-            # into a single bulk post, most of the time there is only one sub channel
-            for channel in self._settings["subchannels"]:
-                if channel in self._sub_channels:
-
-                    # only try to prepare and send data if there is any
-                    if len(self._sub_channels[channel])>0:
-
-                        bulkdata = []
-
-                        for cargo in self._sub_channels[channel]:
-                            # Create a frame of data in "emonCMS format"
-                            f = []
-                            try:
-                                f.append(float(cargo.timestamp))
-                                f.append(cargo.nodeid)
-                                for i in cargo.realdata:
-                                    f.append(i)
-                                if cargo.rssi:
-                                    f.append(cargo.rssi)
-                                #self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-                            except:
-                                self._log.warning("Failed to create emonCMS frame " + str(f))
-
-                            bulkdata.append(f)
-
-                        # Get the length of the data to be sent
-                        bulkdata_length = len(bulkdata)
-
-                        if int(self._settings['senddata']):
-                            self._log.debug("Sending bulkdata, length: "+str(bulkdata_length))
-                            # Attempt to send the data
-                            success = self.bulkpost(bulkdata)
-                            self._log.debug("Sending bulkdata, success: "+str(success))
-                        else:
-                            success = True
-
-
-                        # if bulk post is successful delete the range posted
-                        if success:
-                            for i in range(0,bulkdata_length):
-                                self._sub_channels[channel].pop(0)
-                            #self._log.debug("Deleted sent data from queue")
-                            
-                        
-                        if int(self._settings['senddata']):
-                            self._log.debug("Current queue length: "+str(len(self._sub_channels[channel])))
-
-            
-        if (now-self.lastsentstatus)> (int(self._settings['sendinterval'])):
-            self.lastsentstatus = now
-            if int(self._settings['sendstatus']):
-                self.sendstatus()
-            
-    def bulkpost(self,databuffer):
-    
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
                 or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return False
@@ -131,42 +74,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
             return False
             
-    def _send_post(self, post_url, post_body=None):
-        """
-
-        :param post_url:
-        :param post_body:
-        :return: the received reply if request is successful
-        """
-        """Send data to server.
-
-        data (list): node and values (eg: '[node,val1,val2,...]')
-        time (int): timestamp, time when sample was recorded
-
-        return True if data sent correctly
-
-        """
-
-        reply = ""
-        request = urllib2.Request(post_url, post_body)
-        try:
-            response = urllib2.urlopen(request, timeout=60)
-        except urllib2.HTTPError as e:
-            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
-                              str(e.code))
-        except urllib2.URLError as e:
-            self._log.warning(self.name + " couldn't send to server, URLError: " +
-                              str(e.reason))
-        except httplib.HTTPException:
-            self._log.warning(self.name + " couldn't send to server, HTTPException")
-        except Exception:
-            import traceback
-            self._log.warning(self.name + " couldn't send to server, Exception: " +
-                              traceback.format_exc())
-        else:
-            reply = response.read()
-        finally:
-            return reply
             
     def sendstatus(self):
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
