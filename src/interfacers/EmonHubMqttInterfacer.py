@@ -47,6 +47,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             except:
                 self._log.info("Could not connect...")
                 time.sleep(1.0)
+            
         else:
             cargo = databuffer[0]
         
@@ -74,6 +75,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     
                     if result[0]==4:
                         self._log.info("Publishing error? returned 4")
+                        # return False
                     
                     varid += 1
                     
@@ -96,6 +98,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 
                 if result[0]==4:
                     self._log.info("Publishing error? returned 4")
+                    # return False
                     
                 # RSSI
                 topic = self._settings["node_format_basetopic"]+"rx/"+str(cargo.nodeid)+"/rssi"
@@ -106,8 +109,9 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 
                 if result[0]==4:
                     self._log.info("Publishing error? returned 4")
+                    # return False
                     
-            return True
+        return True
 
     def action(self):
         """
