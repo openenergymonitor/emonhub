@@ -31,7 +31,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # set an absolute upper limit for number of items to process per post
         self._item_limit = 250
                     
-    def _process_post(self, databuffer):
+    def _process_post(self, cargodatabuffer):
         """Send data to server."""
 
         # databuffer is of format:
@@ -41,6 +41,19 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
                 or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
             return False
+          
+        # Convert cargo based databuffer into emoncms format  
+        databuffer = []
+        for c in range(0,len(cargodatabuffer)):
+            cargo = cargodatabuffer[c]
+            f = []
+            f.append(cargo.timestamp)
+            f.append(cargo.nodeid)
+            for i in cargo.realdata:
+                f.append(i)
+                if cargo.rssi:
+                    f.append(cargo.rssi)
+            databuffer.append(f)
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
