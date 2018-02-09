@@ -17,12 +17,11 @@ import threading
 import urllib2
 import json
 import uuid
+import traceback
 
 import paho.mqtt.client as mqtt
 
 import emonhub_coder as ehc
-
-from pydispatch import dispatcher
 
 """class EmonHubInterfacer
 
@@ -32,6 +31,15 @@ This almost empty class is meant to be inherited by subclasses specific to
 their data source.
 
 """
+def log_exceptions_from_class_method(f):
+    def wrapper(*args):
+        self=args[0]
+        try:
+            return f(*args)
+        except:
+            self._log.warning("Exception caught in "+self.name+" thread. "+traceback.format_exc())
+            return
+    return wrapper
 
 class EmonHubInterfacer(threading.Thread):
 
@@ -48,8 +56,13 @@ class EmonHubInterfacer(threading.Thread):
         self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
                           'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"]}
+        
         self._settings = {}
 
+        # Initialize message queue
+        self._sub_channels = {}
+        self._pub_channels = {}
+        
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
@@ -61,37 +74,36 @@ class EmonHubInterfacer(threading.Thread):
         # create a stop
         self.stop = False
 
+    @log_exceptions_from_class_method
     def run(self):
         """
         Run the interfacer.
         Any regularly performed tasks actioned here along with passing received values
 
         """
-
         while not self.stop:
+
             # Read the input and process data if available
             rxc = self.read()
-            # if 'pause' in self._settings and \
-            #                 str.lower(self._settings['pause']) in ['all', 'in']:
-            #     pass
-            # else:
             if rxc:
                 rxc = self._process_rx(rxc)
                 if rxc:
                     for channel in self._settings["pubchannels"]:
                         self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                        dispatcher.send(channel, cargo=rxc)
+                       
+                        # Initialize channel if needed
+                        if not channel in self._pub_channels:
+                            self._pub_channels[channel] = []
+                            
+                        # Add cargo item to channel
+                        self._pub_channels[channel].append(rxc)
+                        
                         self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
             # Don't loop to fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
-
-    # Subscribed channels entry
-    def receiver(self, cargo):
-        txc = self._process_tx(cargo)
-        self.send(txc)
 
     def read(self):
         """Read raw data from interface and pass for processing.
@@ -465,8 +477,12 @@ class EmonHubInterfacer(threading.Thread):
             elif key == 'scale' and (int(setting == 1) or not (int(setting % 10))):
                 pass
             elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
+                if str(setting).lower()=="true": setting = True
+                else: setting = False
                 pass
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
+                if str(setting).lower()=="true": setting = True
+                else: setting = False
                 pass
             elif key == 'pubchannels':
                 pass
@@ -481,11 +497,6 @@ class EmonHubInterfacer(threading.Thread):
                 continue
             self._settings[key] = setting
             self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
-
-            # Is there a better place to put this?
-            for channel in self._settings["subchannels"]:
-                dispatcher.connect(self.receiver, channel)
-                self._log.debug("Interfacer: Subscribed to channel' : " + str(channel))
 
 
 """class EmonHubInterfacerInitError

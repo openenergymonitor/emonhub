@@ -1,7 +1,5 @@
 
 import time
-from pydispatch import dispatcher
-
 import datetime
 import Cargo
 import EmonHubSerialInterfacer as ehi
@@ -49,6 +47,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
+        
         self._ser.flushInput()
 
         # Initialize settings
@@ -66,7 +65,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
-
+            
     def read(self):
         """Read data from serial port and process if complete line received.
 
@@ -146,12 +145,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         return c
 
-        # # unix timestamp
-        # t = round(time.time(), 2)
-        #
-        # # Process data frame
-        # self._r	xq.put(self._process_rx(f, t))
-
     def set(self, **kwargs):
         """Send configuration parameters to the "Jee" type device through COM port
 
@@ -221,26 +214,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
     def send (self, cargo):
-        """
-        """
-        #self._process_tx(self._txq.get())
-        #self._rxq.put( self._process_rx(f, t))
-        #dest = f[1]
-        #packet = f[2:-1]
-        #self.send_packet(packet, dest)
-        # TODO amalgamate into 1 send
 
-    #def send_packet(self, packet, id=0, cmd="s"):
-        """
-
-        """
         f = cargo
         cmd = "s"
 
-        # # If the use of acks gets implemented
-        # ack = False
-        # if ack:
-        #     cmd = "a"
         if self.getName() in f.encoded:
             data = f.encoded[self.getName()]
         else:
@@ -257,4 +234,3 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
         self._ser.write(payload)
-

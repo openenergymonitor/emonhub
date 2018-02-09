@@ -1,16 +1,18 @@
 import serial
 import time
 import Cargo
+from pydispatch import dispatcher
+import emonhub_coder as ehc
 import emonhub_interfacer as ehi
 
-"""class EmonhubSerialInterfacer
+"""class EmonHubTx3eInterfacer
 
 Monitors the serial port for data
 
 """
 
 
-class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
+class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
@@ -20,7 +22,7 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__(name)
+        super(EmonHubTx3eInterfacer, self).__init__(name)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
@@ -60,7 +62,7 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
     def read(self):
         """Read data from serial port and process if complete line received.
 
-        Return data as a list: [NodeID, val1, val2]
+        Return data as a list: [val1, val2,...]
         
         """
 
@@ -72,15 +74,20 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
             return
 
         # Remove CR,LF
-        f = self._rx_buf[:-2]
-
-        # Reset buffer
-        self._rx_buf = ''
+        f = self._rx_buf[:-2].strip()
 
         # Create a Payload object
         c = Cargo.new_cargo(rawdata=f)
 
-        f = f.split()
+        # Reset buffer
+        self._rx_buf = ''
+
+        # Parse the ESP format string
+        payload=[]
+        if f.startswith('ct1:'):
+          for item in f.split(',')[:]:
+            payload.append(item.split(':')[1])
+        f=payload
 
         if int(self._settings['nodeoffset']):
             c.nodeid = int(self._settings['nodeoffset'])
