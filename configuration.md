@@ -24,7 +24,7 @@ Nodes holds the decoder configuration for rfm12/69 node data which are sent as b
         #######################      emonhub.conf     #########################
         #######################################################################
         ### emonHub configuration file, for info see documentation:
-        ### http://github.com/openenergymonitor/emonhub/blob/master/configuration.md
+        ### https://github.com/openenergymonitor/emonhub/blob/emon-pi/conf/emonhub.conf
         #######################################################################
         #######################    emonHub  settings    #######################
         #######################################################################
@@ -187,6 +187,40 @@ You can create multiple of these sections to send data to multiple emoncms insta
 
 This time, the API key will be the API key from your account at emoncms.example.com.
 
+### d.) Socket Interfacer
+
+The EmonHub socket interfacer is a particularly useful interfacer for inputing data from a range of sources. e.g a script monitoring server status where you wish to post the result to both a local instance of emoncms and a remote instance of emoncms alongside other data from other sources such as rfm node data.
+
+As an example the following python script will post a single line of data values on node 98 to an emonhub instance running locally and listening on port 8080:
+
+    import socket, time
+    s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    s.connect(('localhost', 8080))
+    s.sendall('98 3.8 1.6 5.2 80.3\r\n')
+    
+The following emonhub.conf interfacer definition will listen on the choosen socket and forward the data on the ToEmonCMS channel:
+
+    [[mysocketlistener]]
+            Type = EmonHubSocketInterfacer
+            [[[init_settings]]]
+                    port_nb = 8080
+            [[[runtimesettings]]]
+                    pubchannels = ToEmonCMS,
+                    
+#### **1. Timestamped data**
+
+To set a timestamp for the posted data add the timestamped property to the emonhub.conf runtimesettings section:
+
+            [[[runtimesettings]]]
+                    pubchannels = ToEmonCMS,
+                    timestamped = True
+                    
+The python client example needs to include the timestamp e.g:
+
+    s.sendall(str(time.time())+' 98 3.8 1.6 5.2 80.3\r\n')
+
+
+                    
 ***
 
 # 3. 'nodes' Configuration
@@ -353,9 +387,7 @@ The following lists the standard node decoders for recent versions of the EmonPi
 
 If you upload the firmware yourself to any of these nodes and wish to have the data decoded with names, units and scaled correctly these are the decoders for the standard firmwares. The node decoders are also included at the top of each firmware file for reference.
 
-### EmonPi: emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino, v2.1+
-
-Firmware location: [emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino](https://github.com/openenergymonitor/emonpi/blob/master/Atmega328/emonPi_RFM69CW_RF12Demo_DiscreteSampling/emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino)
+### EmonPi:[Firmware location](https://github.com/openenergymonitor/emonpi/)
 
 Copied here for reference:
 
@@ -371,9 +403,7 @@ Copied here for reference:
             units = W,W,W,V,C,C,C,C,C,C,p
 ```
 
-### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v2.3+
-
-Firmware location: [emonTxV3_4_DiscreteSampling.ino](https://github.com/openenergymonitor/emonTxFirmware/blob/master/emonTxV3/RFM/emonTxV3.4/emonTxV3_4_DiscreteSampling/emonTxV3_4_DiscreteSampling.ino)
+### EmonTx v3: [Firmware location](https://github.com/openenergymonitor/emonTx3)
 
 Node ID when DIP switch1 is off = 8, node ID when DIP switch1 is on is 7
 
@@ -391,7 +421,7 @@ Copied here for reference:
            units =W,W,W,W,V,C,C,C,C,C,C,p
 ```
 
-### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6+
+### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6+ [Firmware Location](https://github.com/openenergymonitor/emonTxFirmware)
 
 Can be on either nodeid 10 or 9
 
@@ -405,7 +435,7 @@ Can be on either nodeid 10 or 9
            scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 #Firmware V1.6
            units =W,W,W,W,V,C,C,C,C,C,C,p
 
-### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, <v1.4
+### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, <v1.4:
 
     [[10]]
         nodename = emonTx_1
@@ -417,9 +447,7 @@ Can be on either nodeid 10 or 9
            scales = 1,1,1,1,0.01,0.1
            units =W,W,W,W,V,C
 
-### EmonTH, emonTH_DHT22_DS18B20_RFM69CW_Pulse.ino, v2.6+
-
-Firmware location: [emonTH_DHT22_DS18B20_RFM69CW_Pulse.ino](https://github.com/openenergymonitor/emonTH/blob/master/emonTH_DHT22_DS18B20_RFM69CW_Pulse/emonTH_DHT22_DS18B20_RFM69CW_Pulse.ino)
+### EmonTH V2: [Firmware location](https://github.com/openenergymonitor/emonTH2/)
 
 Standard nodeid's: 23, 24, 25 & 26 depending on DIP switch positions:
 
@@ -433,9 +461,9 @@ Standard nodeid's: 23, 24, 25 & 26 depending on DIP switch positions:
            scales = 0.1,0.1,0.1,0.1,1
            units = C,C,%,V,p
 
-### EmonTH, emonTH_DHT22_DS18B20_RFM69CW.ino v1.5 -> v1.6.1
+### EmonTH V1, emonTH_DHT22_DS18B20_RFM69CW.ino v1.5 -> v1.6.1
 
-Firmware location: [emonTH_DHT22_DS18B20_RFM69CW.ino](https://github.com/openenergymonitor/emonTH/blob/master/emonTH_DHT22_DS18B20_RFM69CW/emonTH_DHT22_DS18B20_RFM69CW.ino)
+emonTH V1 [Firmware location](https://github.com/openenergymonitor/emonTH)
 
 Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
 
@@ -449,9 +477,7 @@ Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
            scales = 0.1,0.1,0.1,0.1
            units = C,C,%,V
 
-### EmonTx Shield
-
-Firmware location: [Shield_CT1234_Voltage.ino](https://github.com/openenergymonitor/emonTxFirmware/blob/master/emonTxShield/Shield_CT1234_Voltage/Shield_CT1234_Voltage.ino)
+### EmonTx Shield [Firmware location]https://github.com/openenergymonitor/emontx-shield)
 
     [[6]]
         nodename = emonTxShield
