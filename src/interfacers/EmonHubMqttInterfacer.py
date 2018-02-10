@@ -11,17 +11,13 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     def __init__(self, name, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883):
         # Initialization
         super(EmonHubMqttInterfacer, self).__init__(name)
-        
-        self._log.info(str(name)+" Init mqtt_host="+str(mqtt_host)+" mqtt_port="+str(mqtt_port)+ " mqtt_user="+str(mqtt_user))
-        self._name = name
-        self._host = mqtt_host
-        self._port = mqtt_port
-        self._user = mqtt_user
-        self._passwd = mqtt_passwd
-        self._connected = False
 
-        self._defaults.update({'batchsize': 1,'interval': 0})
-        self._settings = {
+        # set the default setting values for this interfacer
+        self._defaults.update({'datacode': '0'})
+        self._settings.update(self._defaults)
+        
+        # Add any MQTT specific settings
+        self._mqtt_settings = {
             # emonhub/rx/10/values format - default emoncms nodes module
             'node_format_enable': 1,
             'node_format_basetopic': 'emonhub/',
@@ -30,8 +26,17 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             'nodevar_format_enable': 0,
             'nodevar_format_basetopic': "nodes/"
         }
-        self._settings.update(self._defaults)
-                    
+        self._settings.update(self._mqtt_settings)
+        
+        self.init_settings.update({
+            'mqtt_host':mqtt_host, 
+            'mqtt_port':mqtt_port,
+            'mqtt_user':mqtt_user,
+            'mqtt_passwd':mqtt_passwd
+        })
+
+        self._connected = False          
+                  
         self._mqttc = mqtt.Client()
         self._mqttc.on_connect = self.on_connect
         self._mqttc.on_disconnect = self.on_disconnect
@@ -42,8 +47,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if not self._connected:
             self._log.info("Connecting to MQTT Server")
             try:
-                self._mqttc.username_pw_set(self._user, self._passwd)
-                self._mqttc.connect(self._host, self._port, 60)
+                self._mqttc.username_pw_set(self.init_settings['mqtt_user'], self.init_settings['mqtt_passwd'])
+                self._mqttc.connect(self.init_settings['mqtt_host'], self.init_settings['mqtt_port'], 60)
             except:
                 self._log.info("Could not connect...")
                 time.sleep(1.0)
@@ -190,7 +195,32 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                                 self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
                                 
     def set(self, **kwargs):
-        for key,setting in self._settings.iteritems():
-            if key in kwargs.keys():
-                # replace default
-                self._settings[key] = kwargs[key]
+
+        super (EmonHubMqttInterfacer, self).set(**kwargs)
+
+        for key, setting in self._mqtt_settings.iteritems():
+            #valid = False
+            if not key in kwargs.keys():
+                setting = self._mqtt_settings[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'node_format_enable':
+                self._log.info("Setting " + self.name + " node_format_enable: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'node_format_basetopic':
+                self._log.info("Setting " + self.name + " node_format_basetopic: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'nodevar_format_enable':
+                self._log.info("Setting " + self.name + " nodevar_format_enable: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'nodevar_format_basetopic':
+                self._log.info("Setting " + self.name + " nodevar_format_basetopic: " + setting)
+                self._settings[key] = setting
+                continue
+            else:
+                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))

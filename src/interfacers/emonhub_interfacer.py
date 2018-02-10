@@ -55,10 +55,10 @@ class EmonHubInterfacer(threading.Thread):
         self.setName(name)
 
         # Initialise settings
-        self.init_settings = {}
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
                           'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"], 'batchsize': '1'}
         
+        self.init_settings = {}
         self._settings = {}
 
         # Initialize message queue
