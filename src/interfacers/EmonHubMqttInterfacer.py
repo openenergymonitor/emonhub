@@ -9,6 +9,10 @@ import Cargo
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883):
+        """Initialize interfacer
+
+        """
+        
         # Initialization
         super(EmonHubMqttInterfacer, self).__init__(name)
 
@@ -195,7 +199,12 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                                 self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
                                 
     def set(self, **kwargs):
+        """
 
+        :param kwargs:
+        :return:
+        """
+        
         super (EmonHubMqttInterfacer, self).set(**kwargs)
 
         for key, setting in self._mqtt_settings.iteritems():
