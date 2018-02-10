@@ -49,10 +49,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             f = []
             f.append(cargo.timestamp)
             f.append(cargo.nodeid)
+            
+            # Data values
             for i in cargo.realdata:
                 f.append(i)
-                if cargo.rssi:
-                    f.append(cargo.rssi)
+            # RSSI
+            if cargo.rssi:
+               f.append(cargo.rssi)
+
             databuffer.append(f)
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
