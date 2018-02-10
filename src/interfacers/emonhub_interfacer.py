@@ -215,7 +215,9 @@ class EmonHubInterfacer(threading.Thread):
                 # log the time of last succesful post
                 self._interval_timestamp = time.time()
             else:
-                self._interval_timestamp = time.time()
+                # slow down retry rate in the case where the last attempt failed
+                # stops continuous retry attempts filling up the log
+                self._interval_timestamp = time.time() 
             
 
     def _process_post(self, data):
