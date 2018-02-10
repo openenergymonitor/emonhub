@@ -16,27 +16,22 @@ import logging.handlers
 import signal
 import argparse
 import pprint
+import glob, os
 
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
 
-import interfacers.EmonHubSerialInterfacer
-import interfacers.EmonHubJeeInterfacer
-import interfacers.EmonHubSocketInterfacer
-import interfacers.EmonHubPacketGenInterfacer
-import interfacers.EmonHubMqttInterfacer
-import interfacers.EmonHubEmoncmsHTTPInterfacer
+# seems to need this to start it off
+import interfacers
 
-import interfacers.EmonHubSmilicsInterfacer
-import interfacers.EmonHubVEDirectInterfacer
-import interfacers.EmonHubGraphiteInterfacer
-import interfacers.EmonHubBMWInterfacer
-import interfacers.EmonHubTx3eInterfacer
-import interfacers.EmonModbusTcpInterfacer
-import interfacers.EmonFroniusModbusTcpInterfacer
-# import interfacers.EmonHubSMASolarInterfacer
+# scan interfacers directory and import all interfacers
+for f in glob.glob(os.path.dirname(__file__)+"/interfacers/*.py"):
+    name = f.replace(".py","").replace("src/interfacers/","")
+    if name!="__init__": 
+        __import__('interfacers.'+name)
 
+# next step how to dynamically do the following    
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
 ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
 ehi.EmonHubSocketInterfacer = interfacers.EmonHubSocketInterfacer.EmonHubSocketInterfacer
@@ -51,7 +46,7 @@ ehi.EmonHubBMWInterfacer = interfacers.EmonHubBMWInterfacer.EmonHubBMWInterfacer
 ehi.EmonHubTx3eInterfacer = interfacers.EmonHubTx3eInterfacer.EmonHubTx3eInterfacer
 ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
 ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
-# ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
+ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
 
 """class EmonHub
 

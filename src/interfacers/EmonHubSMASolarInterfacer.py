@@ -4,8 +4,11 @@
 # See LICENCE and README file for details
 
 __author__ = 'Stuart Pittaway'
-
-import bluetooth
+try:
+    import bluetooth
+except ImportError:
+    pass
+    
 import datetime
 import time
 import sys
