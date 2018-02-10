@@ -23,15 +23,29 @@ import emonhub_coder as ehc
 import emonhub_interfacer as ehi
 
 # seems to need this to start it off
-import interfacers
+# import interfacers
 
 # scan interfacers directory and import all interfacers
-for f in glob.glob(os.path.dirname(__file__)+"/interfacers/*.py"):
-    name = f.replace(".py","").replace("src/interfacers/","")
-    if name!="__init__": 
-        __import__('interfacers.'+name)
+# for f in glob.glob(os.path.dirname(__file__)+"/interfacers/*.py"):
+#     name = f.replace(".py","").replace("src/interfacers/","")
+#     if name!="__init__": 
+#         __import__('interfacers.'+name)
+        
+import interfacers.EmonHubSerialInterfacer
+import interfacers.EmonHubJeeInterfacer
+import interfacers.EmonHubSocketInterfacer
+import interfacers.EmonHubPacketGenInterfacer
+import interfacers.EmonHubMqttInterfacer
+import interfacers.EmonHubEmoncmsHTTPInterfacer
+import interfacers.EmonHubSmilicsInterfacer
+import interfacers.EmonHubVEDirectInterfacer
+import interfacers.EmonHubGraphiteInterfacer
+import interfacers.EmonHubBMWInterfacer
+import interfacers.EmonHubTx3eInterfacer
+import interfacers.EmonHubSMASolarInterfacer
+import interfacers.EmonModbusTcpInterfacer
+import interfacers.EmonFroniusModbusTcpInterfacer
 
-# next step how to dynamically do the following    
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
 ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
 ehi.EmonHubSocketInterfacer = interfacers.EmonHubSocketInterfacer.EmonHubSocketInterfacer
