@@ -17,22 +17,9 @@ import signal
 import argparse
 import pprint
 
-try:
-      import pymodbus
-      pymodbus_found = True
-except ImportError:
-      pymodbus_found = False
-
-try:
-      import bluetooth
-      bluetooth_found = True
-except ImportError:
-      bluetooth_found = False
-
-
 import emonhub_setup as ehs
-import interfacers.emonhub_interfacer as ehi
 import emonhub_coder as ehc
+import emonhub_interfacer as ehi
 
 import interfacers.EmonHubSerialInterfacer
 import interfacers.EmonHubJeeInterfacer
@@ -40,18 +27,15 @@ import interfacers.EmonHubSocketInterfacer
 import interfacers.EmonHubPacketGenInterfacer
 import interfacers.EmonHubMqttInterfacer
 import interfacers.EmonHubEmoncmsHTTPInterfacer
+
 import interfacers.EmonHubSmilicsInterfacer
 import interfacers.EmonHubVEDirectInterfacer
 import interfacers.EmonHubGraphiteInterfacer
 import interfacers.EmonHubBMWInterfacer
 import interfacers.EmonHubTx3eInterfacer
-
-if bluetooth_found:
-    import interfacers.EmonHubSMASolarInterfacer
-
-if pymodbus_found:
-    import interfacers.EmonModbusTcpInterfacer
-    import interfacers.EmonFroniusModbusTcpInterfacer
+import interfacers.EmonModbusTcpInterfacer
+import interfacers.EmonFroniusModbusTcpInterfacer
+# import interfacers.EmonHubSMASolarInterfacer
 
 ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
 ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
@@ -59,18 +43,15 @@ ehi.EmonHubSocketInterfacer = interfacers.EmonHubSocketInterfacer.EmonHubSocketI
 ehi.EmonHubPacketGenInterfacer = interfacers.EmonHubPacketGenInterfacer.EmonHubPacketGenInterfacer
 ehi.EmonHubMqttInterfacer = interfacers.EmonHubMqttInterfacer.EmonHubMqttInterfacer
 ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.EmonHubEmoncmsHTTPInterfacer
+
 ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
 ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
 ehi.EmonHubGraphiteInterfacer = interfacers.EmonHubGraphiteInterfacer.EmonHubGraphiteInterfacer
 ehi.EmonHubBMWInterfacer = interfacers.EmonHubBMWInterfacer.EmonHubBMWInterfacer
 ehi.EmonHubTx3eInterfacer = interfacers.EmonHubTx3eInterfacer.EmonHubTx3eInterfacer
-
-if bluetooth_found:
-    ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
-
-if pymodbus_found:
-    ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
-    ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
+ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
+ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
+# ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
 
 """class EmonHub
 
