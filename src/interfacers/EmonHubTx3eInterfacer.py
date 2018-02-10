@@ -93,8 +93,9 @@ class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
             c.nodeid = int(self._settings['nodeoffset'])
             c.realdata = f
         else:
-            c.nodeid = int(f[0])
-            c.realdata = f[1:]
+            if len(f)>0:
+                c.nodeid = int(f[0])
+                c.realdata = f[1:]
 
         return c
 
