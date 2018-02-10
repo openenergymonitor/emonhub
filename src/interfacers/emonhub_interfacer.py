@@ -214,6 +214,9 @@ class EmonHubInterfacer(threading.Thread):
                 self.buffer.discardLastRetrievedItems(retrievedlength)
                 # log the time of last succesful post
                 self._interval_timestamp = time.time()
+            else:
+                self._interval_timestamp = time.time()
+            
 
     def _process_post(self, data):
         """
