@@ -13,20 +13,21 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # Initialization
         super(EmonHubEmoncmsHTTPInterfacer, self).__init__(name)
         
-        self._name = name
-
         # add or alter any default settings for this reporter
+        # defaults previously defined in inherited emonhub_interfacer
+        # here we are just changing the batchsize from 1 to 100
+        # and the interval from 0 to 30
         self._defaults.update({'batchsize': 100,'interval': 30})
-        self._settings = {
+        # This line will stop the default values printing to logfile at start-up
+        self._settings.update(self._defaults)
+        
+        # interfacer specific settings
+        self._cms_settings = {
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0,
-            'interval': 30
+            'sendstatus': 0
         }
-        
-        # This line will stop the default values printing to logfile at start-up
-        self._settings.update(self._defaults)
         
         # set an absolute upper limit for number of items to process per post
         self._item_limit = 250
@@ -107,7 +108,50 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         reply = self._send_post(post_url,None)
             
     def set(self, **kwargs):
-        for key,setting in self._settings.iteritems():
-            if key in kwargs.keys():
-                # replace default
-                self._settings[key] = kwargs[key]
+        """
+
+        :param kwargs:
+        :return:
+        """
+
+        super (EmonHubEmoncmsHTTPInterfacer, self).set(**kwargs)
+
+        for key, setting in self._cms_settings.iteritems():
+            #valid = False
+            if not key in kwargs.keys():
+                setting = self._cms_settings[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'apikey':
+                if str.lower(setting[:4]) == 'xxxx':
+                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    pass
+                elif str.__len__(setting) == 32 :
+                    self._log.info("Setting " + self.name + " apikey: set")
+                    pass
+                elif setting == "":
+                    self._log.info("Setting " + self.name + " apikey: null")
+                    pass
+                else:
+                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    continue
+                self._settings[key] = setting
+                # Next line will log apikey if uncommented (privacy ?)
+                #self._log.debug(self.name + " apikey: " + str(setting))
+                continue
+            elif key == 'url' and setting[:4] == "http":
+                self._log.info("Setting " + self.name + " url: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'senddata':
+                self._log.info("Setting " + self.name + " senddata: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'sendstatus':
+                self._log.info("Setting " + self.name + " sendstatus: " + setting)
+                self._settings[key] = setting
+                continue
+            else:
+                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
