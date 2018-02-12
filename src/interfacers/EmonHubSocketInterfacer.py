@@ -1,9 +1,7 @@
 import socket
 import select
-import Cargo
-
-from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
+import Cargo
 
 """class EmonHubSocketInterfacer
 

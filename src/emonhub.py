@@ -21,46 +21,18 @@ import glob, os
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
+from interfacers import *
 
-# seems to need this to start it off
-# import interfacers
+# this namespace and path
+namespace = sys.modules[__name__]
+path = os.path.dirname(__file__)
 
 # scan interfacers directory and import all interfacers
-# for f in glob.glob(os.path.dirname(__file__)+"/interfacers/*.py"):
-#     name = f.replace(".py","").replace("src/interfacers/","")
-#     if name!="__init__": 
-#         __import__('interfacers.'+name)
-        
-import interfacers.EmonHubSerialInterfacer
-import interfacers.EmonHubJeeInterfacer
-import interfacers.EmonHubSocketInterfacer
-import interfacers.EmonHubPacketGenInterfacer
-import interfacers.EmonHubMqttInterfacer
-import interfacers.EmonHubEmoncmsHTTPInterfacer
-import interfacers.EmonHubSmilicsInterfacer
-import interfacers.EmonHubVEDirectInterfacer
-import interfacers.EmonHubGraphiteInterfacer
-import interfacers.EmonHubBMWInterfacer
-import interfacers.EmonHubTx3eInterfacer
-# import interfacers.EmonHubSMASolarInterfacer
-# import interfacers.EmonModbusTcpInterfacer
-# import interfacers.EmonFroniusModbusTcpInterfacer
-
-ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
-ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
-ehi.EmonHubSocketInterfacer = interfacers.EmonHubSocketInterfacer.EmonHubSocketInterfacer
-ehi.EmonHubPacketGenInterfacer = interfacers.EmonHubPacketGenInterfacer.EmonHubPacketGenInterfacer
-ehi.EmonHubMqttInterfacer = interfacers.EmonHubMqttInterfacer.EmonHubMqttInterfacer
-ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.EmonHubEmoncmsHTTPInterfacer
-
-ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
-ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
-ehi.EmonHubGraphiteInterfacer = interfacers.EmonHubGraphiteInterfacer.EmonHubGraphiteInterfacer
-ehi.EmonHubBMWInterfacer = interfacers.EmonHubBMWInterfacer.EmonHubBMWInterfacer
-ehi.EmonHubTx3eInterfacer = interfacers.EmonHubTx3eInterfacer.EmonHubTx3eInterfacer
-# ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
-# ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
-# ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
+for f in glob.glob(path+"/interfacers/*.py"):
+    name = f.replace(".py","").replace(path+"/interfacers/","")
+    if name!="__init__":
+        # print "Loading: "+name
+        setattr(ehi,name,getattr(getattr(namespace,name),name))
 
 """class EmonHub
 
