@@ -6,8 +6,9 @@
 __author__ = 'Stuart Pittaway'
 try:
     import bluetooth
+    bluetooth_found = True
 except ImportError:
-    pass
+    bluetooth_found = False
     
 import time
 import sys
@@ -186,6 +187,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
     #Override base read code from emonhub_interfacer
     def read(self):
         """Read data from inverter and process"""
+        if not bluetooth_found: return False
 
         #Wait until we are ready to read from inverter
         if (self._is_it_time() == False):

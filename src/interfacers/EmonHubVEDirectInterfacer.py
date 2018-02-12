@@ -117,9 +117,9 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
             self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
+            s = False
             # raise EmonHubInterfacerInitError('Could not open COM port %s' % com_port)
-        else:
-            return s
+        return s
 
     def parse_package(self,data):
         """
@@ -128,7 +128,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         """
         clean_data = "%s"%self._settings['nodeoffset']
         for key in self._extract:
-            if data.has_key(key):
+            if key in data:
                     #Emonhub doesn't like strings so we convert them to ints
                 tempval = 0
                 try:
@@ -165,6 +165,8 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
 
         """
+        
+        if not self._ser: return False
 
         # Read serial RX
         now = time.time()
