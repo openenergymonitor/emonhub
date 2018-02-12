@@ -46,8 +46,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             s.listen(1)
         except socket.error as e:
             self._log.error(e)
-            raise EmonHubInterfacerInitError('Could not open port %s' %
-                                           port_nb)
+            # raise EmonHubInterfacerInitError('Could not open port %s' % port_nb)
         else:
             return s
 
