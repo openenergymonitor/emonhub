@@ -1,10 +1,7 @@
 """class EmonHubGraphiteInterfacer
 """
 import time
-import json
 import socket
-import httplib
-from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubGraphiteInterfacer(EmonHubInterfacer):

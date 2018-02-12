@@ -1,7 +1,5 @@
 import time
-import datetime
 import Cargo
-import logging
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
 import emonhub_coder

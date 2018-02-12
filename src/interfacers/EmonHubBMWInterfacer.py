@@ -8,18 +8,13 @@
 __author__ = 'Stuart Pittaway'
 
 import time
-import argparse
 import sys
-import string
 import traceback
-import datetime
-from datetime import datetime
-import time
 import Cargo
 import json
 import requests
 import os.path
-
+from datetime import datetime
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubBMWInterfacer

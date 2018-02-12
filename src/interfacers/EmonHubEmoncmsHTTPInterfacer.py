@@ -2,10 +2,7 @@
 """
 import time
 import json
-import urllib2
-import httplib
 from emonhub_interfacer import EmonHubInterfacer
-import emonhub_buffer as ehb
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 

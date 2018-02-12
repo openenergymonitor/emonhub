@@ -1,9 +1,7 @@
 import serial
 import time
 import Cargo
-
-import emonhub_coder as ehc
-import emonhub_interfacer as ehi
+from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubTx3eInterfacer
 
@@ -12,7 +10,7 @@ Monitors the serial port for data
 """
 
 
-class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
+class EmonHubTx3eInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer

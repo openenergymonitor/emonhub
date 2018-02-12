@@ -9,18 +9,14 @@ try:
 except ImportError:
     pass
     
-import datetime
 import time
 import sys
-import string
 import traceback
-import re
 
 import Cargo
 
 from time import sleep
 from emonhub_interfacer import EmonHubInterfacer
-from collections import namedtuple
 from smalibrary import SMASolar_library
 
 """class EmonHubSMASolarInterfacer

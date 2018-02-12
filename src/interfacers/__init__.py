@@ -8,7 +8,7 @@ __all__ = [
   
   "EmonHubTx3eInterfacer",
   "EmonHubVEDirectInterfacer",
-  "EmonHubSmilicsInterfacer",
+  # "EmonHubSmilicsInterfacer",
   "EmonHubSMASolarInterfacer",
   "EmonHubGraphiteInterfacer",
   "EmonHubBMWInterfacer",

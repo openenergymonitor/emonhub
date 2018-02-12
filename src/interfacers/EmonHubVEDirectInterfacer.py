@@ -1,7 +1,7 @@
 import time
 import serial
 import Cargo
-import emonhub_interfacer as ehi
+from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonhubSerialInterfacer
 
@@ -10,7 +10,7 @@ Monitors the serial port for data
 """
 
 
-class EmonHubVEDirectInterfacer(ehi.EmonHubInterfacer):
+class EmonHubVEDirectInterfacer(EmonHubInterfacer):
 
     (WAIT_HEADER, IN_KEY, IN_VALUE, IN_CHECKSUM) = range(4)
 
