@@ -56,7 +56,7 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialise settings
         self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
-                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':["ch1"],'subchannels':["ch2"], 'batchsize': '1'}
+                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':[],'subchannels':[], 'batchsize': '1'}
         
         self.init_settings = {}
         self._settings = {}
@@ -96,22 +96,24 @@ class EmonHubInterfacer(threading.Thread):
         """
         while not self.stop:
 
-            # Read the input and process data if available
-            rxc = self.read()
-            if rxc:
-                rxc = self._process_rx(rxc)
+            # Only read if there is a pub channel defined for the interfacer
+            if len(self._settings["pubchannels"]):
+                # Read the input and process data if available
+                rxc = self.read()
                 if rxc:
-                    for channel in self._settings["pubchannels"]:
-                        self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                       
-                        # Initialize channel if needed
-                        if not channel in self._pub_channels:
-                            self._pub_channels[channel] = []
+                    rxc = self._process_rx(rxc)
+                    if rxc:
+                        for channel in self._settings["pubchannels"]:
+                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                           
+                            # Initialize channel if needed
+                            if not channel in self._pub_channels:
+                                self._pub_channels[channel] = []
+                                
+                            # Add cargo item to channel
+                            self._pub_channels[channel].append(rxc)
                             
-                        # Add cargo item to channel
-                        self._pub_channels[channel].append(rxc)
-                        
-                        self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
             # Subscriber channels
             for channel in self._settings["subchannels"]:
