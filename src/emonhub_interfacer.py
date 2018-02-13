@@ -135,19 +135,19 @@ class EmonHubInterfacer(threading.Thread):
         """
 
         # Create a frame of data in "emonCMS format"
-        # f = []
-        # try:
-        #    f.append(cargo.timestamp)
-        #    f.append(cargo.nodeid)
-        #    for i in cargo.realdata:
-        #        f.append(i)
-        #    if cargo.rssi:
-        #        f.append(cargo.rssi)
-        #        
-        #    self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
+        f = []
+        try:
+            f.append(cargo.timestamp)
+            f.append(cargo.nodeid)
+            for i in cargo.realdata:
+                f.append(i)
+            if cargo.rssi:
+                f.append(cargo.rssi)
+                
+            # self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
             
-        # except:
-        #    self._log.warning("Failed to create emonCMS frame " + str(f))
+        except:
+            self._log.warning("Failed to create emonCMS frame " + str(f))
             
         # self._log.debug(str(carg.ref) + " added to buffer =>"
         #                 + " time: " + str(carg.timestamp)
@@ -158,9 +158,9 @@ class EmonHubInterfacer(threading.Thread):
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 3450 ...]]
         
-        # Pass full cargo item:
-        # names required for MQTT interfacer and potentially future HTTP interfacer
-        self.buffer.storeItem(cargo)
+        # datauffer format can be overwritten by interfacer
+        
+        self.buffer.storeItem(f)
 
     def read(self):
         """Read raw data from interface and pass for processing.

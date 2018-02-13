@@ -67,26 +67,44 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
         
         return c
 
-    def _process_post(self, cargodatabuffer):
+    def add(self, cargo):
+        """Append data to buffer.
+        
+          format: {"emontx":{"power1":100,"power2":200,"power3":300}}
+          
+        """
+        
+        nodename = str(cargo.nodeid)
+        if cargo.nodename: nodename = cargo.nodename
+        
+        f = {}
+        f['node'] = nodename
+        f['data'] = {}
+                        
+        for i in range(0,len(cargo.realdata)):
+            name = str(i+1)
+            if i<len(cargo.names):
+                name = cargo.names[i]
+            value = cargo.realdata[i]
+            f['data'][name] = value
+        
+        if cargo.rssi:
+            f['data']['rssi'] = cargo.rssi
+        
+        self.buffer.storeItem(f)
+        
+    def _process_post(self, databuffer):
         """Send data to server/broker or other output
         
         """
         
-        for c in range(0,len(cargodatabuffer)):
-            cargo = cargodatabuffer[c]
+        for i in range(0,len(databuffer)):
+            frame = databuffer[i]
             
-            # Example of producing key:value pairs
-            # from the names and realdata cargo properties
-            node_data = {}
-            for i in range(0,len(cargo.realdata)):
-                if i<len(cargo.names):
-                    key = cargo.names[i]
-                    value = cargo.realdata[i]
-                    node_data[key] = value
             
             # Here we might typically publish or post the data
             # via MQTT, HTTP a socket or other output
-            self._log.debug("node_data = "+json.dumps(node_data))
+            self._log.debug("node = "+frame['node']+" node_data = "+json.dumps(frame['data']))
             
             
             # We could check for successful data receipt here 

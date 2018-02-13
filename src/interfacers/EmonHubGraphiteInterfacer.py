@@ -26,31 +26,53 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         # set an absolute upper limit for number of items to process per post
         self._item_limit = 250
 
-    def _process_post(self, cargodatabuffer):
+    def add(self, cargo):
+        """Append data to buffer.
+        
+          format: {"emontx":{"power1":100,"power2":200,"power3":300}}
+          
+        """
+        
+        nodename = str(cargo.nodeid)
+        if cargo.nodename: nodename = cargo.nodename
+        
+        f = {}
+        f['node'] = nodename
+        f['data'] = {}
+                        
+        for i in range(0,len(cargo.realdata)):
+            name = str(i+1)
+            if i<len(cargo.names):
+                name = cargo.names[i]
+            value = cargo.realdata[i]
+            f['data'][name] = value
+        
+        if cargo.rssi:
+            f['data']['rssi'] = cargo.rssi
+        
+        self.buffer.storeItem(f)
+        
+        
+    def _process_post(self, databuffer):
     
         metrics = []
-        for c in range(0,len(cargodatabuffer)):
-            cargo = cargodatabuffer[c]
-            nodestr = str(cargo.nodeid)
-            if cargo.nodename!=False: nodestr = str(cargo.nodename)
+        for c in range(0,len(databuffer)):
+            frame = databuffer[c]
+            nodename = frame['node']
             
-            varid = 1
-            for value in cargo.realdata:
-                # Variable id or variable name if given
-                varstr = str(varid)
-                if (varid-1)<len(cargo.names):
-                    varstr = str(cargo.names[varid-1])
-                    # Construct path
-                path = self._settings['prefix']+'.'+nodestr+"."+varstr
+            for inputname,value in frame['data'].iteritems():
+                # path
+                path = self._settings['prefix']+'.'+nodename+"."+inputname
+                # payload
                 payload = str(value)
+                # timestamp
+                timestamp = frame['timestamp']
                 
-                timestamp = int(float(cargo.timestamp))
-
                 metrics.append(path+" "+payload+" "+str(timestamp))
-                varid += 1
                 
         return self._send_metrics(metrics)
-
+        
+        
     def _send_metrics(self, metrics=[]):
         """
 
