@@ -1,9 +1,7 @@
 import serial
 import time
 import Cargo
-from pydispatch import dispatcher
-import emonhub_coder as ehc
-import emonhub_interfacer as ehi
+from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubTx3eInterfacer
 
@@ -12,7 +10,7 @@ Monitors the serial port for data
 """
 
 
-class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
+class EmonHubTx3eInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
@@ -24,6 +22,12 @@ class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
         # Initialization
         super(EmonHubTx3eInterfacer, self).__init__(name)
 
+        self._settings.update({
+            'nodename': "mynode",
+            "datacode":False,
+            "scale":1
+        })
+        
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
         
@@ -54,10 +58,9 @@ class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
             self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
-            raise EmonHubInterfacerInitError('Could not open COM port %s' %
-                                           com_port)
-        else:
-            return s
+            s = False
+            # raise EmonHubInterfacerInitError('Could not open COM port %s' % com_port)
+        return s
 
     def read(self):
         """Read data from serial port and process if complete line received.
@@ -66,6 +69,8 @@ class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
         
         """
 
+        if not self._ser: return False
+            
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
         
@@ -83,18 +88,26 @@ class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
         self._rx_buf = ''
 
         # Parse the ESP format string
-        payload=[]
-        if f.startswith('ct1:'):
+        values=[]
+        names=[]
+        if f.startswith('Msg:'):
           for item in f.split(',')[:]:
-            payload.append(item.split(':')[1])
-        f=payload
-
-        if int(self._settings['nodeoffset']):
-            c.nodeid = int(self._settings['nodeoffset'])
-            c.realdata = f
-        else:
-            c.nodeid = int(f[0])
-            c.realdata = f[1:]
+            parts = item.split(':')
+            names.append(parts[0])
+            values.append(parts[1])
+            
+        self._log.debug(self._settings["nodename"])
+        c.nodename = self._settings["nodename"]
+        c.nodeid = self._settings["nodename"]
+        c.realdata = values
+        c.names = names
 
         return c
+        
+    def set(self, **kwargs):
+        for key,setting in self._settings.iteritems():
+            if key in kwargs.keys():
+                # replace default
+                # self._log.debug(kwargs[key])
+                self._settings[key] = kwargs[key]
 

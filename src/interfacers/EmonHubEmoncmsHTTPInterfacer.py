@@ -2,8 +2,6 @@
 """
 import time
 import json
-import urllib2
-import httplib
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -12,92 +10,40 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # Initialization
         super(EmonHubEmoncmsHTTPInterfacer, self).__init__(name)
         
-        self._name = name
+        # add or alter any default settings for this reporter
+        # defaults previously defined in inherited emonhub_interfacer
+        # here we are just changing the batchsize from 1 to 100
+        # and the interval from 0 to 30
+        self._defaults.update({'batchsize': 100,'interval': 30})
+        # This line will stop the default values printing to logfile at start-up
+        self._settings.update(self._defaults)
         
-        self._settings = {
-            'subchannels':['ch1'],
-            'pubchannels':['ch2'],
-            
+        # interfacer specific settings
+        self._cms_settings = {
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0,
-            'sendinterval': 30
+            'sendstatus': 0
         }
         
-        # Initialize message queue
-        self._pub_channels = {}
-        self._sub_channels = {}
+        # set an absolute upper limit for number of items to process per post
+        self._item_limit = 250
         
-        self.lastsent = time.time()
-        self.lastsentstatus = time.time()
+        # maximum buffer size
+        self.buffer._maximumEntriesInBuffer = 100000
+                    
+    def _process_post(self, databuffer):
+        """Send data to server."""
+
+        # databuffer is of format:
+        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+        # [[1399980731, 10, 150, 250 ...]]
         
-    def action(self):
-    
-        now = time.time()
-        
-        if (now-self.lastsent) > (int(self._settings['sendinterval'])):
-            self.lastsent = now
-            
-            # It might be better here to combine the output from all sub channels 
-            # into a single bulk post, most of the time there is only one sub channel
-            for channel in self._settings["subchannels"]:
-                if channel in self._sub_channels:
-
-                    # only try to prepare and send data if there is any
-                    if len(self._sub_channels[channel])>0:
-
-                        bulkdata = []
-
-                        for cargo in self._sub_channels[channel]:
-                            # Create a frame of data in "emonCMS format"
-                            f = []
-                            try:
-                                f.append(float(cargo.timestamp))
-                                f.append(cargo.nodeid)
-                                for i in cargo.realdata:
-                                    f.append(i)
-                                if cargo.rssi:
-                                    f.append(cargo.rssi)
-                                #self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-                            except:
-                                self._log.warning("Failed to create emonCMS frame " + str(f))
-
-                            bulkdata.append(f)
-
-                        # Get the length of the data to be sent
-                        bulkdata_length = len(bulkdata)
-
-                        if int(self._settings['senddata']):
-                            self._log.debug("Sending bulkdata, length: "+str(bulkdata_length))
-                            # Attempt to send the data
-                            success = self.bulkpost(bulkdata)
-                            self._log.debug("Sending bulkdata, success: "+str(success))
-                        else:
-                            success = True
-
-
-                        # if bulk post is successful delete the range posted
-                        if success:
-                            for i in range(0,bulkdata_length):
-                                self._sub_channels[channel].pop(0)
-                            #self._log.debug("Deleted sent data from queue")
-                            
-                        
-                        if int(self._settings['senddata']):
-                            self._log.debug("Current queue length: "+str(len(self._sub_channels[channel])))
-
-            
-        if (now-self.lastsentstatus)> (int(self._settings['sendinterval'])):
-            self.lastsentstatus = now
-            if int(self._settings['sendstatus']):
-                self.sendstatus()
-            
-    def bulkpost(self,databuffer):
-    
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
                 or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
-            return False
+            # Return true to clear buffer if the apikey is not set
+            return True
+            
             
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
@@ -131,42 +77,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.warning("send failure: wanted 'ok' but got '" +reply+ "'")
             return False
             
-    def _send_post(self, post_url, post_body=None):
-        """
-
-        :param post_url:
-        :param post_body:
-        :return: the received reply if request is successful
-        """
-        """Send data to server.
-
-        data (list): node and values (eg: '[node,val1,val2,...]')
-        time (int): timestamp, time when sample was recorded
-
-        return True if data sent correctly
-
-        """
-
-        reply = ""
-        request = urllib2.Request(post_url, post_body)
-        try:
-            response = urllib2.urlopen(request, timeout=60)
-        except urllib2.HTTPError as e:
-            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
-                              str(e.code))
-        except urllib2.URLError as e:
-            self._log.warning(self.name + " couldn't send to server, URLError: " +
-                              str(e.reason))
-        except httplib.HTTPException:
-            self._log.warning(self.name + " couldn't send to server, HTTPException")
-        except Exception:
-            import traceback
-            self._log.warning(self.name + " couldn't send to server, Exception: " +
-                              traceback.format_exc())
-        else:
-            reply = response.read()
-        finally:
-            return reply
             
     def sendstatus(self):
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
@@ -183,7 +93,50 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         reply = self._send_post(post_url,None)
             
     def set(self, **kwargs):
-        for key,setting in self._settings.iteritems():
-            if key in kwargs.keys():
-                # replace default
-                self._settings[key] = kwargs[key]
+        """
+
+        :param kwargs:
+        :return:
+        """
+
+        super (EmonHubEmoncmsHTTPInterfacer, self).set(**kwargs)
+
+        for key, setting in self._cms_settings.iteritems():
+            #valid = False
+            if not key in kwargs.keys():
+                setting = self._cms_settings[key]
+            else:
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            elif key == 'apikey':
+                if str.lower(setting[:4]) == 'xxxx':
+                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    pass
+                elif str.__len__(setting) == 32 :
+                    self._log.info("Setting " + self.name + " apikey: set")
+                    pass
+                elif setting == "":
+                    self._log.info("Setting " + self.name + " apikey: null")
+                    pass
+                else:
+                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    continue
+                self._settings[key] = setting
+                # Next line will log apikey if uncommented (privacy ?)
+                #self._log.debug(self.name + " apikey: " + str(setting))
+                continue
+            elif key == 'url' and setting[:4] == "http":
+                self._log.info("Setting " + self.name + " url: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'senddata':
+                self._log.info("Setting " + self.name + " senddata: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'sendstatus':
+                self._log.info("Setting " + self.name + " sendstatus: " + setting)
+                self._settings[key] = setting
+                continue
+            else:
+                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))

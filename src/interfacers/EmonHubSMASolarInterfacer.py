@@ -4,20 +4,20 @@
 # See LICENCE and README file for details
 
 __author__ = 'Stuart Pittaway'
-
-import bluetooth
-import datetime
+try:
+    import bluetooth
+    bluetooth_found = True
+except ImportError:
+    bluetooth_found = False
+    
 import time
 import sys
-import string
 import traceback
-import re
 
 import Cargo
 
 from time import sleep
 from emonhub_interfacer import EmonHubInterfacer
-from collections import namedtuple
 from smalibrary import SMASolar_library
 
 """class EmonHubSMASolarInterfacer
@@ -187,6 +187,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
     #Override base read code from emonhub_interfacer
     def read(self):
         """Read data from inverter and process"""
+        if not bluetooth_found: return False
 
         #Wait until we are ready to read from inverter
         if (self._is_it_time() == False):

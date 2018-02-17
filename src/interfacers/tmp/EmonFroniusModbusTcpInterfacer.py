@@ -1,17 +1,15 @@
 import time
-from pydispatch import dispatcher
-
 import datetime
 import logging
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
-import EmonModbusTcpInterfacer as ehi
+import EmonModbusTcpInterfacer as EmonModbusTcpInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Solar Inverter using modbus tcp
 """
 
-class EmonFroniusModbusTcpInterfacer(ehi.EmonModbusTcpInterfacer):
+class EmonFroniusModbusTcpInterfacer(EmonModbusTcpInterfacer):
 
     def __init__(self, name, modbus_IP='192.168.1.10', modbus_port=502):
         """Initialize Interfacer
@@ -19,7 +17,7 @@ class EmonFroniusModbusTcpInterfacer(ehi.EmonModbusTcpInterfacer):
         """
 
 # Initialization
-        super(EmonFroniusModbusTcpInterfacer, self).__init__(name,modbus_IP,modbus_port)
+        super(EmonFroniusModbusTcpInterfacer, self).__init__(name)
 
     # Connection opened by parent class INIT
     # Retrieve fronius specific inverter info if connection successfull if connection successfull
