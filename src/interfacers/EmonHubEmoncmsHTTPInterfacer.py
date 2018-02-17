@@ -28,6 +28,9 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         
         # set an absolute upper limit for number of items to process per post
         self._item_limit = 250
+        
+        # maximum buffer size
+        self.buffer._maximumEntriesInBuffer = 100000
                     
     def _process_post(self, databuffer):
         """Send data to server."""
