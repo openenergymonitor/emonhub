@@ -38,7 +38,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         
         if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
                 or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
-            return False
+            # Return true to clear buffer if the apikey is not set
+            return True
             
             
         data_string = json.dumps(databuffer, separators=(',', ':'))

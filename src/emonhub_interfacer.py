@@ -203,6 +203,8 @@ class EmonHubInterfacer(threading.Thread):
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
+            self._log.debug("Buffer size: "+str(self.buffer.size()))
+            
             max_items = int(self._settings['batchsize'])
             if max_items > self._item_limit:
                 max_items = self._item_limit
