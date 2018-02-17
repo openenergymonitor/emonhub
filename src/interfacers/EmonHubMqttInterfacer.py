@@ -71,7 +71,27 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if cargo.rssi:
             f['data']['rssi'] = cargo.rssi
         
-        self.buffer.storeItem(f)
+
+        # This basic QoS level 1 MQTT interfacer does not require buffering
+        # therefore we call _process_post here directly with an array
+        # containing only the one frame.
+        
+        # _process_post will never be called from the emonhub_interfacer
+        # run > action > flush > _process_post chain as the buffer will
+        # always be empty.
+        
+        # This is a bit of a hack, the final approach is currently being considered
+        # as part of ongoing discussion on futue direction of emonhub
+        
+        databuffer = []
+        databuffer.append(f)
+        self._process_post(databuffer)
+        
+        # To re-enable buffering comment the above three lines and uncomment the following
+        # note that at preset _process_post will not handle buffered data correctly and
+        # no time is transmitted to the subscribing clients
+        
+        # self.buffer.storeItem(f)
         
         
     def _process_post(self, databuffer):
