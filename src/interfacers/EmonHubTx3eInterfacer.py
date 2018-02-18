@@ -90,7 +90,7 @@ class EmonHubTx3eInterfacer(EmonHubInterfacer):
         # Parse the ESP format string
         values=[]
         names=[]
-        if f.startswith('Msg:'):
+        if f.startswith('Msg:') or f.startswith('ct1:'):
           for item in f.split(',')[:]:
             parts = item.split(':')
             names.append(parts[0])
