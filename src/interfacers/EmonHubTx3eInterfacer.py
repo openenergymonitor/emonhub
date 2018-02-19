@@ -1,71 +1,48 @@
 import serial
 import time
 import Cargo
-from pydispatch import dispatcher
-import emonhub_coder as ehc
-import emonhub_interfacer as ehi
+import re
+import EmonHubSerialInterfacer as ehi
 
 """class EmonHubTx3eInterfacer
 
-Monitors the serial port for data
+EmonHub Serial Interfacer key:value pair format
+e.g: ct1:0,ct2:0,ct3:0,ct4:0,vrms:524,pulse:0
+for csv format use the EmonHubSerialInterfacer
 
 """
 
 
-class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
+class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
 
-        com_port (string): path to COM port
+        com_port (string): path to COM port e.g /dev/ttyUSB0
+        com_baud (numeric): typically 115200 now for emontx etc
 
         """
 
         # Initialization
-        super(EmonHubTx3eInterfacer, self).__init__(name)
+        super(EmonHubTx3eInterfacer, self).__init__(name, com_port, com_baud)
 
-        # Open serial port
-        self._ser = self._open_serial_port(com_port, com_baud)
+        self._settings.update({
+            'nodename': ""
+        })
         
         # Initialize RX buffer
         self._rx_buf = ''
 
-    def close(self):
-        """Close serial port"""
-        
-        # Close serial port
-        if self._ser is not None:
-            self._log.debug("Closing serial port")
-            self._ser.close()
-
-    def _open_serial_port(self, com_port, com_baud):
-        """Open serial port
-
-        com_port (string): path to COM port
-
-        """
-
-        #if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
-        #    self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
-        #    com_baud = 9600
-
-        try:
-            s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
-        except serial.SerialException as e:
-            self._log.error(e)
-            raise EmonHubInterfacerInitError('Could not open COM port %s' %
-                                           com_port)
-        else:
-            return s
-
     def read(self):
         """Read data from serial port and process if complete line received.
 
-        Return data as a list: [val1, val2,...]
+        Read data format is key:value pairs e.g:
+        ct1:0,ct2:0,ct3:0,ct4:0,vrms:524,pulse:0
         
         """
 
+        if not self._ser: return False
+            
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()
         
@@ -83,18 +60,41 @@ class EmonHubTx3eInterfacer(ehi.EmonHubInterfacer):
         self._rx_buf = ''
 
         # Parse the ESP format string
-        payload=[]
-        if f.startswith('ct1:'):
-          for item in f.split(',')[:]:
-            payload.append(item.split(':')[1])
-        f=payload
+        values=[]
+        names=[]
 
-        if int(self._settings['nodeoffset']):
-            c.nodeid = int(self._settings['nodeoffset'])
-            c.realdata = f
+        for item in f.split(','):
+            parts = item.split(':')
+            if len(parts)==2:
+                # check for alphanumeric input name
+                if re.match('^[\w-]+$',parts[0]):
+                    # check for numeric value
+                    if parts[1].isdigit():
+                        names.append(parts[0])
+                        values.append(parts[1])
+                    # log errors    
+                    else: self._log.debug("input value is not numeric: "+parts[1])
+                else: self._log.debug("invalid input name: "+parts[0])
+
+            
+        if self._settings["nodename"]!="":
+            c.nodename = self._settings["nodename"]
+            c.nodeid = self._settings["nodename"]
         else:
-            c.nodeid = int(f[0])
-            c.realdata = f[1:]
+            c.nodeid = int(self._settings['nodeoffset'])
+            
+        c.realdata = values
+        c.names = names
+        
+        if len(values)==0: 
+            return False
 
         return c
+        
+    def set(self, **kwargs):
+        for key,setting in self._settings.iteritems():
+            if key in kwargs.keys():
+                # replace default
+                # self._log.debug(kwargs[key])
+                self._settings[key] = kwargs[key]
 

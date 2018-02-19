@@ -1,4 +1,3 @@
-from pydispatch import dispatcher
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubPacketGenInterfacer

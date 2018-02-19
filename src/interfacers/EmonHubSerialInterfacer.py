@@ -1,7 +1,8 @@
 import serial
 import time
+from emonhub_interfacer import EmonHubInterfacer
+
 import Cargo
-import emonhub_interfacer as ehi
 
 """class EmonhubSerialInterfacer
 
@@ -9,8 +10,7 @@ Monitors the serial port for data
 
 """
 
-
-class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
+class EmonHubSerialInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer
@@ -52,10 +52,9 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
             self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
-            raise EmonHubInterfacerInitError('Could not open COM port %s' %
-                                           com_port)
-        else:
-            return s
+            s = False
+            # raise EmonHubInterfacerInitError('Could not open COM port %s' % com_port)
+        return s
 
     def read(self):
         """Read data from serial port and process if complete line received.
@@ -63,6 +62,8 @@ class EmonHubSerialInterfacer(ehi.EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
         
         """
+        
+        if not self._ser: return False
 
         # Read serial RX
         self._rx_buf = self._rx_buf + self._ser.readline()

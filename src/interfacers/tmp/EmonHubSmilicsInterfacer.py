@@ -7,17 +7,14 @@ from Queue import Queue
 from SocketServer import TCPServer, ThreadingMixIn
 from urlparse import parse_qs
 
-
 import Cargo
 import emonhub_coder as ehc
 from emonhub_interfacer import EmonHubInterfacer
-
 
 class ThreadedTCPServer(ThreadingMixIn, TCPServer):
     def serve_forever(self, queue):
         self.RequestHandlerClass.queue = queue
         TCPServer.serve_forever(self)
-
 
 class ServerHandler(BaseHTTPRequestHandler):
     def do_GET(self):

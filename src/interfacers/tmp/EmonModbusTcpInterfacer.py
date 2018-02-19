@@ -1,18 +1,16 @@
 import time
-import datetime
 import Cargo
-import logging
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
 import emonhub_coder
 from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-import emonhub_interfacer as ehi
+from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Solar Inverter using modbus tcp
 """
 
-class EmonModbusTcpInterfacer(ehi.EmonHubInterfacer):
+class EmonModbusTcpInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, modbus_IP='192.168.1.10', modbus_port=0):
         """Initialize Interfacer

@@ -47,7 +47,6 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf=""
-        
         self._ser.flushInput()
 
         # Initialize settings

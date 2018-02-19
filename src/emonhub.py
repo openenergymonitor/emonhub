@@ -16,63 +16,23 @@ import logging.handlers
 import signal
 import argparse
 import pprint
-
-try:
-      import pymodbus
-      pymodbus_found = True
-except ImportError:
-      pymodbus_found = False
-
-try:
-      import bluetooth
-      bluetooth_found = True
-except ImportError:
-      bluetooth_found = False
-
+import glob, os
 
 import emonhub_setup as ehs
-import interfacers.emonhub_interfacer as ehi
 import emonhub_coder as ehc
+import emonhub_interfacer as ehi
+from interfacers import *
 
-import interfacers.EmonHubSerialInterfacer
-import interfacers.EmonHubJeeInterfacer
-import interfacers.EmonHubSocketInterfacer
-import interfacers.EmonHubPacketGenInterfacer
-import interfacers.EmonHubMqttInterfacer
-import interfacers.EmonHubTesterInterfacer
-import interfacers.EmonHubEmoncmsHTTPInterfacer
-import interfacers.EmonHubSmilicsInterfacer
-import interfacers.EmonHubVEDirectInterfacer
-import interfacers.EmonHubGraphiteInterfacer
-import interfacers.EmonHubBMWInterfacer
-import interfacers.EmonHubTx3eInterfacer
+# this namespace and path
+namespace = sys.modules[__name__]
+path = os.path.dirname(__file__)
 
-if bluetooth_found:
-    import interfacers.EmonHubSMASolarInterfacer
-
-if pymodbus_found:
-    import interfacers.EmonModbusTcpInterfacer
-    import interfacers.EmonFroniusModbusTcpInterfacer
-
-ehi.EmonHubSerialInterfacer = interfacers.EmonHubSerialInterfacer.EmonHubSerialInterfacer
-ehi.EmonHubJeeInterfacer = interfacers.EmonHubJeeInterfacer.EmonHubJeeInterfacer
-ehi.EmonHubSocketInterfacer = interfacers.EmonHubSocketInterfacer.EmonHubSocketInterfacer
-ehi.EmonHubPacketGenInterfacer = interfacers.EmonHubPacketGenInterfacer.EmonHubPacketGenInterfacer
-ehi.EmonHubMqttInterfacer = interfacers.EmonHubMqttInterfacer.EmonHubMqttInterfacer
-ehi.EmonHubTesterInterfacer = interfacers.EmonHubTesterInterfacer.EmonHubTesterInterfacer
-ehi.EmonHubEmoncmsHTTPInterfacer = interfacers.EmonHubEmoncmsHTTPInterfacer.EmonHubEmoncmsHTTPInterfacer
-ehi.EmonHubSmilicsInterfacer = interfacers.EmonHubSmilicsInterfacer.EmonHubSmilicsInterfacer
-ehi.EmonHubVEDirectInterfacer = interfacers.EmonHubVEDirectInterfacer.EmonHubVEDirectInterfacer
-ehi.EmonHubGraphiteInterfacer = interfacers.EmonHubGraphiteInterfacer.EmonHubGraphiteInterfacer
-ehi.EmonHubBMWInterfacer = interfacers.EmonHubBMWInterfacer.EmonHubBMWInterfacer
-ehi.EmonHubTx3eInterfacer = interfacers.EmonHubTx3eInterfacer.EmonHubTx3eInterfacer
-
-if bluetooth_found:
-    ehi.EmonHubSMASolarInterfacer = interfacers.EmonHubSMASolarInterfacer.EmonHubSMASolarInterfacer
-
-if pymodbus_found:
-    ehi.EmonModbusTcpInterfacer = interfacers.EmonModbusTcpInterfacer.EmonModbusTcpInterfacer
-    ehi.EmonFroniusModbusTcpInterfacer = interfacers.EmonFroniusModbusTcpInterfacer.EmonFroniusModbusTcpInterfacer
+# scan interfacers directory and import all interfacers
+for f in glob.glob(path+"/interfacers/*.py"):
+    name = f.replace(".py","").replace(path+"/interfacers/","")
+    if name!="__init__":
+        # print "Loading: "+name
+        setattr(ehi,name,getattr(getattr(namespace,name),name))
 
 """class EmonHub
 
@@ -86,7 +46,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub(object):
 
-    __version__ = "emonHub emon-pi variant v2.0.0"
+    __version__ = "emonHub emon-pi variant v2.1.0"
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
