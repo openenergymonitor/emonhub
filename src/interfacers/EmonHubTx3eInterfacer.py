@@ -1,6 +1,7 @@
 import serial
 import time
 import Cargo
+import re
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubTx3eInterfacer
@@ -90,17 +91,27 @@ class EmonHubTx3eInterfacer(EmonHubInterfacer):
         # Parse the ESP format string
         values=[]
         names=[]
-        if f.startswith('Msg:') or f.startswith('ct1:'):
-          for item in f.split(',')[:]:
+
+        for item in f.split(','):
             parts = item.split(':')
-            names.append(parts[0])
-            values.append(parts[1])
-            
-        self._log.debug(self._settings["nodename"])
+            if len(parts)==2:
+                # check for alphanumeric input name
+                if re.match('^[\w-]+$',parts[0]):
+                    # check for numeric value
+                    if parts[1].isdigit():
+                        names.append(parts[0])
+                        values.append(parts[1])
+                    # log errors    
+                    else: self._log.debug("input value is not numeric: "+parts[1])
+                else: self._log.debug("invalid input name: "+parts[0])
+                
         c.nodename = self._settings["nodename"]
         c.nodeid = self._settings["nodename"]
         c.realdata = values
         c.names = names
+        
+        if len(values)==0: 
+            return False
 
         return c
         
