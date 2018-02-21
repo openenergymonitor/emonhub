@@ -58,6 +58,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if cargo.nodename: nodename = cargo.nodename
         
         f = {}
+        f['nodeid'] = cargo.nodeid
         f['node'] = nodename
         f['data'] = {}
                         
@@ -107,7 +108,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         else:
             frame = databuffer[0]
             nodename = frame['node']
-            
+            nodeid = frame['nodeid']
             # ----------------------------------------------------------
             # General MQTT format: emonhub/rx/emonpi/power1 ... 100
             # ----------------------------------------------------------
@@ -130,7 +131,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # ----------------------------------------------------------
             if int(self._settings["node_format_enable"])==1:
             
-                topic = self._settings["node_format_basetopic"]+"rx/"+nodename+"/values"
+                topic = self._settings["node_format_basetopic"]+"rx/"+str(nodeid)+"/values"
                 
                 values = []
                 for inputname,value in frame['data'].iteritems():
