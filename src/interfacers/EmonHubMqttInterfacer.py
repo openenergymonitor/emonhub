@@ -60,18 +60,12 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         f = {}
         f['nodeid'] = cargo.nodeid
         f['node'] = nodename
-        f['data'] = {}
-                        
-        for i in range(0,len(cargo.realdata)):
-            name = str(i+1)
-            if i<len(cargo.names):
-                name = cargo.names[i]
-            value = cargo.realdata[i]
-            f['data'][name] = value
+        f['names'] = cargo.names
+        f['data'] = cargo.realdata
         
         if cargo.rssi:
-            f['data']['rssi'] = cargo.rssi
-        
+            f['names'].append('rssi')
+            f['data'].append(cargo.rssi)
 
         # This basic QoS level 1 MQTT interfacer does not require buffering
         # therefore we call _process_post here directly with an array
@@ -109,12 +103,18 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             frame = databuffer[0]
             nodename = frame['node']
             nodeid = frame['nodeid']
+            
             # ----------------------------------------------------------
             # General MQTT format: emonhub/rx/emonpi/power1 ... 100
             # ----------------------------------------------------------
             if int(self._settings["nodevar_format_enable"])==1:
                 
-                for inputname,value in frame['data'].iteritems():
+                for i in range(0,len(frame['data'])):
+                    inputname = str(i+1)
+                    if i<len(frame['names']):
+                        inputname = frame['names'][i]
+                    value = frame['data'][i]
+
                     # Construct topic
                     topic = self._settings["nodevar_format_basetopic"]+nodename+"/"+inputname
                     payload = str(value)
@@ -133,11 +133,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             
                 topic = self._settings["node_format_basetopic"]+"rx/"+str(nodeid)+"/values"
                 
-                values = []
-                for inputname,value in frame['data'].iteritems():
-                    values.append(value)
-                
-                payload = ",".join(map(str,values))
+                payload = ",".join(map(str,frame['data']))
                 
                 self._log.info("Publishing: "+topic+" "+payload)
                 result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
