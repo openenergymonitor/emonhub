@@ -64,9 +64,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         f['data'] = cargo.realdata
         
         if cargo.rssi:
-            f['names'].append('rssi')
-            f['data'].append(cargo.rssi)
-
+            f['rssi'] = cargo.rssi
+            
         # This basic QoS level 1 MQTT interfacer does not require buffering
         # therefore we call _process_post here directly with an array
         # containing only the one frame.
@@ -125,6 +124,18 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     if result[0]==4:
                         self._log.info("Publishing error? returned 4")
                         return False
+
+                # send rssi
+                if 'rssi' in frame:
+                    topic = self._settings["nodevar_format_basetopic"]+nodename+"/rssi"
+                    payload = str(frame['rssi'])
+
+                    self._log.debug("Publishing: "+topic+" "+payload)
+                    result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
+
+                    if result[0]==4:
+                        self._log.info("Publishing error? returned 4")
+                        return False
             
             # ----------------------------------------------------------    
             # Emoncms nodes module format: emonhub/rx/10/values ... 100,200,300
@@ -134,7 +145,10 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 topic = self._settings["node_format_basetopic"]+"rx/"+str(nodeid)+"/values"
                 
                 payload = ",".join(map(str,frame['data']))
-                
+
+                if 'rssi' in frame:
+                    payload = payload+","+str(frame['rssi'])
+
                 self._log.info("Publishing: "+topic+" "+payload)
                 result =self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
                 
