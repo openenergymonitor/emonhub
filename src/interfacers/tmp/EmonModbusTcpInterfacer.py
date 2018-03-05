@@ -105,7 +105,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                 else:
                     #self._log.debug("register value:" + str(self.rVal.registers)+" type= " + str(type(self.rVal.registers)))
                     #f = f + self.rVal.registers
-                    decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, endian=Endian.Big)
+                    decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=Endian.Big, wordorder=Endian.Big)
                     self._log.debug("register type: " + str(rType))
 
                     if rType == "uint16":
