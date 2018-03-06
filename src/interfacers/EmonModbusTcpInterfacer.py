@@ -1,13 +1,19 @@
 import time
 import Cargo
-from pymodbus.constants import Endian
-from pymodbus.payload import BinaryPayloadDecoder
+
+try:
+    from pymodbus.constants import Endian
+    from pymodbus.payload import BinaryPayloadDecoder
+    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
+    pymodbus_found = True
+except ImportError:
+    pymodbus_found = False
+
 import emonhub_coder
-from pymodbus.client.sync import ModbusTcpClient as ModbusClient
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonModbusTcpInterfacer
-Monitors Solar Inverter using modbus tcp
+Monitors Modbus devices using modbus tcp
 """
 
 class EmonModbusTcpInterfacer(EmonHubInterfacer):
@@ -16,18 +22,21 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         """Initialize Interfacer
         com_port (string): path to COM port
         """
-
-# Initialization
+        
+        # Initialization
         super(EmonModbusTcpInterfacer, self).__init__(name)
 
-    # open connection
-        self._log.debug("EmonModbusTcpInterfacer args: " + str(modbus_IP) + " - " + str(modbus_port) )
-        self._con = self._open_modTCP(modbus_IP,modbus_port)
-        if self._modcon :
-            self._log.info("Modbustcp client Connected")
-        else:
-            self._log.info("Connection to ModbusTCP client failed. Will try again")
-
+        if not pymodbus_found:
+            self._log.error("PYMODBUS NOT PRESENT BUT NEEDED !!")
+        # open connection
+        if pymodbus_found:
+            self._log.info("pymodbus installed")
+            self._log.debug("EmonModbusTcpInterfacer args: " + str(modbus_IP) + " - " + str(modbus_port) )
+            self._con = self._open_modTCP(modbus_IP,modbus_port)
+            if self._modcon :
+                 self._log.info("Modbustcp client Connected")
+            else:
+                 self._log.info("Connection to ModbusTCP client failed. Will try again")
 
     def set(self, **kwargs):
 
@@ -64,84 +73,84 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
 
     def read(self):
         """ Read registers from client"""
+        if pymodbus_found:
+            time.sleep(float(self._settings["interval"]))
+            f = []
+            c = Cargo.new_cargo(rawdata="")
+            if not self._modcon :
+                self._con.close()
+                self._log.info("Not connected, retrying connect" + str(self.init_settings))
+                self._con = self._open_modTCP(self.init_settings["modbus_IP"],self.init_settings["modbus_port"])
 
-        time.sleep(float(self._settings["interval"]))
-        f = []
-        c = Cargo.new_cargo(rawdata="")
-        if not self._modcon :
-            self._con.close()
-            self._log.info("Not connected, retrying connect" + str(self.init_settings))
-            self._con = self._open_modTCP(self.init_settings["modbus_IP"],self.init_settings["modbus_port"])
-
-        if self._modcon :
-            #self._log.info(" names " + str(self._settings["rName"]))
-            rNameList = self._settings["rName"]
-            #self._log.info("rNames type: " + str(type(rNameList)))
-            registerList = self._settings["register"]
-            nRegList = self._settings["nReg"]
-            rTypeList = self._settings["rType"]
-            if "nUnit" in self._settings:
-                nUnitList = self._settings["nUnit"]
-            else:
-                nUnitList = None
-
-            for idx, rName in enumerate(rNameList):
-                register = int(registerList[idx])
-                qty = int(nRegList[idx])
-                rType = rTypeList[idx]
-                if nUnitList is not None:
-                    unitId = int(nUnitList[idx])
+            if self._modcon :
+                #self._log.info(" names " + str(self._settings["rName"]))
+                rNameList = self._settings["rName"]
+                #self._log.info("rNames type: " + str(type(rNameList)))
+                registerList = self._settings["register"]
+                nRegList = self._settings["nReg"]
+                rTypeList = self._settings["rType"]
+                if "nUnit" in self._settings:
+                    nUnitList = self._settings["nUnit"]
                 else:
-                    unitId = 1
+                    nUnitList = None
 
-                self._log.debug("register # :" + str(register) + ", qty #: " + str(qty) + ", unit #: " + str(unitId))
-
-                try:
-                    self.rVal = self._con.read_holding_registers(register-1,qty,unit=unitId)
-                    assert(self.rVal.function_code < 0x80)
-                except Exception as e:
-                    self._log.error("Connection failed on read of register: " +str(register) + " : " + str(e))
-                    self._modcon = False
-                else:
-                    #self._log.debug("register value:" + str(self.rVal.registers)+" type= " + str(type(self.rVal.registers)))
-                    #f = f + self.rVal.registers
-                    decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=Endian.Big, wordorder=Endian.Big)
-                    self._log.debug("register type: " + str(rType))
-
-                    if rType == "uint16":
-                        rValD = decoder.decode_16bit_uint()
-                        t = emonhub_coder.encode('H',rValD)
-                        f = f + list(t)
-                    elif rType == "uint32":
-                        rValD = decoder.decode_32bit_uint()
-                        t = emonhub_coder.encode('I',rValD)
-                        f = f + list(t)
-                    elif rType == "uint64":
-                        rValD = decoder.decode_64bit_uint()
-                        t = emonhub_coder.encode('Q',rValD)
-                        f = f + list(t)
-                    elif rType == "int16":
-                        rValD = decoder.decode_16bit_int()
-                        t = emonhub_coder.encode('h',rValD)
-                        f = f + list(t)
-                    elif rType == "string":
-                        rValD = decoder.decode_string(qty*2)
-                        t = rValD
-                    elif rType == "float32":
-                        rValD = decoder.decode_32bit_float()*10
-                        t = emonhub_coder.encode('f',rValD)
-                        f = f + list(t)
+                for idx, rName in enumerate(rNameList):
+                    register = int(registerList[idx])
+                    qty = int(nRegList[idx])
+                    rType = rTypeList[idx]
+                    if nUnitList is not None:
+                        unitId = int(nUnitList[idx])
                     else:
-                        self._log.error("Register type not found: "+ str(rType) + " Register:" + str(register))
-                    self._log.debug("Encoded value: " + str(t))
+                        unitId = 1
 
-            self._log.debug("reporting data: " + str(f))
-            if int(self._settings['nodeId']):
-                c.nodeid = int(self._settings['nodeId'])
-                c.realdata = f
-            else:
-                c.nodeid = int(12)
-                c.realdata = f
-            self._log.debug("Return from read data: " + str(c.realdata))
+                    self._log.debug("register # :" + str(register) + ", qty #: " + str(qty) + ", unit #: " + str(unitId))
 
-        return c
+                    try:
+                        self.rVal = self._con.read_holding_registers(register-1,qty,unit=unitId)
+                        assert(self.rVal.function_code < 0x80)
+                    except Exception as e:
+                        self._log.error("Connection failed on read of register: " +str(register) + " : " + str(e))
+                        self._modcon = False
+                    else:
+                        #self._log.debug("register value:" + str(self.rVal.registers)+" type= " + str(type(self.rVal.registers)))
+                        #f = f + self.rVal.registers
+                        decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=Endian.Big, wordorder=Endian.Big)
+                        self._log.debug("register type: " + str(rType))
+
+                        if rType == "uint16":
+                            rValD = decoder.decode_16bit_uint()
+                            t = emonhub_coder.encode('H',rValD)
+                            f = f + list(t)
+                        elif rType == "uint32":
+                            rValD = decoder.decode_32bit_uint()
+                            t = emonhub_coder.encode('I',rValD)
+                            f = f + list(t)
+                        elif rType == "uint64":
+                            rValD = decoder.decode_64bit_uint()
+                            t = emonhub_coder.encode('Q',rValD)
+                            f = f + list(t)
+                        elif rType == "int16":
+                            rValD = decoder.decode_16bit_int()
+                            t = emonhub_coder.encode('h',rValD)
+                            f = f + list(t)
+                        elif rType == "string":
+                            rValD = decoder.decode_string(qty*2)
+                            t = rValD
+                        elif rType == "float32":
+                            rValD = decoder.decode_32bit_float()*10
+                            t = emonhub_coder.encode('f',rValD)
+                            f = f + list(t)
+                        else:
+                            self._log.error("Register type not found: "+ str(rType) + " Register:" + str(register))
+                        self._log.debug("Encoded value: " + str(t))
+
+                self._log.debug("reporting data: " + str(f))
+                if int(self._settings['nodeId']):
+                    c.nodeid = int(self._settings['nodeId'])
+                    c.realdata = f
+                else:
+                    c.nodeid = int(12)
+                    c.realdata = f
+                self._log.debug("Return from read data: " + str(c.realdata))
+
+            return c
