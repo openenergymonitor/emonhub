@@ -25,7 +25,7 @@ from interfacers import *
 
 # this namespace and path
 namespace = sys.modules[__name__]
-path = os.path.dirname(__file__)
+path = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 
 # scan interfacers directory and import all interfacers
 for f in glob.glob(path+"/interfacers/*.py"):
