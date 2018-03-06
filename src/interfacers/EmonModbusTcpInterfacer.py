@@ -14,6 +14,8 @@ from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Modbus devices using modbus tcp
+At this stage, only read_holding_registers() is implemented in the read() method
+for devices working only with integers, please change the function to read_input_registers()
 """
 
 class EmonModbusTcpInterfacer(EmonHubInterfacer):
