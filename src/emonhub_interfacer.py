@@ -134,11 +134,16 @@ class EmonHubInterfacer(threading.Thread):
 
         """
 
+        if cargo.nodename:
+            node_name = cargo.nodename
+        else:
+            node_name = cargo.nodeid
+
         # Create a frame of data in "emonCMS format"
         f = []
         try:
             f.append(cargo.timestamp)
-            f.append(cargo.nodeid)
+            f.append(node_name)
             for i in cargo.realdata:
                 f.append(i)
             if cargo.rssi:
