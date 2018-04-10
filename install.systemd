@@ -20,13 +20,10 @@ INST_PATH=/usr/share/emonhub
 sudo rm -r -f $INST_PATH
 sudo ln -s $GIT_PATH/src $INST_PATH
 
-### link init script
-sudo rm -f /etc/init.d/emonhub
-sudo ln -s $GIT_PATH/service/emonhub /etc/init.d/emonhub
-
-### link default locations file
-sudo rm -f /etc/default/emonhub
-sudo ln -s $GIT_PATH/conf/default/emonhub /etc/default/emonhub
+### copy emonhub service file and config file
+sudo cp $GIT_PATH/service/emonhub.service /etc/systemd/system/
+sudo mkdir /etc/systemd/system/emonhub.service.d/
+sudo cp $GIT_PATH/service/emonhub.default.conf /etc/systemd/system/emonhub.service.d/
 
 ### create folder and move settings file (unless it exists already)
 if [ ! -f /home/pi/data/emonhub.conf ] ; then
@@ -36,8 +33,7 @@ if [ ! -f /home/pi/data/emonhub.conf ] ; then
 fi
 
 # launch at start-ip
-sudo update-rc.d emonhub defaults 99
-
+sudo systemctl enable emonhub
 
 ### create "emonhub" user
 sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
