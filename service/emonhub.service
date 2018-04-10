@@ -8,7 +8,6 @@ After=sysinit.target syslog.target local-fs.target
 
 [Service]
 User=emonhub
-EnvironmentFile=/etc/default/emonhub
 PIDFile=/var/run/emonhub.pid
 ExecStart=/usr/share/emonhub/emonhub.py --config-file=/home/pi/data/emonhub.conf
 Type=simple
