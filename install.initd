@@ -1,0 +1,43 @@
+#!/bin/sh
+
+echo "Emonhub installation script for emonPi"
+
+### set git cloned location
+GIT_PATH=/home/pi/emonhub
+
+if [ ! -d /home/pi ] ; then
+  {
+    echo "Directory /home/pi does not exist, this installation script is for raspberrypi installation"
+    exit
+  }
+fi
+
+
+### set location to install emonhub.py etc
+INST_PATH=/usr/share/emonhub
+
+### create linked directory for emonhub.py etc
+sudo rm -r -f $INST_PATH
+sudo ln -s $GIT_PATH/src $INST_PATH
+
+### link init script
+sudo rm -f /etc/init.d/emonhub
+sudo ln -s $GIT_PATH/service/emonhub /etc/init.d/emonhub
+
+### link default locations file
+sudo rm -f /etc/default/emonhub
+sudo ln -s $GIT_PATH/conf/default/emonhub /etc/default/emonhub
+
+### create folder and move settings file (unless it exists already)
+if [ ! -f /home/pi/data/emonhub.conf ] ; then
+  {
+    sudo mv $GIT_PATH/conf/emonpi.default.emonhub.conf /home/pi/data/emonhub.conf
+  }
+fi
+
+# launch at start-ip
+sudo update-rc.d emonhub defaults 99
+
+
+### create "emonhub" user
+sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
