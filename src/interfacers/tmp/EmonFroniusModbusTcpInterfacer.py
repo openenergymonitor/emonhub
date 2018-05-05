@@ -3,7 +3,7 @@ import datetime
 import logging
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
-import EmonModbusTcpInterfacer as EmonModbusTcpInterfacer
+from EmonModbusTcpInterfacer import EmonModbusTcpInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Solar Inverter using modbus tcp
