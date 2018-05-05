@@ -1,3 +1,10 @@
+!/usr/bin/python
+# EmonFroniusModbusTcpInterfacer released for use by OpenEnergyMonitor project
+# GNU GENERAL PUBLIC LICENSE -  Version 2, June 1991
+# See LICENCE and README file for details
+
+__author__ = 'Chris Thuys'
+
 import time
 import datetime
 import logging
