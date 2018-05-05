@@ -1,3 +1,17 @@
+#!/usr/bin/python
+# EmonModbusTcpInterfacer released for use by OpenEnergyMonitor project
+# GNU GENERAL PUBLIC LICENSE -  Version 2, June 1991
+# See LICENCE and README file for details
+
+__author__ = 'Chris Thuys'
+
+try:
+      import pymodbus
+      pymodbus_found = True
+except ImportError:
+      pymodbus_found = False
+
+
 import time
 import Cargo
 from pymodbus.constants import Endian
@@ -45,6 +59,8 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
 
     def _open_modTCP(self,modbus_IP,modbus_port):
         """ Open connection to modbus device """
+        if not pymodbus_found :
+                self._log.error("Python module pymodbus not installed or found. Unable to open modbus connection")
 
         try:
             c = ModbusClient(modbus_IP,modbus_port)
