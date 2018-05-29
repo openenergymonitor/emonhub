@@ -9,13 +9,13 @@ try:
 except ImportError:
     pymodbus_found = False
 
-import emonhub_coder
+import emonhub_coder as ehc
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Modbus devices using modbus tcp
 At this stage, only read_holding_registers() is implemented in the read() method
-for devices working only with integers, please change the function to read_input_registers()
+if needed, please change the function to read_input_registers()
 """
 
 class EmonModbusTcpInterfacer(EmonHubInterfacer):
@@ -24,7 +24,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         """Initialize Interfacer
         com_port (string): path to COM port
         """
-        
+
         # Initialization
         super(EmonModbusTcpInterfacer, self).__init__(name)
 
@@ -67,7 +67,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                 self._modcon = False
         except Exception as e:
             self._log.error("modbusTCP connection failed" + str(e))
-            #raise EmonHubInterfacerInitError('Could not open connection to host %s' %modbus_IP)
+           #raise EmonHubInterfacerInitError('Could not open connection to host %s' %modbus_IP)
             pass
         else:
             return c
@@ -79,80 +79,146 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
             time.sleep(float(self._settings["interval"]))
             f = []
             c = Cargo.new_cargo(rawdata="")
+            # valid datacodes list and number of registers associated
+            # in modbus protocol, one register is 16 bits or 2 bytes
+            valid_datacodes = ({'h': 1, 'H': 1, 'i': 2, 'l': 2, 'I': 2, 'L': 2, 'f': 2, 'q': 4, 'Q': 4, 'd': 4})
+            
             if not self._modcon :
                 self._con.close()
                 self._log.info("Not connected, retrying connect" + str(self.init_settings))
                 self._con = self._open_modTCP(self.init_settings["modbus_IP"],self.init_settings["modbus_port"])
 
             if self._modcon :
-                #self._log.info(" names " + str(self._settings["rName"]))
-                rNameList = self._settings["rName"]
-                #self._log.info("rNames type: " + str(type(rNameList)))
-                registerList = self._settings["register"]
-                nRegList = self._settings["nReg"]
-                rTypeList = self._settings["rType"]
-                if "nUnit" in self._settings:
-                    nUnitList = self._settings["nUnit"]
+                
+                # fetch nodeid
+                if 'nodeId' in self._settings:
+                    node = str(self._settings["nodeId"])
                 else:
-                    nUnitList = None
-
-                for idx, rName in enumerate(rNameList):
-                    register = int(registerList[idx])
-                    qty = int(nRegList[idx])
-                    rType = rTypeList[idx]
-                    if nUnitList is not None:
-                        unitId = int(nUnitList[idx])
+                    self._log.error("please provide a nodeId")
+                    return
+                
+                # stores registers
+                if 'register' in self._settings:
+                    registers = self._settings["register"]
+                else:
+                    self._log.error("please provide a register number or a list of registers")
+                    return
+                
+                # fetch unitids if present
+                if "nUnit" in self._settings:
+                    UnitIds = self._settings["nUnit"]
+                else:
+                    UnitIds = None
+                
+                
+                # stores names
+                # fetch datacode or datacodes
+                if node in ehc.nodelist and 'rx' in ehc.nodelist[node]:
+                    rNames = ehc.nodelist[node]['rx']['names']
+                    if 'datacode' in ehc.nodelist[node]['rx']:
+                        datacode = ehc.nodelist[node]['rx']['datacode']
+                        datacodes = None
+                    elif 'datacodes' in ehc.nodelist[node]['rx']:
+                        datacodes = ehc.nodelist[node]['rx']['datacodes']
+                    else:
+                        _self._log.error("please provide a datacode or a list of datacodes")
+                        return
+                
+                # check if number of registers and number of names are the same
+                if len(rNames) != len (registers):
+                    self._log.error("You have to define an equal number of registers and of names")
+                    return
+                # check if number of names and number of datacodes are the same
+                if datacodes is not None:
+                    if len(datacodes) != len(rNames):
+                        self._log.error("You are using datacodes. You have to define an equal number of datacodes and of names")
+                        return
+                
+                # calculate expected size in bytes and search for invalid datacode(s) 
+                expectedSize=0
+                if datacodes is not None:
+                    for code in datacodes:
+                        if code not in valid_datacodes:
+                            self._log.debug("-" * 46)
+                            self._log.debug("invalid datacode")
+                            self._log.debug("-" * 46)
+                            return
+                        else:
+                            expectedSize+=valid_datacodes[code]*2
+                else:
+                    if datacode not in valid_datacodes:
+                        self._log.debug("-" * 46)
+                        self._log.debug("invalid datacode")
+                        self._log.debug("-" * 46)
+                        return
+                    else:
+                        expectedSize=len(rNames)*valid_datacodes[datacode]*2
+                
+                self._log.debug("expected bytes number after encoding: "+str(expectedSize))
+                
+                # at this stage, we don't have any invalid datacode(s)
+                # so we can loop and read registers
+                for idx, rName in enumerate(rNames):
+                    register = int(registers[idx])
+                    if UnitIds is not None:
+                        unitId = int(UnitIds[idx])
                     else:
                         unitId = 1
-
-                    self._log.debug("register # :" + str(register) + ", qty #: " + str(qty) + ", unit #: " + str(unitId))
-
+                    if datacodes is not None:
+                        datacode = datacodes[idx]
+                    
+                    self._log.debug("datacode " + datacode)
+                    qty = valid_datacodes[datacode]
+                    self._log.debug("reading register # :" + str(register) + ", qty #: " + str(qty) + ", unit #: " + str(unitId))
+                        
                     try:
                         self.rVal = self._con.read_holding_registers(register-1,qty,unit=unitId)
                         assert(self.rVal.function_code < 0x80)
                     except Exception as e:
                         self._log.error("Connection failed on read of register: " +str(register) + " : " + str(e))
                         self._modcon = False
+                        #missing datas will lead to an incorrect encoding
+                        #we have to drop the payload
+                        return
                     else:
                         #self._log.debug("register value:" + str(self.rVal.registers)+" type= " + str(type(self.rVal.registers)))
                         #f = f + self.rVal.registers
                         decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=Endian.Big, wordorder=Endian.Big)
-                        self._log.debug("register type: " + str(rType))
-
-                        if rType == "uint16":
-                            rValD = decoder.decode_16bit_uint()
-                            t = emonhub_coder.encode('H',rValD)
-                            f = f + list(t)
-                        elif rType == "uint32":
-                            rValD = decoder.decode_32bit_uint()
-                            t = emonhub_coder.encode('I',rValD)
-                            f = f + list(t)
-                        elif rType == "uint64":
-                            rValD = decoder.decode_64bit_uint()
-                            t = emonhub_coder.encode('Q',rValD)
-                            f = f + list(t)
-                        elif rType == "int16":
+                        if datacode == 'h': 
                             rValD = decoder.decode_16bit_int()
-                            t = emonhub_coder.encode('h',rValD)
-                            f = f + list(t)
-                        elif rType == "string":
-                            rValD = decoder.decode_string(qty*2)
-                            t = rValD
-                        elif rType == "float32":
+                        elif datacode == 'H': 
+                            rValD = decoder.decode_16bit_uint()
+                        elif datacode == 'i':
+                            rValD = decoder.decode_32bit_int()
+                        elif datacode == 'l':
+                            rValD = decoder.decode_32bit_int()
+                        elif datacode == 'I':
+                            rValD = decoder.decode_32bit_uint()
+                        elif datacode == 'L':
+                            rValD = decoder.decode_32bit_uint()
+                        elif datacode == 'f':
                             rValD = decoder.decode_32bit_float()*10
-                            t = emonhub_coder.encode('f',rValD)
-                            f = f + list(t)
-                        else:
-                            self._log.error("Register type not found: "+ str(rType) + " Register:" + str(register))
+                        elif datacode == 'q':
+                            rValD = decoder.decode_64bit_int()
+                        elif datacode == 'Q':
+                            rValD = decoder.decode_64bit_uint()
+                        elif datacode == 'd':
+                            rValD = decoder.decode_64bit_float()*10
+                        
+                        t = ehc.encode(datacode,rValD)
+                        f = f + list(t)
                         self._log.debug("Encoded value: " + str(t))
-
-                self._log.debug("reporting data: " + str(f))
-                if int(self._settings['nodeId']):
-                    c.nodeid = int(self._settings['nodeId'])
-                    c.realdata = f
+                        self._log.debug("value: " + str(rValD))
+                
+                #test if payload length is OK
+                if len(f) == expectedSize:
+                    self._log.debug("payload size OK (" + str(len(f)) +")")
+                    self._log.debug("reporting data: " + str(f))
+                    c.nodeid = node
+                    c.realdata = f      
+                    self._log.debug("Return from read data: " + str(c.realdata))
+                    return c
                 else:
-                    c.nodeid = int(12)
-                    c.realdata = f
-                self._log.debug("Return from read data: " + str(c.realdata))
-
-            return c
+                    self._log.error("incorrect payload size :" + str(len(f)) + " expecting " + str(expectedSize))
+                    return
+                    
