@@ -301,9 +301,15 @@ It's possible to transmitt data to other nodes via RFM eg the following config
      units = h,min,sec,W,W,kwh,kwh
 ```
 
-Will transmitt the following:
+The following data published to MQTT 
 
-`emonhub/txi/20/14,38,34,700,138,2700,829`
+`emonhub/tx/20/values/14,38,34,700,138,2700,829`
+
+Will result in the follwing data being transmitted via RF in JeeLib packet formatt: 
+
+`14,38,34,700,138,2700,829`
+
+To decode the RFM data use the following struct in the receiver node, emonGLCD in this example: 
 
 ```
 typedef struct {
