@@ -1,5 +1,6 @@
 
 import time
+import json
 import datetime
 import Cargo
 import EmonHubSerialInterfacer as ehi
@@ -64,7 +65,25 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
-            
+        
+
+
+
+
+    def add(self, cargo):
+        """Append data to buffer.
+
+        data (list): node and values (eg: '[node,val1,val2,...]')
+
+        """
+
+	#just send it
+	txc = self._process_tx(cargo)
+	self.send(txc)
+
+
+
+    
     def read(self):
         """Read data from serial port and process if complete line received.
 
@@ -212,6 +231,22 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
                 self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
 
+
+
+    def _process_post(self, databuffer):
+        """Send data to server/broker or other output
+
+        """
+
+        for i in range(0,len(databuffer)):
+            frame = databuffer[i]
+            self._log.debug("node = " + str(frame[1]) + " node_data = "+json.dumps(frame))
+            self.send(frame)
+
+
+        return True
+
+
     def send (self, cargo):
 
         f = cargo
@@ -228,8 +263,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._log.warning(self.name + " discarding Tx packet: values out of scope" )
                 return
             payload += str(int(value))+","
-                
+
         payload += cmd
-        
+
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
         self._ser.write(payload)
+
+
+
