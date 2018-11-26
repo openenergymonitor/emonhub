@@ -286,7 +286,34 @@ Indicates the host environment for human reference. **This field is optional.**
 
     `[[[rx]]]`
 
-This must be "rx" and specifies that the next section is for the config of the sensor values received from a node. Its also possible to define a "tx" section for variables to be sent to the node such as control state's. Documentation on this to be added.
+This must be "rx" and specifies that the next section is for the config of the sensor values received from a node. Its also possible to define a "tx" section for variables to be sent to the node such as control state's. 
+
+### tx
+
+`[[[tx]]]`
+
+It's possible to transmitt data to other nodes via RFM eg the following config
+
+```
+  [[[tx]]]
+     names=nodeid,hour,minute,second,utilityW,solarW,utilityKwh,solarKwh
+     datacodes =b,b,b,h,h,H,H
+     units = h,min,sec,W,W,kwh,kwh
+```
+
+Will transmitt the following:
+
+`emonhub/txi/20/14,38,34,700,138,2700,829`
+
+```
+typedef struct {
+  byte nodeId ;
+  byte hour, min, sec ;
+  int utilityW, solarW, utilityKwh, solarKwh;
+} PayloadTX;
+```
+
+See PR [#68](https://github.com/openenergymonitor/emonhub/pull/68) and emonGLCD PR [#12](https://github.com/openenergymonitor/EmonGLCD/pull/12) for MQTT data transmission.
 
 ### Datacodes
 
