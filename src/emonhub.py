@@ -206,8 +206,6 @@ class EmonHub(object):
                     if not 'Type' in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
-                    if I['Type'] in ('EmonModbusTcpInterfacer','EmonFroniusModbusTcpInterfacer') and not pymodbus_found :
-                        self._log.error("Python module pymodbus not installed. unable to load modbus interfacer")
                     # This gets the class from the 'Type' string
                     interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
