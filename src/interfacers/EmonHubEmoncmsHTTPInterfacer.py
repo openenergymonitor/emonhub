@@ -2,6 +2,8 @@
 """
 import time
 import json
+import urllib
+import zlib
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -14,7 +16,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # defaults previously defined in inherited emonhub_interfacer
         # here we are just changing the batchsize from 1 to 100
         # and the interval from 0 to 30
-        self._defaults.update({'batchsize': 100,'interval': 30})
+        self._defaults.update({'batchsize': 100, 'interval': 30})
         # This line will stop the default values printing to logfile at start-up
         self._settings.update(self._defaults)
         
@@ -23,7 +25,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0
+            'sendstatus': 0,
+            'compress': 1
         }
         
         # set an absolute upper limit for number of items to process per post
@@ -44,7 +47,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             # Return true to clear buffer if the apikey is not set
             return True
             
-            
         data_string = json.dumps(databuffer, separators=(',', ':'))
         
         # Prepare URL string of the form
@@ -57,7 +59,17 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         # Construct post_url (without apikey)
         post_url = self._settings['url']+'/input/bulk'+'.json?apikey='
-        post_body = "data="+data_string+"&sentat="+str(sentat)
+        
+        # Construct post body
+        post_body_data = {"data": data_string, "sentat": sentat}
+        
+        if self._settings['compress']:
+            # Compress data and encode as hex string.
+            post_body_data["data"] = zlib.compress(post_body_data["data"]).encode("hex")
+            # Set flag.
+            post_body_data["c"] = 1
+        
+        post_body = urllib.urlencode(post_body_data)
 
         # logged before apikey added for security
         self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
@@ -70,6 +82,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # adopted
 
         reply = self._send_post(post_url, post_body)
+        
         if reply == 'ok':
             self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
@@ -136,6 +149,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'sendstatus':
                 self._log.info("Setting " + self.name + " sendstatus: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'compress':
+                self._log.info("Setting " + self.name + " compress: " + setting)
+                if setting == "1":
+                    setting = True
+                else:
+                    setting = False
                 self._settings[key] = setting
                 continue
             else:
