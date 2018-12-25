@@ -376,25 +376,29 @@ class EmonHubInterfacer(threading.Thread):
                 decoded.append(value)
 
         # ------------------------------------------------------------------------
-        if rxc.nodeid==10:
-            tmp = decoded
-            decoded = []
-                
+        if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'unitless' in ehc.nodelist[node]['rx']:
+            # unitless = ["rp","rp","rp","rp","v"]
+            unitless = ehc.nodelist[node]['rx']['unitless']
+            
+            converted = []
+            
             phase_shift = 0.0
             if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'phase_shift' in ehc.nodelist[node]['rx']:
                 phase_shift = float(ehc.nodelist[node]['rx']['phase_shift'])
             
-            scaleFactor = 0x4800                                    # scaling for integer transmission of values
-            sampleRate = 0.1073                                     # angle between sample pairs (radians @ 50 Hz). Use 0.1288 for 60 Hz systems
-
-            y = math.sin(phase_shift) / math.sin(sampleRate)        # if phase_shift = 0, y = 0
-            x = math.cos(phase_shift) - y * math.cos(sampleRate)    # if phase_shift = 1, x = 1
+            # Itterate through unitless inputs
+            index = 0
+            for i in range(0, len(unitless)):
+                if unitless[i]=="rp":
+                    converted.append(ehc.unitless_realpower(decoded[index],decoded[index+1],phase_shift))
+                    index += 2
+                if unitless[i]=="v":
+                    converted.append(ehc.unitless_vrms(decoded[index]))
+                    index += 1  
             
-            decoded.append((tmp[0] * x - tmp[1] * y) / scaleFactor)
-            decoded.append((tmp[2] * x - tmp[3] * y) / scaleFactor)
-            decoded.append((tmp[4] * x - tmp[5] * y) / scaleFactor)
-            decoded.append((tmp[6] * x - tmp[7] * y) / scaleFactor)
-            decoded.append(1.0*tmp[8]/scaleFactor)
+            # Update decoded with converted values
+            decoded = converted
+      
         # ------------------------------------------------------------------------
 
         # check if node is listed and has individual scales for each value

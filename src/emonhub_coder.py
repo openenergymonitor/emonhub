@@ -1,4 +1,5 @@
 import struct
+import math
 
 # Initialize nodes data
 nodelist = {}
@@ -45,3 +46,18 @@ def encode(datacode, value):
     #datacode = "b"
     result = struct.unpack(e + b*s, struct.pack(e + datacode, value))
     return result
+    
+def unitless_realpower(A,B,phase_shift):
+
+    scaleFactor = 0x4800                                    # scaling for integer transmission of values
+    sampleRate = 0.1073                                     # angle between sample pairs (radians @ 50 Hz). Use 0.1288 for 60 Hz systems
+
+    y = math.sin(phase_shift) / math.sin(sampleRate)        # if phase_shift = 0, y = 0
+    x = math.cos(phase_shift) - y * math.cos(sampleRate)    # if phase_shift = 1, x = 1
+
+    return (A * x - B * y) / scaleFactor
+    
+def unitless_vrms(V):
+
+    scaleFactor = 0x4800                                    # scaling for integer transmission of values
+    return 1.0*V/scaleFactor
