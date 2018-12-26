@@ -11,6 +11,7 @@ import time
 import logging
 from configobj import ConfigObj
 import json
+import imp
 
 """class EmonHubSetup
 
@@ -51,6 +52,7 @@ class EmonHubSetup(object):
         
         # Initialize settings
         self.settings = None
+        self.redis_found = False
 
     def run(self):
         """Run in background. 
@@ -91,6 +93,17 @@ class EmonHubFileSetup(EmonHubSetup):
         else:
             self.retry_msg = ""
 
+        # Make emonhub.conf available over redis for local emoncms installation
+        try:
+            imp.find_module('redis')
+            self.redis_found = True
+            self._log.info("Redis found")
+            import redis
+            self.r = redis.Redis(host="localhost",port=6379,db=0)
+        except ImportError:
+            self.redis_found = False
+            self._log.info("Redis not found")
+
         # Initialize attribute settings as a ConfigObj instance
         try:
         
@@ -99,6 +112,12 @@ class EmonHubFileSetup(EmonHubSetup):
             else:            
                 with open(filename) as f:
                     self.settings = json.loads(f.read())
+            
+            # Translate configuration into json object and reload back to python dict
+            if self.redis_found:
+                jsonstr = json.dumps(self.settings)
+                self.r.set("get:emonhubconf",jsonstr)
+                self._log.info("emonhub conf loaded to redis")
             
             # Check the settings file sections
             self.settings['hub']
@@ -135,7 +154,7 @@ class EmonHubFileSetup(EmonHubSetup):
                 self.settings.reload()
             else:            
                 with open(self._filename) as f:
-                    self.settings = json.loads(f.read())
+                    self.settings = json.loads(f.read())                
                 
         except IOError as e:
             self._log.warning('Could not get settings: ' + str(e) + self.retry_msg)
@@ -152,8 +171,27 @@ class EmonHubFileSetup(EmonHubSetup):
                               traceback.format_exc() + self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
+
+        # Redis interface to emonhub.conf
+        # Check for configuration in set topic & apply to settings if present:
+        if self.redis_found:    
+            result = self.r.get("set:emonhubconf")
+            if result:
+                self.r.delete("set:emonhubconf");
+                jsonsettings = json.loads(result)
+                # 4. Merge dict with original configobj class
+                self.settings.merge(jsonsettings)
+                # 5. Save to conf file
+                self.settings.write()
+                self._log.info("emonhub conf saved from redis")
         
         if self.settings != settings:
+            # Reload latest settings to redis get topic if change detected:
+            if self.redis_found:
+                jsonstr = json.dumps(self.settings)
+                self.r.set("get:emonhubconf",jsonstr)
+                self._log.info("emonhub conf loaded to redis")
+                
             # Check the settings file sections
             try:
                 self.settings['hub']
@@ -161,7 +199,8 @@ class EmonHubFileSetup(EmonHubSetup):
             except KeyError as e:
                 self._log.warning("Configuration file missing section: " + str(e))
             else:
-                 return True
+                return True
+            
 
 """class EmonHubSetupInitError
 

@@ -110,10 +110,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if str.lower(setting[:4]) == 'xxxx':
+                if str.lower(str(setting[:4])) == 'xxxx':
                     self._log.warning("Setting " + self.name + " apikey: obscured")
                     pass
-                elif str.__len__(setting) == 32 :
+                elif str.__len__(str(setting)) == 32 :
                     self._log.info("Setting " + self.name + " apikey: set")
                     pass
                 elif setting == "":
