@@ -47,7 +47,7 @@ def encode(datacode, value):
     result = struct.unpack(e + b*s, struct.pack(e + datacode, value))
     return result
     
-def unitless_realpower(A,B,phase_shift):
+def unitless_realpower(A,B,vcal,ical,phase_shift):
 
     scaleFactor = 0x4800                                    # scaling for integer transmission of values
     sampleRate = 0.1073                                     # angle between sample pairs (radians @ 50 Hz). Use 0.1288 for 60 Hz systems
@@ -55,9 +55,9 @@ def unitless_realpower(A,B,phase_shift):
     y = math.sin(phase_shift) / math.sin(sampleRate)        # if phase_shift = 0, y = 0
     x = math.cos(phase_shift) - y * math.cos(sampleRate)    # if phase_shift = 1, x = 1
 
-    return (A * x - B * y) / scaleFactor
+    return ((A * x - B * y) / scaleFactor)*vcal*ical
     
-def unitless_vrms(V):
+def unitless_vrms(V,vcal):
 
     scaleFactor = 0x4800                                    # scaling for integer transmission of values
-    return 1.0*V/scaleFactor
+    return (1.0*V/scaleFactor)*vcal

@@ -381,19 +381,39 @@ class EmonHubInterfacer(threading.Thread):
             unitless = ehc.nodelist[node]['rx']['unitless']
             
             converted = []
+
+            vcal = 1.0
+            if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'vcal' in ehc.nodelist[node]['rx']:
+                vcal = float(ehc.nodelist[node]['rx']['vcal'])
             
-            phase_shift = 0.0
-            if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'phase_shift' in ehc.nodelist[node]['rx']:
-                phase_shift = float(ehc.nodelist[node]['rx']['phase_shift'])
+            icals = []
+            if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'icals' in ehc.nodelist[node]['rx']:
+                icals = ehc.nodelist[node]['rx']['icals']
+
+            phase_shifts = []
+            if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'phase_shifts' in ehc.nodelist[node]['rx']:
+                phase_shifts = ehc.nodelist[node]['rx']['phase_shifts']
             
             # Itterate through unitless inputs
             index = 0
             for i in range(0, len(unitless)):
                 if unitless[i]=="rp":
-                    converted.append(ehc.unitless_realpower(decoded[index],decoded[index+1],phase_shift))
+                    # Current calibration if available
+                    if i<len(icals):
+                        ical = float(icals[i])
+                    else: 
+                        ical = 1.0
+                    # Phase shift if available
+                    if i<len(phase_shifts):
+                        phase_shift = float(phase_shifts[i])
+                    else: 
+                        phase_shift = 0.0
+                    # Real power unitless conversion    
+                    converted.append(ehc.unitless_realpower(decoded[index],decoded[index+1],vcal,ical,phase_shift))
                     index += 2
                 if unitless[i]=="v":
-                    converted.append(ehc.unitless_vrms(decoded[index]))
+                    # VRMS unitless conversion
+                    converted.append(ehc.unitless_vrms(decoded[index],vcal))
                     index += 1  
             
             # Update decoded with converted values
