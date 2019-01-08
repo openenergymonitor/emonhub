@@ -62,6 +62,8 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
         # Parse the ESP format string
         values=[]
         names=[]
+        
+        p = re.compile('\d+(\.\d+)?')
 
         for item in f.split(','):
             parts = item.split(':')
@@ -69,7 +71,7 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
                 # check for alphanumeric input name
                 if re.match('^[\w-]+$',parts[0]):
                     # check for numeric value
-                    if parts[1].isdigit():
+                    if p.match(parts[1])!=None:
                         names.append(parts[0])
                         values.append(parts[1])
                     # log errors    
