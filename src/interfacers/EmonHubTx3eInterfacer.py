@@ -69,11 +69,14 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
                 # check for alphanumeric input name
                 if re.match('^[\w-]+$',parts[0]):
                     # check for numeric value
-                    if parts[1].isdigit():
-                        names.append(parts[0])
-                        values.append(parts[1])
-                    # log errors    
-                    else: self._log.debug("input value is not numeric: "+parts[1])
+                    value = 0
+                    try:
+                        value = float(parts[1])
+                    except Exception:
+                        self._log.debug("input value is not numeric: "+parts[1])
+                    
+                    names.append(parts[0])
+                    values.append(value)
                 else: self._log.debug("invalid input name: "+parts[0])
 
             
