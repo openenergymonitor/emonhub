@@ -361,7 +361,11 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
 
 `datacode = 0` is a valid datacode. It is best remembered by thinking of it as either "0 = False" (no decoding) or "Zero decoding required"; in code it is a logical test as to whether to continue through or bypass the decoding of the value(s).
 
+<! ---
 **Note:** Each interfacer has its own default datacode, so it is possible to comment out the datacode line to the same effect as `datacode = 0`, either would denote an unspecified number of values that require no decoding. But `datacodes = 0,0,0,0,0,0,0,0` would differ slightly as it denotes exactly 8 values that require no decoding, any array of values that has less than or more than 8 values will be discarded; this stricter filtering can be advantageous in some circumstances.
+
+< Correct for serial and socket interfacers, but not for the Jee interfacer.
+--- >
 
 **Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
 
