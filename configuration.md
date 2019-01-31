@@ -323,7 +323,7 @@ See PR [#68](https://github.com/openenergymonitor/emonhub/pull/68) and emonGLCD 
 
 ### Datacodes
 
-An un-configured Emonhub will by default assume that RFM12 or RFM69 data packets received are a series of integers, each 2 bytes long. The radio packet format is quite minimal and non-descriptive and so emonhub cant know how to decode the packets from the received data if the packet structure is any different.
+An un-configured Emonhub will by default assume that RFM12 or RFM69 data packets received are a series of integers, each 2 bytes long (when using the Jee interfacer). The radio packet format is quite minimal and non-descriptive and so emonhub can't know how to decode the packets from the received data if the packet structure is any different.
 
 Earlier OpenEnergyMonitor nodes always sent a series of integers and so no decoder configuration was needed, more recent revisions now include the sending of pulse counts or watt hours which would overrun the maximum value that can be sent as an integer. The latest EmonPi, EmonTx3 and EmonTH firmware's all send pulse count as long datatypes at the end of their packets taking up 4 bytes.
 
@@ -353,7 +353,7 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
     f: float, 4 bytes
     d: double, 8 bytes
     B: unsigned byte, 1 byte
-    H: unsigned integer, 2 bytes
+    H: unsigned short integer, 2 bytes
     I: unsigned integer, 4 bytes
     L: unsigned long, 4 bytes
     Q: unsigned long long, 8 bytes
@@ -361,13 +361,7 @@ Notice that the name is datacode rather than datacode**s** with an s. There are 
 
 `datacode = 0` is a valid datacode. It is best remembered by thinking of it as either "0 = False" (no decoding) or "Zero decoding required"; in code it is a logical test as to whether to continue through or bypass the decoding of the value(s).
 
-<!---
-**Note:** Each interfacer has its own default datacode, so it is possible to comment out the datacode line to the same effect as `datacode = 0`, either would denote an unspecified number of values that require no decoding. But `datacodes = 0,0,0,0,0,0,0,0` would differ slightly as it denotes exactly 8 values that require no decoding, any array of values that has less than or more than 8 values will be discarded; this stricter filtering can be advantageous in some circumstances.
-
-< Correct for serial and socket interfacers, but not for the Jee interfacer.
--->
-
-**Note:** Arduino integers are 2 bytes long and so we use the short integer decoder: h.
+**Note:** A datacode can also be set in the runtimesettings of any interfacer; e.g. if you added datacode = h to the serial or socket interfacers, that would mean if the datacode(s) line is omitted from the nodes section, it will default to “h” rather than the hardcoded default of “0”.
 
 ### Names
 
