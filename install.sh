@@ -1,14 +1,20 @@
 #!/bin/bash
-
 # -------------------------------------------------------------
 # emonHub install script
 # -------------------------------------------------------------
-
-usrdir=$1
-emonSD_pi_env=$2
-
 # Assumes emonhub repository installed via git:
 # git clone https://github.com/openenergymonitor/emonhub.git
+
+DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+usrdir=${DIR/\/emonhub/}
+
+emonSD_pi_env=$1
+if [ "$emonSD_pi_env" = "" ]; then
+    read -sp 'Apply raspberrypi serial configuration? 1=yes, 0=no: ' emonSD_pi_env
+    echo 
+    echo "You entered $emonSD_pi_env"
+    echo
+fi
 
 sudo apt-get install -y python-serial python-configobj
 sudo pip install paho-mqtt requests
