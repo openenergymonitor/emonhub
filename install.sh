@@ -68,6 +68,7 @@ else
 fi
 
 sudo cp $usrdir/emonhub/service/$service.service /lib/systemd/system
+# Set ExecStart path to point to installed script and config location
 sudo sed -i "s~ExecStart=.*~ExecStart=$emonhub_src_path/emonhub.py --config-file=$emonhub_conf_path/emonhub.conf~" /lib/systemd/system/$service.service
 sudo systemctl enable $service.service
 sudo systemctl restart $service.service
