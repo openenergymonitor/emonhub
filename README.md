@@ -76,8 +76,7 @@ Install the emon-pi variant of emonhub:
 
     git clone https://github.com/openenergymonitor/emonhub.git 
     cd emonhub 
-    sudo ./install.systemd
-    sudo systemctl start emonhub.service
+    sudo ./install.sh
 
 The emonhub configuration guide can be found here:
 
