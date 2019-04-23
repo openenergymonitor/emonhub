@@ -282,7 +282,7 @@ class EmonHubInterfacer(threading.Thread):
         Return data as a list: [NodeID, val1, val2]
 
         """
-
+            
         # Log data
         self._log.debug(str(cargo.uri) + " NEW FRAME : " + str(cargo.rawdata))
 
@@ -308,6 +308,13 @@ class EmonHubInterfacer(threading.Thread):
         # if n % 1 != 0 or n < 0 or n > 31:
         #     self._log.warning(str(cargo.uri) + " Discarded RX frame 'node id outside scope' : " + str(rxc.realdata))
         #     return False
+
+        # Data whitening uses for ensuring rfm sync
+        if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
+            whitening = ehc.nodelist[node]['rx']['whitening']
+            if whitening==True or whitening=="1":
+                for i in range(0, len(rxc.realdata), 1):
+                    rxc.realdata[i] = rxc.realdata[i] ^ 0x55
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacodes' in ehc.nodelist[node]['rx']:
@@ -373,7 +380,7 @@ class EmonHubInterfacer(threading.Thread):
                     return False
                 bytepos += size
                 decoded.append(value)
-
+        
         # check if node is listed and has individual scales for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scales' in ehc.nodelist[node]['rx']:
             scales = ehc.nodelist[node]['rx']['scales']
