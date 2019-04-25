@@ -55,6 +55,8 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         
     def _process_post(self, databuffer):
     
+        timestamp = int(time.time())
+        
         metrics = []
         for c in range(0,len(databuffer)):
             frame = databuffer[c]
@@ -66,7 +68,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
                 # payload
                 payload = str(value)
                 # timestamp
-                timestamp = frame['timestamp']
+                #timestamp = frame['timestamp']
                 
                 metrics.append(path+" "+payload+" "+str(timestamp))
                 
