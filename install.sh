@@ -44,41 +44,37 @@ fi
 
 sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
 
-if [ ! -f $usrdir/data/emonhub.conf ]; then
-    sudo cp $usrdir/emonhub/conf/emonpi.default.emonhub.conf $usrdir/data/emonhub.conf
+# ---------------------------------------------------------
+# EmonHub config file
+# ---------------------------------------------------------
+if [ ! -d /etc/emonhub ]; then
+    sudo mkdir /etc/emonhub
+fi
+
+if [ ! -f /etc/emonhub/emonhub.conf ]; then
+    sudo cp $usrdir/emonhub/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
 
     # Temporary: replace with update to default settings file
-    sed -i "s/loglevel = DEBUG/loglevel = WARNING/" $usrdir/data/emonhub.conf
+    sed -i "s/loglevel = DEBUG/loglevel = WARNING/" /etc/emonhub/emonhub.conf
 fi
+
+# ---------------------------------------------------------
+# Symlink emonhub.py
+# ---------------------------------------------------------
+if [ ! -d /usr/share/emonhub ]; then
+    sudo mkdir /usr/share/emonhub
+fi
+
+sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/share/emonhub/emonhub.py
 
 # ---------------------------------------------------------
 # Install service
 # ---------------------------------------------------------
-service=emonhub
-emonhub_src_path=$usrdir/emonhub/src
-emonhub_conf_path=$usrdir/data
+echo "- installing emonhub.service"
+sudo ln -sf $usrdir/emonhub/service/emonhub.service.new /lib/systemd/system/emonhub.service
+sudo systemctl enable emonhub.service
+sudo systemctl restart emonhub.service
 
-emonhub_logfile_path=/var/log/emonhub
-if [ ! -d /var/log/emonhub ]; then
-    sudo mkdir $emonhub_logfile_path
-    sudo chown emonhub $emonhub_logfile_path
-fi
-
-if [ -f /lib/systemd/system/$service.service ]; then
-    echo "- reinstalling $service.service"
-    sudo systemctl stop $service.service
-    sudo systemctl disable $service.service
-    sudo rm /lib/systemd/system/$service.service
-else
-    echo "- installing $service.service"
-fi
-
-sudo cp $usrdir/emonhub/service/$service.service /lib/systemd/system
-# Set ExecStart path to point to installed script and config location
-sudo sed -i "s~ExecStart=.*~ExecStart=$emonhub_src_path/emonhub.py --config-file=$emonhub_conf_path/emonhub.conf --logfile=$emonhub_logfile_path/emonhub.log~" /lib/systemd/system/$service.service
-sudo systemctl enable $service.service
-sudo systemctl restart $service.service
-
-state=$(systemctl show $service | grep ActiveState)
+state=$(systemctl show emonhub | grep ActiveState)
 echo "- Service $state"
 # ---------------------------------------------------------
