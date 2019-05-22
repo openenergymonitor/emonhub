@@ -71,7 +71,7 @@ sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/share/emonhub/emonhub.py
 # Install service
 # ---------------------------------------------------------
 echo "- installing emonhub.service"
-sudo ln -sf $usrdir/emonhub/service/emonhub.service.new /lib/systemd/system/emonhub.service
+sudo ln -sf $usrdir/emonhub/service/emonhub.service /lib/systemd/system
 sudo systemctl enable emonhub.service
 sudo systemctl restart emonhub.service
 
