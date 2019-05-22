@@ -9,7 +9,7 @@ After=sysinit.target syslog.target local-fs.target
 [Service]
 User=emonhub
 PIDFile=/var/run/emonhub.pid
-ExecStart=/usr/share/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
+ExecStart=/usr/local/bin/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
 PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p /var/log/emonhub/
 ExecStartPre=/bin/chgrp -R emonhub /var/log/emonhub/
