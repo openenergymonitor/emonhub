@@ -61,11 +61,7 @@ fi
 # ---------------------------------------------------------
 # Symlink emonhub.py
 # ---------------------------------------------------------
-if [ ! -d /usr/share/emonhub ]; then
-    sudo mkdir /usr/share/emonhub
-fi
-
-sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/share/emonhub/emonhub.py
+sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/local/bin/emonhub.py
 
 # ---------------------------------------------------------
 # Install service
