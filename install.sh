@@ -61,7 +61,7 @@ fi
 # ---------------------------------------------------------
 # Symlink emonhub.py
 # ---------------------------------------------------------
-sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/local/bin/emonhub.py
+sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/local/bin
 
 # ---------------------------------------------------------
 # Install service
