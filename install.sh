@@ -59,9 +59,9 @@ if [ ! -f /etc/emonhub/emonhub.conf ]; then
 fi
 
 # ---------------------------------------------------------
-# Symlink emonhub.py
+# Symlink emonhub source to /usr/share/emonhub
 # ---------------------------------------------------------
-sudo ln -sf $usrdir/emonhub/src/emonhub.py /usr/local/bin
+sudo ln -sf $usrdir/emonhub/src /usr/share/emonhub
 
 # ---------------------------------------------------------
 # Install service
