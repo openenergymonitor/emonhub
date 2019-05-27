@@ -7,14 +7,14 @@ Requires=local-fs.target
 After=sysinit.target syslog.target local-fs.target
 
 [Service]
-EnvironmentFile=/home/pi/emonhub.env
+EnvironmentFile=/etc/emonhub/emonhub.env
 User=emonhub
 PIDFile=/var/run/emonhub.pid
 ExecStart=/usr/bin/python ${EMONHUB_SRC}/emonhub.py --config-file=${EMONHUB_CONF}/emonhub.conf --logfile=${EMONHUB_LOG}/emonhub.log
 PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /var/log/emonhub/
-ExecStartPre=/bin/chgrp -R emonhub /var/log/emonhub/
-ExecStartPre=/bin/chmod -R 775 /var/log/emonhub/
+ExecStartPre=/bin/mkdir -p ${EMONHUB_LOG}
+ExecStartPre=/bin/chgrp -R emonhub ${EMONHUB_LOG}
+ExecStartPre=/bin/chmod -R 775 ${EMONHUB_LOG}
 Type=simple
 Restart=always
 
