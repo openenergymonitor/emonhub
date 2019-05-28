@@ -14,7 +14,7 @@ ExecStart=/usr/bin/python ${EMONHUB_SRC}/emonhub.py --config-file=${EMONHUB_CONF
 PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p ${EMONHUB_LOG}
 ExecStartPre=/bin/chgrp -R emonhub ${EMONHUB_LOG}
-ExecStartPre=/bin/chmod -R 775 ${EMONHUB_LOG}
+ExecStartPre=/bin/chmod 775 ${EMONHUB_LOG}
 Type=simple
 Restart=always
 
