@@ -37,11 +37,6 @@ if [ "$emonSD_pi_env" = "1" ]; then
     sudo systemctl mask serial-getty@ttyAMA0.service
 fi
 
-cd $usrdir
-if [ ! -d $usrdir/data ]; then
-    mkdir data
-fi
-
 sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
 
 # ---------------------------------------------------------
