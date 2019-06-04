@@ -43,24 +43,7 @@ This variant of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 Emonhub requires the following dependencies:
 
-Mosquitto: (see http://mosquitto.org/2013/01/mosquitto-debian-repository)
-
-    wget http://repo.mosquitto.org/debian/mosquitto-repo.gpg.key
-    sudo apt-key add mosquitto-repo.gpg.key
-    cd /etc/apt/sources.list.d/
-
-Depending on which version of Debian you're using:
-
-    sudo wget http://repo.mosquitto.org/debian/mosquitto-wheezy.list
-
-or:
-
-    sudo wget http://repo.mosquitto.org/debian/mosquitto-jessie.list
-
-Update apt information:
-
     sudo apt-get update
-
     sudo apt-get install -y mosquitto python-pip python-serial python-configobj python-requests
     sudo pip install paho-mqtt
 
@@ -72,8 +55,12 @@ Set
 
     persistence false
 
-Install the emon-pi variant of emonhub:
+Install emonhub in /opt/emon:
 
+    sudo mkdir /opt/emon
+    sudo chown YOUR_USER_NAME /opt/emon
+    cd /opt/emon
+    
     git clone https://github.com/openenergymonitor/emonhub.git 
     cd emonhub 
     sudo ./install.sh

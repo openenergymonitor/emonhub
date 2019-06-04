@@ -59,14 +59,15 @@ if [ ! -f /etc/emonhub/emonhub.conf ]; then
 fi
 
 # ---------------------------------------------------------
-# Symlink emonhub source to /usr/share/emonhub
-# ---------------------------------------------------------
-sudo ln -sf $usrdir/emonhub/src /usr/share/emonhub
-
-# ---------------------------------------------------------
 # Install service
 # ---------------------------------------------------------
 echo "- installing emonhub.service"
+
+# Install default emonhub.env service path settings
+if [ ! -f /etc/emonhub/emonhub.env ]; then
+    sudo cp $usrdir/emonhub/service/emonhub.env /etc/emonhub/emonhub.env
+fi
+
 sudo ln -sf $usrdir/emonhub/service/emonhub.service /lib/systemd/system
 sudo systemctl enable emonhub.service
 sudo systemctl restart emonhub.service
