@@ -60,7 +60,7 @@ loglevel = DEBUG
 # use_syslog = yes
 ```
 ***
-# 2. 'interfaces' Configuration
+# 2. 'interfacers' Configuration
 
 Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics:
 
