@@ -61,7 +61,7 @@ fi
 # ---------------------------------------------------------
 # Symlink emonhub source to /usr/share/emonhub
 # ---------------------------------------------------------
-sudo ln -sf $usrdir/emonhub/src /usr/share/emonhub
+sudo ln -sf $usrdir/emonhub/src /usr/local/bin/emonhub
 
 # ---------------------------------------------------------
 # Install service
