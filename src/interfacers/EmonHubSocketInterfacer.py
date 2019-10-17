@@ -22,7 +22,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         super(EmonHubSocketInterfacer, self).__init__(name)
 
         # add an apikey setting
-        self._skt_settings = {'apikey':""}
+        self._skt_settings = {'apikey': ""}
         self._settings.update(self._skt_settings)
 
         # Open socket
@@ -61,7 +61,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """Read data from socket and process if complete line received.
 
         Return data as a list: [NodeID, val1, val2]
-        
+
         """
 
         # Check if data received
@@ -73,10 +73,10 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
             # Accept connection
             conn, addr = self._socket.accept()
-            
+
             # Read data
             self._sock_rx_buf = self._sock_rx_buf + conn.recv(1024)
-            
+
             # Close connection
             conn.close()
 
@@ -101,23 +101,20 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
                     self._log.warning(str(c.uri) +" discarded frame: apikey not matched")
                     return
                 # Otherwise remove apikey from frame
-                f = [ v for v in f if self._settings['apikey'] not in v ]
+                f = [v for v in f if self._settings['apikey'] not in v]
                 c.rawdata = ' '.join(f)
-        else:
-            pass
-
 
         # Extract timestamp value if one is expected or use 0
         timestamp = 0.0
         if self._settings['timestamped']:
-            c.timestamp=f[0]
+            c.timestamp = f[0]
             f = f[1:]
         # Extract source's node id
         c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
-        f=f[1:]
+        f = f[1:]
         # Extract the Target id if one is expected
         if self._settings['targeted']:
-                #setting = str.capitalize(str(setting))
+            #setting = str(setting).capitalize()
             c.target = int(f[0])
             f = f[1:]
         # Extract list of data values
@@ -126,7 +123,6 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         #f = new_cargo(data, node, timestamp, dest)
 
         return c
-
 
     def set(self, **kwargs):
         """
@@ -144,13 +140,10 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             elif key == 'apikey':
                 if str.lower(setting[:4]) == 'xxxx':
                     self._log.warning("Setting " + self.name + " apikey: obscured")
-                    pass
-                elif str.__len__(setting) == 32 :
+                elif str.__len__(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
-                    pass
                 elif setting == "":
                     self._log.info("Setting " + self.name + " apikey: null")
-                    pass
                 else:
                     self._log.warning("Setting " + self.name + " apikey: invalid format")
                     continue
@@ -167,4 +160,3 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super(EmonHubSocketInterfacer, self).set(**kwargs)
-

@@ -16,7 +16,8 @@ import logging.handlers
 import signal
 import argparse
 import pprint
-import glob, os
+import glob
+import os
 
 import emonhub_setup as ehs
 import emonhub_coder as ehc
@@ -28,11 +29,11 @@ namespace = sys.modules[__name__]
 path = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 
 # scan interfacers directory and import all interfacers
-for f in glob.glob(path+"/interfacers/*.py"):
-    name = f.replace(".py","").replace(path+"/interfacers/","")
-    if name!="__init__":
-        # print "Loading: "+name
-        setattr(ehi,name,getattr(getattr(namespace,name),name))
+for f in glob.glob(path + "/interfacers/*.py"):
+    name = f.replace(".py", "").replace(path + "/interfacers/", "")
+    if name != "__init__":
+        # print "Loading: " + name
+        setattr(ehi, name, getattr(getattr(namespace, name), name))
 
 """class EmonHub
 
@@ -86,9 +87,9 @@ class EmonHub(object):
         signal.signal(signal.SIGINT, self._sigint_handler)
 
         # Initialise thread restart counters
-        restart_count={}
+        restart_count = {}
         for I in self._interfacers.itervalues():
-            restart_count[I.name]=0
+            restart_count[I.name] = 0
 
         # Until asked to stop
         while not self._exit:
@@ -99,7 +100,7 @@ class EmonHub(object):
                 self._update_settings(self._setup.settings)
 
             # For all Interfacers
-            kill_list=[]
+            kill_list = []
             for I in self._interfacers.itervalues():
                 # Check threads are still running
                 if not I.isAlive():
@@ -107,23 +108,23 @@ class EmonHub(object):
 
                 # Read each interfacers pub channels
                 for pub_channel in I._settings['pubchannels']:
-                
+
                     if pub_channel in I._pub_channels:
-                        if len(I._pub_channels[pub_channel])>0:
-                        
+                        if len(I._pub_channels[pub_channel]) > 0:
+
                             # POP cargo item (one at a time)
                             cargo = I._pub_channels[pub_channel].pop(0)
-                            
+
                             # Post to each subscriber interface
                             for sub_interfacer in self._interfacers.itervalues():
                                 # For each subsciber channel
                                 for sub_channel in sub_interfacer._settings['subchannels']:
                                     # If channel names match
-                                    if sub_channel==pub_channel:
+                                    if sub_channel == pub_channel:
                                         # init if empty
                                         if not sub_channel in sub_interfacer._sub_channels:
                                             sub_interfacer._sub_channels[sub_channel] = []
-                                            
+
                                         # APPEND cargo item
                                         sub_interfacer._sub_channels[sub_channel].append(cargo)
 
@@ -133,13 +134,13 @@ class EmonHub(object):
 
                 # The following should trigger a restart ... unless the
                 # interfacer is also removed from the settings table.
-                del(self._interfacers[name])
+                del self._interfacers[name]
 
                 # Trigger restart by calling update settings
-                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
-                restart_count[name]+=1
+                self._log.warning("Attempting to restart thread " + name + " (thread has been restarted " + str(restart_count[name]) + " times...")
+                restart_count[name] += 1
                 self._update_settings(self._setup.settings)
-                
+
             # Sleep until next iteration
             time.sleep(0.2)
 
@@ -171,7 +172,6 @@ class EmonHub(object):
         else:
             self._set_logging_level()
 
-
         # Create a place to hold buffer contents whilst a deletion & rebuild occurs
         self.temp_buffer = {}
 
@@ -197,7 +197,7 @@ class EmonHub(object):
             # Delete interfacers if setting changed or name is unlisted or Type is missing
             self._log.info("Deleting interfacer '%s' ", name)
             self._interfacers[name].stop = True
-            del(self._interfacers[name])
+            del self._interfacers[name]
 
         for name, I in settings['interfacers'].iteritems():
             # If interfacer does not exist, create it
@@ -264,7 +264,7 @@ if __name__ == "__main__":
 
     # Configuration file
     parser.add_argument("--config-file", action="store",
-                        help='Configuration file', default=sys.path[0]+'/../conf/emonhub.conf')
+                        help='Configuration file', default=sys.path[0] + '/../conf/emonhub.conf')
     # Log file
     parser.add_argument('--logfile', action='store', type=argparse.FileType('a'),
                         help='Log file (default: log to Standard error stream STDERR)')
@@ -294,10 +294,10 @@ if __name__ == "__main__":
         # Close the file for now and get its path
         args.logfile.close()
         loghandler = logging.handlers.RotatingFileHandler(args.logfile.name,
-                                                       'a', 5000 * 1024, 1)
+                                                          'a', 5000 * 1024, 1)
     # Format log strings
     loghandler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
+        '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
 
     logger.addHandler(loghandler)
 
@@ -312,7 +312,7 @@ if __name__ == "__main__":
         if setup.settings['hub']['use_syslog'] == 'yes':
             syslogger = logging.handlers.SysLogHandler(address='/dev/log')
             syslogger.setFormatter(logging.Formatter(
-                  'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
+                'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
             logger.addHandler(syslogger)
 
     # If in "Show settings" mode, print settings and exit

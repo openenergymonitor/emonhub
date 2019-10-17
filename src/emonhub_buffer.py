@@ -1,7 +1,7 @@
 """
 
   This code is released under the GNU Affero General Public License.
-  
+
   OpenEnergyMonitor project:
   http://openenergymonitor.org
 
@@ -23,7 +23,7 @@ class AbstractBuffer():
     def retrieveItems(self, number):
         raise NotImplementedError
 
-    def retrieveItem(self): 
+    def retrieveItem(self):
         raise NotImplementedError
 
     def discardLastRetrievedItem(self):
@@ -32,7 +32,7 @@ class AbstractBuffer():
     def discardLastRetrievedItems(self, number):
         raise NotImplementedError
 
-    def hasItems(self): 
+    def hasItems(self):
         raise NotImplementedError
 
 """
@@ -42,7 +42,7 @@ It's basically identical to the previous (inline) buffer.
 
 
 class InMemoryBuffer(AbstractBuffer):
-  
+
     def __init__(self, bufferName, buffer_size):
         self._bufferName = str(bufferName)
         self._buffer_type = "memory"
@@ -97,7 +97,7 @@ class InMemoryBuffer(AbstractBuffer):
 
 
 """
-The getBuffer function returns the buffer class corresponding to a 
+The getBuffer function returns the buffer class corresponding to a
 buffering method passed as argument.
 """
 bufferMethodMap = {
@@ -112,4 +112,3 @@ def getBuffer(method):
 
     """
     return bufferMethodMap[method]
-

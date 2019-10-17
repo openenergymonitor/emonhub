@@ -1,4 +1,3 @@
-
 import time
 import json
 import datetime
@@ -25,29 +24,29 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
         else:
             super(EmonHubJeeInterfacer, self).__init__(name, com_port, 38400)
-        
+
         # Display device firmware version and current settings
-        self.info = ["",""]
+        self.info = ["", ""]
         if self._ser is not None:
             self._ser.write("v")
             time.sleep(2)
             self._rx_buf = self._rx_buf + self._ser.readline()
             if '\r\n' in self._rx_buf:
-                self._rx_buf=""
+                self._rx_buf = ""
                 info = self._rx_buf + self._ser.readline()[:-2]
                 if info != "":
                     # Split the returned "info" string into firmware version & current settings
                     self.info[0] = info.strip().split(' ')[0]
                     self.info[1] = info.replace(str(self.info[0]), "")
-                    self._log.info( self.name + " device firmware version: " + self.info[0])
-                    self._log.info( self.name + " device current settings: " + str(self.info[1]))
+                    self._log.info(self.name + " device firmware version: " + self.info[0])
+                    self._log.info(self.name + " device current settings: " + str(self.info[1]))
                 else:
                     # since "v" command only v11> recommend firmware update ?
-                    #self._log.info( self.name + " device firmware is pre-version RFM12demo.11")
-                    self._log.info( self.name + " device firmware version & configuration: not available")
+                    #self._log.info(self.name + " device firmware is pre-version RFM12demo.11")
+                    self._log.info(self.name + " device firmware version & configuration: not available")
             else:
                 self._log.warning("Device communication error - check settings")
-        self._rx_buf=""
+        self._rx_buf = ""
         self._ser.flushInput()
 
         # Initialize settings
@@ -59,16 +58,12 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         self._settings.update(self._defaults)
 
         # Jee specific settings to be picked up as changes not defaults to initialise "Jee" device
-        self._jee_settings =  ({'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True', 'calibration': '230V'})
-        self._jee_prefix = ({'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q', 'calibration': 'p'})
+        self._jee_settings = {'baseid': '15', 'frequency': '433', 'group': '210', 'quiet': 'True', 'calibration': '230V'}
+        self._jee_prefix = {'baseid': 'i', 'frequency': '', 'group': 'g', 'quiet': 'q', 'calibration': 'p'}
 
         # Pre-load Jee settings only if info string available for checks
         if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
             self._settings.update(self._jee_settings)
-        
-
-
-
 
     def add(self, cargo):
         """Append data to buffer.
@@ -77,13 +72,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         """
 
-	#just send it
-	txc = self._process_tx(cargo)
-	self.send(txc)
+        #just send it
+        txc = self._process_tx(cargo)
+        self.send(txc)
 
-
-
-    
     def read(self):
         """Read data from serial port and process if complete line received.
 
@@ -136,11 +128,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         f = f.split(' ')
 
         # Strip leading 'OK' from frame if needed
-        if f[0]=='OK':
+        if f[0] == 'OK':
             f = f[1:]
- 
+
         # Extract RSSI value if it's available
-        if str(f[-1])[0]=='(' and str(f[-1])[-1]==')':
+        if str(f[-1])[0] == '(' and str(f[-1])[-1] == ')':
             r = f[-1][1:-1]
             try:
                 c.rssi = int(r)
@@ -169,7 +161,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         **kwargs (dict): settings to be modified. Available settings are
         'baseid', 'frequency', 'group'. Example:
         {'baseid': '15', 'frequency': '4', 'group': '210'}
-        
+
         """
 
         for key, setting in self._jee_settings.iteritems():
@@ -181,26 +173,26 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             # convert bools to ints
             if str.capitalize(str(setting)) in ['True', 'False']:
                 setting = int(setting == "True")
-            # confirmation string always contains baseid, group anf freq
+            # confirmation string always contains baseid, group and freq
             if " i" and " g" and " @ " and " MHz" in self.info[1]:
                 # If setting confirmed as already set, continue without changing
                 if (self._jee_prefix[key] + str(setting)) in self.info[1].split():
                     continue
             elif key in self._settings and self._settings[key] == setting:
                 continue
-            if key == 'baseid' and int(setting) >=1 and int(setting) <=26:
+            if key == 'baseid' and int(setting) >= 1 and int(setting) <= 26:
                 command = str(setting) + 'i'
-            elif key == 'frequency' and setting in ['433','868','915']:
+            elif key == 'frequency' and setting in ['433', '868', '915']:
                 command = setting[:1] + 'b'
-            elif key == 'group'and int(setting) >=0 and int(setting) <=250:
+            elif key == 'group' and int(setting) >= 0 and int(setting) <= 250:
                 command = str(setting) + 'g'
-            elif key == 'quiet' and int(setting) >=0 and int(setting) <2:
+            elif key == 'quiet' and int(setting) >= 0 and int(setting) < 2:
                 command = str(setting) + 'q'
             elif key == 'calibration' and setting == '230V':
                 command = '1p'
             elif key == 'calibration' and setting == '110V':
                 command = '2p'
-                
+
             else:
                 self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
                 continue
@@ -214,10 +206,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         super(EmonHubJeeInterfacer, self).set(**kwargs)
 
     def action(self):
-        """Actions that need to be done on a regular basis. 
-        
+        """Actions that need to be done on a regular basis.
+
         This should be called in main loop by instantiater.
-        
+
         """
 
         t = time.time()
@@ -225,30 +217,24 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Broadcast time to synchronize emonGLCD
         interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if (t - self._interval_timestamp) > interval:
+            if t - self._interval_timestamp > interval:
                 self._interval_timestamp = t
                 now = datetime.datetime.now()
                 self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
                 self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
-
-
 
     def _process_post(self, databuffer):
         """Send data to server/broker or other output
 
         """
 
-        for i in range(0,len(databuffer)):
+        for i in range(0, len(databuffer)):
             frame = databuffer[i]
-            self._log.debug("node = " + str(frame[1]) + " node_data = "+json.dumps(frame))
+            self._log.debug("node = " + str(frame[1]) + " node_data = " + json.dumps(frame))
             self.send(frame)
-
-
         return True
 
-
-    def send (self, cargo):
-
+    def send(self, cargo):
         f = cargo
         cmd = "s"
 
@@ -260,14 +246,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         payload = ""
         for value in data:
             if int(value) < 0 or int(value) > 255:
-                self._log.warning(self.name + " discarding Tx packet: values out of scope" )
+                self._log.warning(self.name + " discarding Tx packet: values out of scope")
                 return
-            payload += str(int(value))+","
+            payload += str(int(value)) + ","
 
         payload += cmd
 
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
         self._ser.write(payload)
-
-
-

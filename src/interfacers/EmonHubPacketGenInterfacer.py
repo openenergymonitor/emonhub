@@ -64,7 +64,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
         # Extract the Target id if one is expected
         if self._settings['targeted']:
-                #setting = str.capitalize(str(setting))
+            #setting = str(setting).capitalize()
             c.target = int(values[0])
             values = values[1:]
             datacodes = datacodes[1:]
@@ -97,10 +97,10 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 return
 
             try:
-                 z = urllib2.urlopen(self._settings['url'] +
-                                     "/emoncms/packetgen/getinterval.json?apikey="
-                                     + self._settings['apikey']).read()
-                 i = int(z[1:-1])
+                z = urllib2.urlopen(self._settings['url'] +
+                                    "/emoncms/packetgen/getinterval.json?apikey="
+                                    + self._settings['apikey']).read()
+                i = int(z[1:-1])
             except:
                 self._log.info("request interval not returned")
                 return
@@ -129,13 +129,10 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
             elif key == 'apikey':
                 if str.lower(setting[:4]) == 'xxxx':
                     self._log.warning("Setting " + self.name + " apikey: obscured")
-                    pass
-                elif str.__len__(setting) == 32 :
+                elif str.__len__(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
-                    pass
                 elif setting == "":
                     self._log.info("Setting " + self.name + " apikey: null")
-                    pass
                 else:
                     self._log.warning("Setting " + self.name + " apikey: invalid format")
                     continue
@@ -152,4 +149,3 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super(EmonHubPacketGenInterfacer, self).set(**kwargs)
-
