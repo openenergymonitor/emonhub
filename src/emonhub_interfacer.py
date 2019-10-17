@@ -22,7 +22,6 @@ import traceback
 import paho.mqtt.client as mqtt
 
 import emonhub_coder as ehc
-
 import emonhub_buffer as ehb
 
 """class EmonHubInterfacer
@@ -33,20 +32,18 @@ This almost empty class is meant to be inherited by subclasses specific to
 their data source.
 
 """
+
 def log_exceptions_from_class_method(f):
     def wrapper(*args):
-        self=args[0]
+        self = args[0]
         try:
             return f(*args)
         except:
-            self._log.warning("Exception caught in "+self.name+" thread. "+traceback.format_exc())
-            return
+            self._log.warning("Exception caught in " + self.name + " thread. " + traceback.format_exc())
     return wrapper
 
 class EmonHubInterfacer(threading.Thread):
-
     def __init__(self, name):
-
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
 
@@ -55,16 +52,24 @@ class EmonHubInterfacer(threading.Thread):
         self.setName(name)
 
         # Initialise settings
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
-                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':[],'subchannels':[], 'batchsize': '1'}
-        
+        self._defaults = {'pause': 'off',
+                          'interval': 0,
+                          'datacode': '0',
+                          'scale': '1',
+                          'timestamped': False,
+                          'targeted': False,
+                          'nodeoffset': '0',
+                          'pubchannels': [],
+                          'subchannels': [],
+                          'batchsize': '1'}
+
         self.init_settings = {}
         self._settings = {}
 
         # Initialize message queue
         self._sub_channels = {}
         self._pub_channels = {}
-        
+
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
@@ -72,7 +77,7 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
-        
+
         buffer_type = "memory"
         buffer_size = 1000
 
@@ -83,7 +88,7 @@ class EmonHubInterfacer(threading.Thread):
         # number of items posted is the lower of this item limit, buffer_size, or the
         # batchsize, as set in reporter settings or by the default value.
         self._item_limit = buffer_size
-        
+
         # create a stop
         self.stop = False
 
@@ -105,28 +110,28 @@ class EmonHubInterfacer(threading.Thread):
                     if rxc:
                         for channel in self._settings["pubchannels"]:
                             self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                           
+
                             # Initialize channel if needed
                             if not channel in self._pub_channels:
                                 self._pub_channels[channel] = []
-                                
+
                             # Add cargo item to channel
                             self._pub_channels[channel].append(rxc)
-                            
+
                             self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
             # Subscriber channels
             for channel in self._settings["subchannels"]:
                 if channel in self._sub_channels:
-                    for i in range(0,len(self._sub_channels[channel])):
+                    for i in range(0, len(self._sub_channels[channel])):
                         frame = self._sub_channels[channel].pop(0)
                         self.add(frame)
-                    
-            # Don't loop to fast
+
+            # Don't loop too fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
-            
+
     def add(self, cargo):
         """Append data to buffer.
 
@@ -143,12 +148,12 @@ class EmonHubInterfacer(threading.Thread):
                 f.append(i)
             if cargo.rssi:
                 f.append(cargo.rssi)
-                
+
             # self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-            
+
         except:
             self._log.warning("Failed to create emonCMS frame " + str(f))
-            
+
         # self._log.debug(str(carg.ref) + " added to buffer =>"
         #                 + " time: " + str(carg.timestamp)
         #                 + ", node: " + str(carg.node)
@@ -157,9 +162,9 @@ class EmonHubInterfacer(threading.Thread):
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 3450 ...]]
-        
-        # datauffer format can be overwritten by interfacer
-        
+
+        # databuffer format can be overwritten by interfacer
+
         self.buffer.storeItem(f)
 
     def read(self):
@@ -199,12 +204,12 @@ class EmonHubInterfacer(threading.Thread):
 
     def flush(self):
         """Send oldest data in buffer, if any."""
-        
+
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
-            self._log.debug("Buffer size: "+str(self.buffer.size()))
-            
+            self._log.debug("Buffer size: " + str(self.buffer.size()))
+
             max_items = int(self._settings['batchsize'])
             if max_items > self._item_limit:
                 max_items = self._item_limit
@@ -221,8 +226,8 @@ class EmonHubInterfacer(threading.Thread):
             else:
                 # slow down retry rate in the case where the last attempt failed
                 # stops continuous retry attempts filling up the log
-                self._interval_timestamp = time.time() 
-            
+                self._interval_timestamp = time.time()
+
 
     def _process_post(self, data):
         """
@@ -268,7 +273,7 @@ class EmonHubInterfacer(threading.Thread):
             reply = response.read()
         finally:
             return reply
-            
+
     def _process_rx(self, cargo):
         """Process a frame of data
 
@@ -282,7 +287,7 @@ class EmonHubInterfacer(threading.Thread):
         Return data as a list: [NodeID, val1, val2]
 
         """
-            
+
         # Log data
         self._log.debug(str(cargo.uri) + " NEW FRAME : " + str(cargo.rawdata))
 
@@ -312,7 +317,7 @@ class EmonHubInterfacer(threading.Thread):
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
-            if whitening==True or whitening=="1":
+            if whitening == True or whitening == "1":
                 for i in range(0, len(rxc.realdata), 1):
                     rxc.realdata[i] = rxc.realdata[i] ^ 0x55
 
@@ -341,7 +346,7 @@ class EmonHubInterfacer(threading.Thread):
             if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacode' in ehc.nodelist[node]['rx']:
                 datacode = ehc.nodelist[node]['rx']['datacode']
             else:
-            # when node not listed or has no datacode(s) use the interfacers default if specified
+                # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
             # Ensure only int 0 is passed not str 0
             if datacode == '0':
@@ -380,7 +385,7 @@ class EmonHubInterfacer(threading.Thread):
                     return False
                 bytepos += size
                 decoded.append(value)
-        
+
         # check if node is listed and has individual scales for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scales' in ehc.nodelist[node]['rx']:
             scales = ehc.nodelist[node]['rx']['scales']
@@ -393,7 +398,7 @@ class EmonHubInterfacer(threading.Thread):
                   # Determine the expected number of values to be decoded
                   # Set decoder to "Per value" scaling using scale 'False' as flag
             #     scale = False
-            if len(scales)>1:
+            if len(scales) > 1:
                 scale = False
             else:
                 scale = "1"
@@ -409,7 +414,7 @@ class EmonHubInterfacer(threading.Thread):
             for i in range(0, len(decoded), 1):
                 x = scale
                 if not scale:
-                    if i<len(scales):
+                    if i < len(scales):
                         x = scales[i]
                     else:
                         x = 1
@@ -422,7 +427,6 @@ class EmonHubInterfacer(threading.Thread):
                         decoded[i] = float(val)
 
         rxc.realdata = decoded
-
         names = rxc.names
 
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'names' in ehc.nodelist[node]['rx']:
@@ -469,13 +473,13 @@ class EmonHubInterfacer(threading.Thread):
         # Normal operation is dest from txc.nodeid
         if txc.target:
             dest = str(txc.target)
-            # self._log.info("dest from txc.target: "+dest)
+            # self._log.info("dest from txc.target: " + dest)
         else:
             dest = str(txc.nodeid)
-            # self._log.info("dest from txc.nodeid: "+dest)
+            # self._log.info("dest from txc.nodeid: " + dest)
 
-        # self._log.info("Target: "+dest)
-        # self._log.info("Realdata: "+json.dumps(txc.realdata))
+        # self._log.info("Target: " + dest)
+        # self._log.info("Realdata: " + json.dumps(txc.realdata))
 
         # check if node is listed and has individual scales for each value
         if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'scales' in ehc.nodelist[dest]['tx']:
@@ -483,7 +487,7 @@ class EmonHubInterfacer(threading.Thread):
             # Discard the frame & return 'False' if it doesn't match the number of scales
             if len(txc.realdata) != len(scales):
                 self._log.warning(str(txc.uri) + " Scales " + str(scales) + " for RX data : " + str(txc.realdata) +
-                                  " not suitable " )
+                                  " not suitable ")
                 return False
             else:
                 # Determine the expected number of values to be decoded
@@ -516,11 +520,10 @@ class EmonHubInterfacer(threading.Thread):
                         val = int(val)
                 scaled.append(val)
 
-
-        # self._log.info("Scaled: "+json.dumps(scaled))
+        # self._log.info("Scaled: " + json.dumps(scaled))
 
         # check if node is listed and has individual datacodes for each value
-        if (dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']):
+        if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']:
 
             # fetch the string of datacodes
             datacodes = ehc.nodelist[dest]['tx']['datacodes']
@@ -580,7 +583,7 @@ class EmonHubInterfacer(threading.Thread):
                 if not datacode:
                     dc = str(datacodes[i])
 
-                for b in ehc.encode(dc,int(scaled[i])):
+                for b in ehc.encode(dc, int(scaled[i])):
                     encoded.append(b)
 
         # self._log.info("Encoded: "+json.dumps(encoded))
@@ -618,16 +621,12 @@ class EmonHubInterfacer(threading.Thread):
                 pass
             elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
                 pass
-            elif key == 'scale' and (int(setting == 1) or not (int(setting % 10))):
+            elif key == 'scale' and (int(setting == 1) or not int(setting % 10)):
                 pass
             elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
-                if str(setting).lower()=="true": setting = True
-                else: setting = False
-                pass
+                setting = str(setting).lower() == "true"
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
-                if str(setting).lower()=="true": setting = True
-                else: setting = False
-                pass
+                setting = str(setting).lower() == "true"
             elif key == 'pubchannels':
                 pass
             elif key == 'subchannels':
@@ -646,8 +645,3 @@ Raise this when init fails.
 """
 class EmonHubInterfacerInitError(Exception):
     pass
-
-
-
-
-

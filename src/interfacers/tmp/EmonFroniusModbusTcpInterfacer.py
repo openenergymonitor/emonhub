@@ -16,27 +16,27 @@ class EmonFroniusModbusTcpInterfacer(EmonModbusTcpInterfacer):
         com_port (string): path to COM port
         """
 
-# Initialization
+        # Initialization
         super(EmonFroniusModbusTcpInterfacer, self).__init__(name)
 
-    # Connection opened by parent class INIT
-    # Retrieve fronius specific inverter info if connection successfull if connection successfull
-        self._log.debug("Fronius args: " + str(modbus_IP) + " - " + str(modbus_port) )
+        # Connection opened by parent class INIT
+        # Retrieve Fronius specific inverter info if connection successful
+        self._log.debug("Fronius args: " + str(modbus_IP) + " - " + str(modbus_port))
         self._log.debug("EmonFroniusModbusTcpInterfacer: Init")
-        if self._modcon :
+        if self._modcon:
             # Display device firmware version and current settings
-            self.info =["",""]
+            self.info =["", ""]
             #self._log.info("Modtcp Connected")
-            r2= self._con.read_holding_registers(40005-1,4,unit=1)
-            r3= self._con.read_holding_registers(40021-1,4,unit=1)
+            r2 = self._con.read_holding_registers(40005 - 1, 4, unit=1)
+            r3 = self._con.read_holding_registers(40021 - 1, 4, unit=1)
             invBrand = BinaryPayloadDecoder.fromRegisters(r2.registers, endian=Endian.Big)
             invModel = BinaryPayloadDecoder.fromRegisters(r3.registers, endian=Endian.Big)
-            self._log.info( self.name +  " Inverter: " + invBrand.decode_string(8) + " " + invModel.decode_string(8))
-            swDM= self._con.read_holding_registers(40037-1,8,unit=1)
-            swInv= self._con.read_holding_registers(40045-1,8,unit=1)
+            self._log.info(self.name +  " Inverter: " + invBrand.decode_string(8) + " " + invModel.decode_string(8))
+            swDM = self._con.read_holding_registers(40037 - 1, 8, unit=1)
+            swInv = self._con.read_holding_registers(40045 - 1, 8, unit=1)
             swDMdecode = BinaryPayloadDecoder.fromRegisters(swDM.registers, endian=Endian.Big)
             swInvdecode = BinaryPayloadDecoder.fromRegisters(swInv.registers, endian=Endian.Big)
-            self._log.info( self.name + " SW Versions: Datamanager " + swDMdecode.decode_string(16) + "- Inverter " + swInvdecode.decode_string(16))
-            r1 = self._con.read_holding_registers(40070-1,1,unit=1)
+            self._log.info(self.name + " SW Versions: Datamanager " + swDMdecode.decode_string(16) + "- Inverter " + swInvdecode.decode_string(16))
+            r1 = self._con.read_holding_registers(40070 - 1, 1, unit=1)
             ssModel = BinaryPayloadDecoder.fromRegisters(r1.registers, endian=Endian.Big)
-            self._log.info( self.name + " SunSpec Model: " + str(ssModel.decode_16bit_uint()) )
+            self._log.info(self.name + " SunSpec Model: " + str(ssModel.decode_16bit_uint()))

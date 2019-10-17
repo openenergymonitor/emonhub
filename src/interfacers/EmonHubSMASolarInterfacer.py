@@ -9,7 +9,7 @@ try:
     bluetooth_found = True
 except ImportError:
     bluetooth_found = False
-    
+
 import time
 import sys
 import traceback
@@ -32,26 +32,26 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         super(EmonHubSMASolarInterfacer, self).__init__(name)
 
         self._btSocket = None
-        self._inverteraddress=inverteraddress
-        self._inverterpincode=inverterpincode
-        self._port=1
-        self._nodeid=int(nodeid)
+        self._inverteraddress = inverteraddress
+        self._inverterpincode = inverterpincode
+        self._port = 1
+        self._nodeid = int(nodeid)
 
-        if packettrace==0:
-            self._packettrace=False
+        if packettrace == 0:
+            self._packettrace = False
         else:
-            self._packettrace=True
+            self._packettrace = True
 
-        self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd]);
+        self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd])
 
         self._reset_packet_send_counter()
         self._Inverters = None
         #Duration in seconds
-        self._time_inverval =  int(timeinverval)
+        self._time_inverval = int(timeinverval)
         self._InverterPasswordArray = SMASolar_library.encodeInverterPassword(self._inverterpincode)
 
         self._reset_duration_timer()
-        self._reset_time_to_disconnect_timer();
+        self._reset_time_to_disconnect_timer()
 
         self._log.info("Reading from SMASolar every " + str(self._time_inverval) + " seconds")
 
@@ -63,7 +63,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         self._btSocket = self._open_bluetooth(self._inverteraddress, self._port)
 
-        #If bluetooth didnt work, exit here
+        #If bluetooth didn't work, exit here
         if self._btSocket is None:
             return
 
@@ -81,9 +81,9 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         SMASolar_library.logon(self._btSocket, self.mylocalBTAddress, self.MySerialNumber, self._packet_send_counter, self._InverterPasswordArray)
         self._increment_packet_send_counter()
 
-        self._reset_time_to_disconnect_timer();
+        self._reset_time_to_disconnect_timer()
 
-        self._Inverters={}
+        self._Inverters = {}
 
         #TODO: We need to see what packets look like when we get multiple inverters talking to us
         dictInverterData = SMASolar_library.getInverterDetails(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber)
@@ -95,17 +95,17 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._log.debug(str(dictInverterData))
 
         #Clear rogue characters from name
-        dictInverterData["inverterName"] = re.sub(r'[^a-zA-Z0-9]','', dictInverterData["inverterName"])
+        dictInverterData["inverterName"] = re.sub(r'[^a-zA-Z0-9]', '', dictInverterData["inverterName"])
 
-        nodeName=dictInverterData["inverterName"]
+        nodeName = dictInverterData["inverterName"]
 
         #Build list of inverters we communicate with
         self._Inverters[nodeName] = dictInverterData
 
-        self._Inverters[nodeName]["NodeId"]=self._nodeid
+        self._Inverters[nodeName]["NodeId"] = self._nodeid
 
-        self._log.info("Connected to SMA inverter named [" + self._Inverters[nodeName]["inverterName"] + "] with serial number ["+str(self._Inverters[nodeName]["serialNumber"])
-        +"] using NodeId="+str(self._Inverters[nodeName]["NodeId"])+ ".  Model "+ self._Inverters[nodeName]["TypeName"])
+        self._log.info("Connected to SMA inverter named [" + self._Inverters[nodeName]["inverterName"] + "] with serial number [" + str(self._Inverters[nodeName]["serialNumber"])
+        + "] using NodeId=" + str(self._Inverters[nodeName]["NodeId"]) + ".  Model " + self._Inverters[nodeName]["TypeName"])
 
     def close(self):
         """Close bluetooth port"""
@@ -164,14 +164,14 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         """
 
         duration_of_delay = time.time() - self._last_time_reading
-        return (int(duration_of_delay) > self._time_inverval)
+        return int(duration_of_delay) > self._time_inverval
 
     def _is_it_time_to_disconnect(self):
         """Checks to see if 8 minutes has passed, if so, force a disconnect
         Return true or false
         """
         duration_of_delay = time.time() - self._last_time_auto_disconnect
-        return (int(duration_of_delay) > 480)
+        return int(duration_of_delay) > 480
 
     def _reset_time_to_disconnect_timer(self):
         """Reset timer to current date/time"""
@@ -187,10 +187,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
     #Override base read code from emonhub_interfacer
     def read(self):
         """Read data from inverter and process"""
-        if not bluetooth_found: return False
+        if not bluetooth_found:
+            return False
 
         #Wait until we are ready to read from inverter
-        if (self._is_it_time() == False):
+        if self._is_it_time() == False:
             return
 
         self._reset_duration_timer()
@@ -206,61 +207,62 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             if self._btSocket is None:
                 return
 
-            readingsToMake= {}
+            readingsToMake = {}
 
-            readingsToMake["EnergyProduction"]=[0x54000200, 0x00260100, 0x002622FF]
+            readingsToMake["EnergyProduction"] = [0x54000200, 0x00260100, 0x002622FF]
 
             #This causes problems with some inverters
-            #readingsToMake["SpotDCPower"]=[0x53800200, 0x00251E00, 0x00251EFF]
+            #readingsToMake["SpotDCPower"] = [0x53800200, 0x00251E00, 0x00251EFF]
 
-            readingsToMake["SpotACPower"]=[0x51000200, 0x00464000, 0x004642FF]
-            readingsToMake["SpotACTotalPower"]=[0x51000200, 0x00263F00, 0x00263FFF]
-            readingsToMake["SpotDCVoltage"]=[0x53800200, 0x00451F00, 0x004521FF]
-            readingsToMake["SpotACVoltage"]=[0x51000200, 0x00464800, 0x004655FF]
-            readingsToMake["SpotGridFrequency"]=[0x51000200, 0x00465700, 0x004657FF]
-            readingsToMake["OperationTime"]=[0x54000200, 0x00462E00, 0x00462FFF]
-            readingsToMake["InverterTemperature"]=[0x52000200, 0x00237700, 0x002377FF]
+            readingsToMake["SpotACPower"] = [0x51000200, 0x00464000, 0x004642FF]
+            readingsToMake["SpotACTotalPower"] = [0x51000200, 0x00263F00, 0x00263FFF]
+            readingsToMake["SpotDCVoltage"] = [0x53800200, 0x00451F00, 0x004521FF]
+            readingsToMake["SpotACVoltage"] = [0x51000200, 0x00464800, 0x004655FF]
+            readingsToMake["SpotGridFrequency"] = [0x51000200, 0x00465700, 0x004657FF]
+            readingsToMake["OperationTime"] = [0x54000200, 0x00462E00, 0x00462FFF]
+            readingsToMake["InverterTemperature"] = [0x52000200, 0x00237700, 0x002377FF]
             #Not very useful for reporting
-            #readingsToMake["MaxACPower"]=[0x51000200, 0x00411E00, 0x004120FF]
-            #readingsToMake["MaxACPower2"]=[0x51000200, 0x00832A00, 0x00832AFF]
-            #readingsToMake["GridRelayStatus"]=[0x51800200, 0x00416400, 0x004164FF]
+            #readingsToMake["MaxACPower"] = [0x51000200, 0x00411E00, 0x004120FF]
+            #readingsToMake["MaxACPower2"] = [0x51000200, 0x00832A00, 0x00832AFF]
+            #readingsToMake["GridRelayStatus"] = [0x51800200, 0x00416400, 0x004164FF]
 
             #Only useful on off grid battery systems
-            #readingsToMake["ChargeStatus"]=[0x51000200, 0x00295A00, 0x00295AFF]
-            #readingsToMake["BatteryInfo"]=[0x51000200, 0x00491E00, 0x00495DFF]
+            #readingsToMake["ChargeStatus"] = [0x51000200, 0x00295A00, 0x00295AFF]
+            #readingsToMake["BatteryInfo"] = [0x51000200, 0x00491E00, 0x00495DFF]
 
 
             #Get first inverter in dictionary
-            inverter=self._Inverters[ self._Inverters.keys()[0] ]
-            self._log.debug("Reading from inverter "+inverter["inverterName"] )
+            inverter = self._Inverters[self._Inverters.keys()[0]]
+            self._log.debug("Reading from inverter " + inverter["inverterName"])
 
 
             #Loop through dictionary and take readings, building "output" dictionary as we go
             output = {}
             for key in readingsToMake:
 
-                data=SMASolar_library.request_data(self._btSocket,
-                self._packet_send_counter,
-                self.mylocalBTAddress,
-                self.MySerialNumber,
-                readingsToMake[key][0],
-                readingsToMake[key][1],
-                readingsToMake[key][2],
-                inverter["susyid"],inverter["serialNumber"])
+                data = SMASolar_library.request_data(self._btSocket,
+                    self._packet_send_counter,
+                    self.mylocalBTAddress,
+                    self.MySerialNumber,
+                    readingsToMake[key][0],
+                    readingsToMake[key][1],
+                    readingsToMake[key][2],
+                    inverter["susyid"],
+                    inverter["serialNumber"])
 
                 self._increment_packet_send_counter()
                 if data is not None:
                     output.update(SMASolar_library.extract_data(data))
-                    if (self._packettrace):
-                        self._log.debug("Packet reply for "+key + ". Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14),data.getFourByteLong(16)) )
+                    if self._packettrace:
+                        self._log.debug("Packet reply for " + key + ". Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14), data.getFourByteLong(16)))
                         self._log.debug(data.debugViewPacket())
 
-            #Sort the output to keep the keys in a consistant order
-            names= []
+            #Sort the output to keep the keys in a consistent order
+            names = []
             values = []
             for key in sorted(output):
-                names.append( output[key].Label )
-                values.append( output[key].Value )
+                names.append(output[key].Label)
+                values.append(output[key].Value)
 
             #self._log.debug("Building cargo")
             c = Cargo.new_cargo()
@@ -273,11 +275,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             c.nodename = inverter["inverterName"]
 
             #TODO: We should be able to populate the rssi number from the bluetooth signal strength
-            c.rssi=0
+            c.rssi = 0
 
             #Inverter appears to kill our connection every 10 minutes, so disconnect after 8 minutes
             #to avoid errors in log files
-            if (self._is_it_time_to_disconnect() == True):
+            if self._is_it_time_to_disconnect() == True:
                 self._log.info("Disconnecting Bluetooth after timer expired")
                 SMASolar_library.logoff(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber)
                 self._reset_time_to_disconnect_timer()
@@ -295,5 +297,5 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         except Exception as err2:
             exc_type, exc_value, exc_traceback = sys.exc_info()
             self._log.error(err2)
-            self._log.error(repr(traceback.format_exception(exc_type, exc_value,exc_traceback)))
+            self._log.error(repr(traceback.format_exception(exc_type, exc_value, exc_traceback)))
             self._btSocket = None

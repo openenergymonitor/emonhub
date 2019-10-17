@@ -29,7 +29,8 @@ class SMABluetoothPacket:
 
     def pushRawByteArray(self, barray):
         # Raw byte array
-        for bte in barray: self.pushRawByte(bte)
+        for bte in barray:
+            self.pushRawByte(bte)
 
     def pushRawByte(self, value):
         # Accept a byte of ESCAPED data (ie. raw byte from Bluetooth)
@@ -37,7 +38,8 @@ class SMABluetoothPacket:
         self.RawByteArray.append(value)
 
     def pushUnescapedByteArray(self, barray):
-        for bte in barray: self.pushUnescapedByte(bte)
+        for bte in barray:
+            self.pushUnescapedByte(bte)
 
     def pushUnescapedByte(self, value):
         # Store the raw byte
@@ -66,13 +68,13 @@ class SMABluetoothPacket:
         previousUnescapedByte = 0
 
         if len(self.RawByteArray) > 0:
-            previousUnescapedByte = self.RawByteArray[ len(self.RawByteArray) - 1 ];
+            previousUnescapedByte = self.RawByteArray[len(self.RawByteArray) - 1]
 
         # Store the raw byte as it was received into RawByteArray
         self.RawByteArray.append(value)
 
         # did we receive the escape char in previous byte?
-        if (len(self.RawByteArray) > 0 and previousUnescapedByte == 0x7d):
+        if len(self.RawByteArray) > 0 and previousUnescapedByte == 0x7d:
             self.UnescapedArray[len(self.UnescapedArray) - 1] = value ^ 0x20
         else:
             # Unescaped array is same as raw array
@@ -101,7 +103,8 @@ class SMABluetoothPacket:
         return self.UnescapedArray[indexfromstartofdatapayload]
 
     def pushEscapedByteArray(self, barray):
-        for bte in barray: self.pushEscapedByte(bte)
+        for bte in barray:
+            self.pushEscapedByte(bte)
 
     def TotalUnescapedPacketLength(self):
         return len(self.UnescapedArray) + self.headerlength
@@ -116,7 +119,7 @@ class SMABluetoothPacket:
         # Thanks to
         # http://groups.google.com/group/sma-bluetooth/browse_thread/thread/50fe13a7c39bdce0/2caea56cdfb3a68a#2caea56cdfb3a68a
         # for this checksum information !!
-        return  (self.header[0] ^ self.header[1] ^ self.header[2] ^ self.header[3]) == 0
+        return (self.header[0] ^ self.header[1] ^ self.header[2] ^ self.header[3]) == 0
 
     def __init__(self, length1, length2, checksum=0, cmd1=0, cmd2=0, SourceAddress=bytearray(), DestinationAddress=bytearray([0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF])):
         self.headerlength = 18
@@ -134,5 +137,5 @@ class SMABluetoothPacket:
         self.UnescapedArray = bytearray()
         self.setCommandCode(cmd1, cmd2)
 
-        if (checksum > 0) and (self.ValidateHeaderChecksum() == False):
+        if checksum > 0 and self.ValidateHeaderChecksum() == False:
             raise Exception("Invalid header checksum!")
