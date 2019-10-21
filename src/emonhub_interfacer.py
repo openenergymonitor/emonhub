@@ -43,7 +43,7 @@ class EmonHubInterfacer(threading.Thread):
         self._log = logging.getLogger("EmonHub")
 
         # Initialise thread
-        threading.Thread.__init__(self)
+        super(threading.Thread, self).__init__(self)
         self.setName(name)
 
         # Initialise settings
