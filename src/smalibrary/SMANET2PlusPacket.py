@@ -147,7 +147,7 @@ class SMANET2PlusPacket:
 
     def calculateFCS(self):
         myfcs = 0xffff
-        for bte in packet:
+        for bte in self.packet:
             myfcs = (myfcs >> 8) ^ self.fcstab[(myfcs ^ bte) & 0xff]
 
         myfcs ^= 0xffff
