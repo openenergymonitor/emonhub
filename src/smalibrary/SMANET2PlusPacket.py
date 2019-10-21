@@ -3,7 +3,10 @@
 
 import array
 import math
-import string
+try:
+    from __builtin__ import long
+except ImportError:
+    long = int  # FIXME Python2 compatibility
 
 __author__ = 'Stuart Pittaway'
 
@@ -274,4 +277,4 @@ class SMANET2PlusPacket:
         str_list.append("L2 Checksu= {0:02x} {1:02x}".format(myfcs & 0x00ff, (myfcs >> 8) & 0x00ff))
         str_list.append("L2    END = {0:02x}".format(0x7e))
 
-        return string.join(str_list, '\n')
+        return '\n'.join(str_list)

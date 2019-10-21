@@ -3,10 +3,13 @@
 
 from collections import namedtuple
 import time
-from __builtin__ import long
+try:
+    from __builtin__ import long  # FIXME long is defined by default on Python2, but is equivalent to int on Python3
+except ImportError:
+    long = int
+from datetime import datetime
 from SMABluetoothPacket import SMABluetoothPacket
 from SMANET2PlusPacket import SMANET2PlusPacket
-from datetime import datetime
 
 __author__ = 'Stuart Pittaway'
 

@@ -16,7 +16,6 @@ import traceback
 import re
 import Cargo
 
-from time import sleep
 from emonhub_interfacer import EmonHubInterfacer
 from smalibrary import SMASolar_library
 
