@@ -1,6 +1,3 @@
-import time
-import datetime
-import logging
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
 import EmonModbusTcpInterfacer as EmonModbusTcpInterfacer

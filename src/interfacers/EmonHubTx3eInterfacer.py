@@ -1,7 +1,5 @@
-import serial
-import time
-import Cargo
 import re
+import Cargo
 import EmonHubSerialInterfacer as ehi
 
 """class EmonHubTx3eInterfacer
