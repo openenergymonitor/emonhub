@@ -100,10 +100,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     return
 
                 # fetch unitids if present
-                if "nUnit" in self._settings:
-                    UnitIds = self._settings["nUnit"]
-                else:
-                    UnitIds = None
+                UnitIds = self._settings.get("nUnit", None)
 
                 # stores names
                 # fetch datacode or datacodes

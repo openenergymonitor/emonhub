@@ -67,7 +67,7 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
         # Write the payload into a level2 class structure
         level2Packet.pushByteArray(bluetoothbuffer.getLevel2Payload())
 
-        if waitForPacket == True and level2Packet.getPacketCounter() != waitPacketNumber:
+        if waitForPacket and level2Packet.getPacketCounter() != waitPacketNumber:
             #print("Received packet number {0:02x} expected {1:02x}".format(level2Packet.getPacketCounter(),waitPacketNumber))
             raise Exception("Wrong Level 2 packet returned!")
 

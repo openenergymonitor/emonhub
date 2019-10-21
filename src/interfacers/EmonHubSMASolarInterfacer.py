@@ -190,7 +190,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             return False
 
         #Wait until we are ready to read from inverter
-        if self._is_it_time() == False:
+        if not self._is_it_time():
             return
 
         self._reset_duration_timer()
@@ -278,7 +278,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
             #Inverter appears to kill our connection every 10 minutes, so disconnect after 8 minutes
             #to avoid errors in log files
-            if self._is_it_time_to_disconnect() == True:
+            if self._is_it_time_to_disconnect():
                 self._log.info("Disconnecting Bluetooth after timer expired")
                 SMASolar_library.logoff(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber)
                 self._reset_time_to_disconnect_timer()

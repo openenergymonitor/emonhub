@@ -39,8 +39,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 250 ...]]
 
-        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
-                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+        if 'apikey' not in self._settings.keys() or len(str(self._settings['apikey'])) != 32 \
+                or str(self._settings['apikey']).lower() == 'x' * 32:
             # Return true to clear buffer if the apikey is not set
             return True
 
@@ -77,8 +77,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return False
 
     def sendstatus(self):
-        if not 'apikey' in self._settings.keys() or str.__len__(str(self._settings['apikey'])) != 32 \
-                or str.lower(str(self._settings['apikey'])) == 'xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx':
+        if 'apikey' not in self._settings.keys() or len(str(self._settings['apikey'])) != 32 \
+                or str(self._settings['apikey']).lower() == 'x' * 32:
             return
 
         # MYIP url
@@ -101,16 +101,16 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         for key, setting in self._cms_settings.iteritems():
             #valid = False
-            if not key in kwargs.keys():
+            if key not in kwargs.keys():
                 setting = self._cms_settings[key]
             else:
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if str.lower(setting[:4]) == 'xxxx':
+                if setting[:4].lower() == 'xxxx':  # FIXME compare whole string to 'x'*32?
                     self._log.warning("Setting " + self.name + " apikey: obscured")
-                elif str.__len__(setting) == 32:
+                elif len(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
                 elif setting == "":
                     self._log.info("Setting " + self.name + " apikey: null")

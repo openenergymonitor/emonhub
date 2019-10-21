@@ -41,7 +41,8 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         f['node'] = nodename
         f['data'] = {}
 
-        for i in range(0, len(cargo.realdata)):
+        # FIXME replace with zip
+        for i in range(len(cargo.realdata)):
             name = str(i + 1)
             if i < len(cargo.names):
                 name = cargo.names[i]
@@ -58,8 +59,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         timestamp = int(time.time())
 
         metrics = []
-        for c in range(0, len(databuffer)):
-            frame = databuffer[c]
+        for frame in databuffer:
             nodename = frame['node']
 
             for inputname, value in frame['data'].iteritems():
@@ -118,7 +118,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         super (EmonHubGraphiteInterfacer, self).set(**kwargs)
         for key, setting in self._graphite_settings.iteritems():
             #valid = False
-            if not key in kwargs.keys():
+            if key not in kwargs.keys():
                 setting = self._graphite_settings[key]
             else:
                 setting = kwargs[key]

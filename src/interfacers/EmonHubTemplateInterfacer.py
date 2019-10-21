@@ -82,7 +82,8 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
         f['node'] = nodename
         f['data'] = {}
 
-        for i in range(0, len(cargo.realdata)):
+        # FIXME replace with zip
+        for i in range(len(cargo.realdata)):
             name = str(i + 1)
             if i < len(cargo.names):
                 name = cargo.names[i]
@@ -99,9 +100,7 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
 
         """
 
-        for i in range(0, len(databuffer)):
-            frame = databuffer[i]
-
+        for frame in databuffer:
             # Here we might typically publish or post the data
             # via MQTT, HTTP a socket or other output
             self._log.debug("node = " + frame['node'] + " node_data = " + json.dumps(frame['data']))
