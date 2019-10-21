@@ -68,7 +68,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                             self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
 
                             # Initialize channel if needed
-                            if not channel in self._pub_channels:
+                            if channel not in self._pub_channels:
                                 self._pub_channels[channel] = []
 
                             # Add cargo item to channel

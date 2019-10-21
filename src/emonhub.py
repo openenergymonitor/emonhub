@@ -109,24 +109,22 @@ class EmonHub(object):
                 # Read each interfacers pub channels
                 for pub_channel in I._settings['pubchannels']:
 
-                    if pub_channel in I._pub_channels:
-                        if len(I._pub_channels[pub_channel]) > 0:
+                    if pub_channel in I._pub_channels and len(I._pub_channels[pub_channel]) > 0:
+                        # POP cargo item (one at a time)
+                        cargo = I._pub_channels[pub_channel].pop(0)
 
-                            # POP cargo item (one at a time)
-                            cargo = I._pub_channels[pub_channel].pop(0)
+                        # Post to each subscriber interface
+                        for sub_interfacer in self._interfacers.values():
+                            # For each subsciber channel
+                            for sub_channel in sub_interfacer._settings['subchannels']:
+                                # If channel names match
+                                if sub_channel == pub_channel:
+                                    # init if empty
+                                    if sub_channel not in sub_interfacer._sub_channels:
+                                        sub_interfacer._sub_channels[sub_channel] = []
 
-                            # Post to each subscriber interface
-                            for sub_interfacer in self._interfacers.itervalues():
-                                # For each subsciber channel
-                                for sub_channel in sub_interfacer._settings['subchannels']:
-                                    # If channel names match
-                                    if sub_channel == pub_channel:
-                                        # init if empty
-                                        if not sub_channel in sub_interfacer._sub_channels:
-                                            sub_interfacer._sub_channels[sub_channel] = []
-
-                                        # APPEND cargo item
-                                        sub_interfacer._sub_channels[sub_channel].append(cargo)
+                                    # APPEND cargo item
+                                    sub_interfacer._sub_channels[sub_channel].append(cargo)
 
             # ->avoid modification of iterable within loop
             for name in kill_list:
@@ -179,9 +177,7 @@ class EmonHub(object):
         for name in self._interfacers.keys():
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
             # (This also provides an ability to delete & rebuild by commenting 'Type' in conf)
-            if not name in settings['interfacers'] or not 'Type' in settings['interfacers'][name]:
-                pass
-            else:
+            if name in settings['interfacers'] and 'Type' in settings['interfacers'][name]:
                 try:
                     # test for 'init_settings' and 'runtime_setting' sections
                     settings['interfacers'][name]['init_settings']
@@ -203,7 +199,7 @@ class EmonHub(object):
             # If interfacer does not exist, create it
             if name not in self._interfacers:
                 try:
-                    if not 'Type' in I:
+                    if 'Type' not in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
                     # This gets the class from the 'Type' string
@@ -284,17 +280,17 @@ if __name__ == "__main__":
 
     # Logging configuration
     logger = logging.getLogger("EmonHub")
-    if args.logfile is None:
-        # If no path was specified, everything goes to sys.stderr
-        loghandler = logging.StreamHandler()
-    else:
-        # Otherwise, rotating logging over two 5 MB files
+    if args.logfile:
+        # If path was given, rotating logging over two 5 MB files
         # If logfile is supplied, argparse opens the file in append mode,
         # this ensures it is writable
         # Close the file for now and get its path
         args.logfile.close()
         loghandler = logging.handlers.RotatingFileHandler(args.logfile.name,
                                                           'a', 5000 * 1024, 1)
+    else:
+        # Otherwise, if no path was specified, everything goes to sys.stderr
+        loghandler = logging.StreamHandler()
     # Format log strings
     loghandler.setFormatter(logging.Formatter(
         '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))

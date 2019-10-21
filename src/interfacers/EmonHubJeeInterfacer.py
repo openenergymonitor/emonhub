@@ -116,7 +116,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             return
 
         # Record current device settings
-        if " i" and " g" and " @ " and " MHz" in f:
+        if all(i in f for i in (" i", " g", " @ ", " MHz")):
             self.info[1] = f
             self._log.debug("device settings updated: " + str(self.info[1]))
             return
@@ -132,7 +132,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             f = f[1:]
 
         # Extract RSSI value if it's available
-        if str(f[-1])[0] == '(' and str(f[-1])[-1] == ')':
+        if f[-1].startswith('(') and f[-1].endswith(')'):
             r = f[-1][1:-1]
             try:
                 c.rssi = int(r)
@@ -171,22 +171,22 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             else:
                 setting = self._jee_settings[key]
             # convert bools to ints
-            if str.capitalize(str(setting)) in ['True', 'False']:
+            if str(setting).capitalize() in ['True', 'False']:
                 setting = int(setting == "True")
             # confirmation string always contains baseid, group and freq
-            if " i" and " g" and " @ " and " MHz" in self.info[1]:
+            if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
                 # If setting confirmed as already set, continue without changing
-                if (self._jee_prefix[key] + str(setting)) in self.info[1].split():
+                if self._jee_prefix[key] + str(setting) in self.info[1].split():
                     continue
             elif key in self._settings and self._settings[key] == setting:
                 continue
-            if key == 'baseid' and int(setting) >= 1 and int(setting) <= 26:
+            if key == 'baseid' and 1 <= int(setting) <= 26:
                 command = str(setting) + 'i'
             elif key == 'frequency' and setting in ['433', '868', '915']:
                 command = setting[:1] + 'b'
-            elif key == 'group' and int(setting) >= 0 and int(setting) <= 250:
+            elif key == 'group' and 0 <= int(setting) <= 250:
                 command = str(setting) + 'g'
-            elif key == 'quiet' and int(setting) >= 0 and int(setting) < 2:
+            elif key == 'quiet' and 0 <= int(setting) < 2:
                 command = str(setting) + 'q'
             elif key == 'calibration' and setting == '230V':
                 command = '1p'
@@ -228,8 +228,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         """
 
-        for i in range(0, len(databuffer)):
-            frame = databuffer[i]
+        for frame in databuffer:
             self._log.debug("node = " + str(frame[1]) + " node_data = " + json.dumps(frame))
             self.send(frame)
         return True
@@ -245,7 +244,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         payload = ""
         for value in data:
-            if int(value) < 0 or int(value) > 255:
+            if not 0 < int(value) < 255:
                 self._log.warning(self.name + " discarding Tx packet: values out of scope")
                 return
             payload += str(int(value)) + ","

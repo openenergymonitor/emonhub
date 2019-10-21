@@ -189,7 +189,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         """Read data from BMW API"""
 
         #Wait until we are ready to read from inverter
-        if self._is_it_time() == False and self._first_time_loop == False:
+        if not self._is_it_time() and not self._first_time_loop:
             return
 
         self._reset_duration_timer()

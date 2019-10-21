@@ -108,7 +108,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # General MQTT format: emonhub/rx/emonpi/power1 ... 100
             # ----------------------------------------------------------
             if int(self._settings["nodevar_format_enable"]) == 1:
-                for i in range(0, len(frame['data'])):
+                # FIXME replace with zip
+                for i in range(len(frame['data'])):
                     inputname = str(i + 1)
                     if i < len(frame['names']):
                         inputname = frame['names'][i]
@@ -207,31 +208,29 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     def on_message(self, client, userdata, msg):
         topic_parts = msg.topic.split("/")
 
-        if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
-            if topic_parts[1] == "tx":
-                if topic_parts[3] == "values":
-                    nodeid = int(topic_parts[2])
+        if topic_parts[0] == self._settings["node_format_basetopic"][:-1] and topic_parts[1] == "tx" and topic_parts[3] == "values":
+            nodeid = int(topic_parts[2])
 
-                    payload = msg.payload
-                    realdata = payload.split(",")
-                    self._log.debug("Nodeid: " + str(nodeid) + " values: " + msg.payload)
+            payload = msg.payload
+            realdata = payload.split(",")
+            self._log.debug("Nodeid: " + str(nodeid) + " values: " + msg.payload)
 
-                    rxc = Cargo.new_cargo(realdata=realdata)
-                    rxc.nodeid = nodeid
+            rxc = Cargo.new_cargo(realdata=realdata)
+            rxc.nodeid = nodeid
 
-                    if rxc:
-                        # rxc = self._process_tx(rxc)
-                        if rxc:
-                            for channel in self._settings["pubchannels"]:
+            if rxc:
+                # rxc = self._process_tx(rxc)
+                if rxc:
+                    for channel in self._settings["pubchannels"]:
 
-                                # Initialize channel if needed
-                                if not channel in self._pub_channels:
-                                    self._pub_channels[channel] = []
+                        # Initialize channel if needed
+                        if channel not in self._pub_channels:
+                            self._pub_channels[channel] = []
 
-                                # Add cargo item to channel
-                                self._pub_channels[channel].append(rxc)
+                        # Add cargo item to channel
+                        self._pub_channels[channel].append(rxc)
 
-                                self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
+                        self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
 
     def set(self, **kwargs):
         """
@@ -244,7 +243,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
         for key, setting in self._mqtt_settings.iteritems():
             #valid = False
-            if not key in kwargs.keys():
+            if key not in kwargs.keys():
                 setting = self._mqtt_settings[key]
             else:
                 setting = kwargs[key]

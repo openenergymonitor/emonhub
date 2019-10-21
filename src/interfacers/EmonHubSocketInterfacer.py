@@ -81,7 +81,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             conn.close()
 
         # If there is at least one complete frame in the buffer
-        if not '\r\n' in self._sock_rx_buf:
+        if '\r\n' not in self._sock_rx_buf:
             return
 
         # Process and return first frame in buffer:
@@ -95,10 +95,10 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         # If apikey is specified, 32chars and not all x's
         if 'apikey' in self._settings:
-            if len(self._settings['apikey']) == 32 and self._settings['apikey'].lower != "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx":
+            if len(self._settings['apikey']) == 32 and self._settings['apikey'].lower() != "x" * 32:
                 # Discard if apikey is not in received frame
-                if not self._settings['apikey'] in f:
-                    self._log.warning(str(c.uri) +" discarded frame: apikey not matched")
+                if self._settings['apikey'] not in f:
+                    self._log.warning(str(c.uri) + " discarded frame: apikey not matched")
                     return
                 # Otherwise remove apikey from frame
                 f = [v for v in f if self._settings['apikey'] not in v]
@@ -138,9 +138,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if str.lower(setting[:4]) == 'xxxx':
+                if setting[:4].lower() == 'xxxx':  # FIXME compare whole string to 'x'*32?
                     self._log.warning("Setting " + self.name + " apikey: obscured")
-                elif str.__len__(setting) == 32:
+                elif len(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
                 elif setting == "":
                     self._log.info("Setting " + self.name + " apikey: null")

@@ -61,7 +61,7 @@ class SMABluetoothPacket:
         self.setChecksum()
 
         # Just in case!
-        if self.ValidateHeaderChecksum() == False:
+        if not self.ValidateHeaderChecksum():
             raise Exception("Invalid header checksum when finishing!")
 
     def pushEscapedByte(self, value):
@@ -137,5 +137,5 @@ class SMABluetoothPacket:
         self.UnescapedArray = bytearray()
         self.setCommandCode(cmd1, cmd2)
 
-        if checksum > 0 and self.ValidateHeaderChecksum() == False:
+        if checksum > 0 and not self.ValidateHeaderChecksum():
             raise Exception("Invalid header checksum!")

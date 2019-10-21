@@ -168,7 +168,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
 
         # Read serial RX
         now = time.time()
-        if not (now - self.last_read) > self.poll_interval:
+        if now - self.last_read <= self.poll_interval:
             #self._log.debug(" Waiting for %s seconds " % (str(now - self.last_read)))
             # Wait to read based on poll_interval
             return
@@ -178,7 +178,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         # Update last read time
         self.last_read = now
         # If line incomplete, exit
-        if self._rx_buf is None:
+        if self._rx_buf == '':
             return
 
         #Sample data looks like {'FW': '0307', 'SOC': '1000', 'Relay': 'OFF', 'PID': '0x203', 'H10': '6', 'BMV': '700', 'TTG': '-1', 'H12': '0', 'H18': '0', 'I': '0', 'H11': '0', 'Alarm': 'OFF', 'CE': '0', 'H17': '9', 'P': '0', 'AR': '0', 'V': '26719', 'H8': '29011', 'H9': '0', 'H2': '0', 'H3': '0', 'H1': '-1633', 'H6': '-5775', 'H7': '17453', 'H4': '0', 'H5': '0'}

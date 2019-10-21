@@ -107,7 +107,7 @@ class EmonHubInterfacer(threading.Thread):
                             self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
 
                             # Initialize channel if needed
-                            if not channel in self._pub_channels:
+                            if channel not in self._pub_channels:
                                 self._pub_channels[channel] = []
 
                             # Add cargo item to channel
@@ -118,7 +118,9 @@ class EmonHubInterfacer(threading.Thread):
             # Subscriber channels
             for channel in self._settings["subchannels"]:
                 if channel in self._sub_channels:
-                    for i in range(0, len(self._sub_channels[channel])):
+                    # FIXME should be: while self._sub_channels[channel]
+                    for _ in range(len(self._sub_channels[channel])):
+                        # FIXME pop(0) has O(n) complexity. Can we use pop's default of last?
                         frame = self._sub_channels[channel].pop(0)
                         self.add(frame)
 
@@ -311,13 +313,12 @@ class EmonHubInterfacer(threading.Thread):
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
-            if whitening == True or whitening == "1":
-                for i in range(0, len(rxc.realdata), 1):
+            if whitening is True or whitening == "1":
+                for i in range(len(rxc.realdata)):
                     rxc.realdata[i] = rxc.realdata[i] ^ 0x55
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacodes' in ehc.nodelist[node]['rx']:
-
             # fetch the string of datacodes
             datacodes = ehc.nodelist[node]['rx']['datacodes']
 
@@ -364,8 +365,8 @@ class EmonHubInterfacer(threading.Thread):
 
         # Decode the string of data one value at a time into "decoded"
         if not decoded:
-            bytepos = int(0)
-            for i in range(0, count, 1):
+            bytepos = 0
+            for i in range(count):
                 # Use single datacode unless datacode = False then use datacodes
                 dc = str(datacode)
                 if not datacode:
@@ -404,8 +405,9 @@ class EmonHubInterfacer(threading.Thread):
             # when node not listed or has no scale(s) use the interfacers default if specified
                 scale = self._settings['scale']
 
-        if not scale == "1":
-            for i in range(0, len(decoded), 1):
+        if scale != "1":
+            # FIXME replace with zip
+            for i in range(len(decoded)):
                 x = scale
                 if not scale:
                     if i < len(scales):
@@ -502,7 +504,7 @@ class EmonHubInterfacer(threading.Thread):
         if scale == "1":
             scaled = txc.realdata
         else:
-            for i in range(0, len(txc.realdata), 1):
+            for i in range(len(txc.realdata)):
                 x = scale
                 if not scale:
                     x = scales[i]
@@ -571,7 +573,7 @@ class EmonHubInterfacer(threading.Thread):
 
         if not encoded:
             encoded.append(dest)
-            for i in range(0, count, 1):
+            for i in range(count):
                 # Use single datacode unless datacode = False then use datacodes
                 dc = str(datacode)
                 if not datacode:

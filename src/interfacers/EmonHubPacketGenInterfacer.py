@@ -28,7 +28,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         """
         t = time.time()
 
-        if not (t - self._control_timestamp) > self._control_interval:
+        if t - self._control_timestamp <= self._control_interval:
             return
 
         req = self._settings['url'] + \
@@ -93,7 +93,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         # Keep in touch with PacketGen and update refresh time
         interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if not (t - self._interval_timestamp) > interval:
+            if t - self._interval_timestamp < interval:
                 return
 
             try:
@@ -127,9 +127,9 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if str.lower(setting[:4]) == 'xxxx':
+                if setting[:4].lower() == 'xxxx':  # FIXME compare whole string to 'x'*32?
                     self._log.warning("Setting " + self.name + " apikey: obscured")
-                elif str.__len__(setting) == 32:
+                elif len(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
                 elif setting == "":
                     self._log.info("Setting " + self.name + " apikey: null")
