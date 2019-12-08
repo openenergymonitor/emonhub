@@ -1,6 +1,6 @@
 import time
 
-class EmonHubCargo(object):
+class EmonHubCargo:
     uri = 0
 
     # The class "constructor" - It's actually an initializer

@@ -8,7 +8,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
     def __init__(self, name):
         # Initialization
-        super(EmonHubEmoncmsHTTPInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # add or alter any default settings for this reporter
         # defaults previously defined in inherited emonhub_interfacer
@@ -39,7 +39,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 250 ...]]
 
-        if 'apikey' not in self._settings.keys() or len(str(self._settings['apikey'])) != 32 \
+        if 'apikey' not in self._settings or len(str(self._settings['apikey'])) != 32 \
                 or str(self._settings['apikey']).lower() == 'x' * 32:
             # Return true to clear buffer if the apikey is not set
             return True
@@ -77,7 +77,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return False
 
     def sendstatus(self):
-        if 'apikey' not in self._settings.keys() or len(str(self._settings['apikey'])) != 32 \
+        if 'apikey' not in self._settings or len(str(self._settings['apikey'])) != 32 \
                 or str(self._settings['apikey']).lower() == 'x' * 32:
             return
 
@@ -97,18 +97,18 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         :return:
         """
 
-        super(EmonHubEmoncmsHTTPInterfacer, self).set(**kwargs)
+        super().set(**kwargs)
 
-        for key, setting in self._cms_settings.iteritems():
+        for key, setting in self._cms_settings.items():
             #valid = False
-            if key not in kwargs.keys():
+            if key not in kwargs:
                 setting = self._cms_settings[key]
             else:
                 setting = kwargs[key]
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if setting[:4].lower() == 'xxxx':  # FIXME compare whole string to 'x'*32?
+                if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
                     self._log.warning("Setting " + self.name + " apikey: obscured")
                 elif len(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")

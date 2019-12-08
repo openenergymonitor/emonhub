@@ -2,10 +2,6 @@
 # See LICENCE and README file for details
 
 import array
-try:
-    from __builtin__ import long
-except ImportError:
-    long = int  # FIXME Python2 compatibility
 
 __author__ = 'Stuart Pittaway'
 
@@ -87,14 +83,14 @@ class SMANET2PlusPacket:
     def getTwoByte(self, offset):
         value = self.packet[offset]
         value += self.packet[offset + 1] << 8
-        return long(value)
+        return value
 
     def getFourByteLong(self, offset):
         value = self.packet[offset]
         value += self.packet[offset + 1] << 0x08
         value += self.packet[offset + 2] << 0x10
         value += self.packet[offset + 3] << 0x18
-        return long(value)
+        return value
 
     def getEightByte(self, offset):
         return self.packet[offset] \

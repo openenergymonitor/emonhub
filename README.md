@@ -61,8 +61,8 @@ Update apt information:
 
     sudo apt-get update
 
-    sudo apt-get install -y mosquitto python-pip python-serial python-configobj python-requests
-    sudo pip install paho-mqtt
+    sudo apt-get install -y mosquitto python3-pip python3-serial python3-configobj python3-requests
+    sudo pip3 install paho-mqtt
 
 It is recommended to turn off mosquitto persistence
 

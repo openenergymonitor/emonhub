@@ -19,7 +19,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)

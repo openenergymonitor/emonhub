@@ -1,6 +1,6 @@
 import re
 import Cargo
-import EmonHubSerialInterfacer as ehi
+from . import EmonHubSerialInterfacer as ehi
 
 """class EmonHubTx3eInterfacer
 
@@ -22,7 +22,7 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         # Initialization
-        super(EmonHubTx3eInterfacer, self).__init__(name, com_port, com_baud)
+        super().__init__(name, com_port, com_baud)
 
         self._settings.update({
             'nodename': ""
@@ -94,8 +94,8 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
         return c
 
     def set(self, **kwargs):
-        for key, setting in self._settings.iteritems():
-            if key in kwargs.keys():
+        for key, setting in self._settings.items():
+            if key in kwargs:
                 # replace default
                 # self._log.debug(kwargs[key])
                 self._settings[key] = kwargs[key]
