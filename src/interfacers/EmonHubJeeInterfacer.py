@@ -2,7 +2,7 @@ import time
 import json
 import datetime
 import Cargo
-import EmonHubSerialInterfacer as ehi
+from . import EmonHubSerialInterfacer as ehi
 
 """class EmonHubJeeInterfacer
 
@@ -161,9 +161,9 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
         """
 
-        for key, setting in self._jee_settings.iteritems():
+        for key, setting in self._jee_settings.items():
             # Decide which setting value to use
-            if key in kwargs.keys():
+            if key in kwargs:
                 setting = kwargs[key]
             else:
                 setting = self._jee_settings[key]
@@ -200,7 +200,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             time.sleep(1)
 
         # include kwargs from parent
-        super(EmonHubJeeInterfacer, self).set(**kwargs)
+        super().set(**kwargs)
 
     def action(self):
         """Actions that need to be done on a regular basis.

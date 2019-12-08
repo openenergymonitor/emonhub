@@ -40,7 +40,7 @@ class EmonHubInterfacer(threading.Thread):
         self._log = logging.getLogger("EmonHub")
 
         # Initialise thread
-        super(threading.Thread, self).__init__(self)
+        super().__init__()
         self.setName(name)
 
         # Initialise settings
@@ -588,7 +588,7 @@ class EmonHubInterfacer(threading.Thread):
         """
     #def setall(self, **kwargs):
 
-        for key, setting in self._defaults.iteritems():
+        for key, setting in self._defaults.items():
             if key in kwargs.keys():
                 setting = kwargs[key]
             else:

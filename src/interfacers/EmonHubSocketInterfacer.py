@@ -19,7 +19,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSocketInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # add an apikey setting
         self._skt_settings = {'apikey': ""}
@@ -129,9 +129,9 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         """
 
-        for key, setting in self._skt_settings.iteritems():
+        for key, setting in self._skt_settings.items():
             # Decide which setting value to use
-            if key in kwargs.keys():
+            if key in kwargs:
                 setting = kwargs[key]
             else:
                 setting = self._skt_settings[key]
@@ -159,4 +159,4 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
                 self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
 
         # include kwargs from parent
-        super(EmonHubSocketInterfacer, self).set(**kwargs)
+        super().set(**kwargs)

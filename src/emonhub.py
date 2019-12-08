@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 
@@ -47,7 +47,7 @@ Controlled by the user via EmonHubSetup
 
 """
 
-class EmonHub(object):
+class EmonHub:
 
     __version__ = "emonHub emon-pi variant v2.1.2"
 
@@ -101,7 +101,7 @@ class EmonHub(object):
 
             # For all Interfacers
             kill_list = []
-            for I in self._interfacers.itervalues():
+            for I in self._interfacers.values():
                 # Check threads are still running
                 if not I.isAlive():
                     kill_list.append(I.name) # <-avoid modification of iterable within loop
@@ -147,7 +147,7 @@ class EmonHub(object):
 
         self._log.info("Exiting hub...")
 
-        for I in self._interfacers.itervalues():
+        for I in self._interfacers.values():
             I.stop = True
             I.join()
 
@@ -174,7 +174,7 @@ class EmonHub(object):
         self.temp_buffer = {}
 
         # Interfacers
-        for name in self._interfacers.keys():
+        for name in self._interfacers:
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
             # (This also provides an ability to delete & rebuild by commenting 'Type' in conf)
             if name in settings['interfacers'] and 'Type' in settings['interfacers'][name]:
@@ -195,7 +195,7 @@ class EmonHub(object):
             self._interfacers[name].stop = True
             del self._interfacers[name]
 
-        for name, I in settings['interfacers'].iteritems():
+        for name, I in settings['interfacers'].items():
             # If interfacer does not exist, create it
             if name not in self._interfacers:
                 try:

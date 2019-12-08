@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # EmonHubBMWInterfacer released for use by OpenEnergyMonitor project
 # GNU GENERAL PUBLIC LICENSE -  Version 2, June 1991
 # See LICENCE and README file for details
@@ -32,7 +32,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         """Initialize interfacer"""
 
         # Initialization
-        super(EmonHubBMWInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._NodeId = int(nodeid)
         self._Username = bmwapiusername

@@ -3,13 +3,9 @@
 
 from collections import namedtuple
 import time
-try:
-    from __builtin__ import long  # FIXME long is defined by default on Python2, but is equivalent to int on Python3
-except ImportError:
-    long = int
 from datetime import datetime
-from SMABluetoothPacket import SMABluetoothPacket
-from SMANET2PlusPacket import SMANET2PlusPacket
+from smalibrary.SMABluetoothPacket import SMABluetoothPacket
+from smalibrary.SMANET2PlusPacket import SMANET2PlusPacket
 
 __author__ = 'Stuart Pittaway'
 
@@ -214,7 +210,7 @@ def logon(btSocket, mylocalBTAddress, MySerialNumber, packet_send_counter, Inver
     #Timeout = 900sec ?
     pluspacket1.pushLong(0x00000384)
 
-    pluspacket1.pushLong(long(time.mktime(datetime.today().timetuple())))
+    pluspacket1.pushLong(time.mktime(datetime.today().timetuple()))
 
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushByteArray(InverterPasswordArray)

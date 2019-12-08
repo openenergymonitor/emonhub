@@ -15,7 +15,7 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubTemplateInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # add or alter any default settings for this interfacer
         # defaults previously defined in inherited emonhub_interfacer
@@ -112,9 +112,9 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
         return True
 
     def set(self, **kwargs):
-        for key, setting in self._template_settings.iteritems():
+        for key, setting in self._template_settings.items():
             # Decide which setting value to use
-            if key in kwargs.keys():
+            if key in kwargs:
                 setting = kwargs[key]
             else:
                 setting = self._template_settings[key]
@@ -128,4 +128,4 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
                 self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
 
         # include kwargs from parent
-        super(EmonHubTemplateInterfacer, self).set(**kwargs)
+        super().set(**kwargs)

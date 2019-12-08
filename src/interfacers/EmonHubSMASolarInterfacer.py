@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 # EmonHubSMASolarInterfacer released for use by OpenEnergyMonitor project
 # GNU GENERAL PUBLIC LICENSE -  Version 2, June 1991
 # See LICENCE and README file for details
@@ -28,7 +28,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         """Initialize interfacer"""
 
         # Initialization
-        super(EmonHubSMASolarInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._btSocket = None
         self._inverteraddress = inverteraddress

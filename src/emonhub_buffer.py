@@ -15,7 +15,7 @@ Represents the actual buffer being used.
 """
 
 
-class AbstractBuffer():
+class AbstractBuffer:
 
     def storeItem(self, data):
         raise NotImplementedError

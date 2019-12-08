@@ -17,7 +17,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubPacketGenInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._control_timestamp = 0
         self._control_interval = 5
@@ -113,9 +113,9 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
         """
 
-        for key, setting in self._pg_settings.iteritems():
+        for key, setting in self._pg_settings.items():
             # Decide which setting value to use
-            if key in kwargs.keys():
+            if key in kwargs:
                 setting = kwargs[key]
             else:
                 setting = self._pg_settings[key]
@@ -143,4 +143,4 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
 
         # include kwargs from parent
-        super(EmonHubPacketGenInterfacer, self).set(**kwargs)
+        super().set(**kwargs)

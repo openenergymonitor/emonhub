@@ -42,7 +42,7 @@ each setup.
 
 """
 
-class EmonHubSetup(object):
+class EmonHubSetup:
     def __init__(self):
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
@@ -71,7 +71,7 @@ class EmonHubSetup(object):
 class EmonHubFileSetup(EmonHubSetup):
     def __init__(self, filename):
         # Initialization
-        super(EmonHubFileSetup, self).__init__()
+        super().__init__()
 
         self._fileformat = "ConfigObj" # or "ConfigObj"
 

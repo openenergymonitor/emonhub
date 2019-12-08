@@ -14,7 +14,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubMqttInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # set the default setting values for this interfacer
         self._defaults.update({'datacode': '0'})
@@ -239,11 +239,11 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         :return:
         """
 
-        super(EmonHubMqttInterfacer, self).set(**kwargs)
+        super().set(**kwargs)
 
-        for key, setting in self._mqtt_settings.iteritems():
+        for key, setting in self._mqtt_settings.items():
             #valid = False
-            if key not in kwargs.keys():
+            if key not in kwargs:
                 setting = self._mqtt_settings[key]
             else:
                 setting = kwargs[key]

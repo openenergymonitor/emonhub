@@ -34,7 +34,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
             name (str): Configuration name.
             port (int): The port the webserver should listen on.
         """
-        super(EmonHubSmilicsInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._settings = {
             'subchannels': ['ch1'],

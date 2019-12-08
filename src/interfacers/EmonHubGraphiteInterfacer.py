@@ -8,7 +8,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
 
     def __init__(self, name):
         # Initialization
-        super(EmonHubGraphiteInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._defaults.update({'batchsize': 100, 'interval': 30})
         self._settings.update(self._defaults)
@@ -62,7 +62,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         for frame in databuffer:
             nodename = frame['node']
 
-            for inputname, value in frame['data'].iteritems():
+            for inputname, value in frame['data'].items():
                 # path
                 path = self._settings['prefix'] + '.' + nodename + "." + inputname
                 # payload
@@ -107,18 +107,18 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         return True
 
     def set(self, **kwargs):
-        super(EmonHubGraphiteInterfacer, self).set(**kwargs)
-        for key, setting in self._graphite_settings.iteritems():
-            if key in kwargs.keys():
+        super().set(**kwargs)
+        for key, setting in self._graphite_settings.items():
+            if key in kwargs:
                 # replace default
                 self._settings[key] = kwargs[key]
 
     """
     def set(self, **kwargs):
-        super (EmonHubGraphiteInterfacer, self).set(**kwargs)
-        for key, setting in self._graphite_settings.iteritems():
+        super ().set(**kwargs)
+        for key, setting in self._graphite_settings.items():
             #valid = False
-            if key not in kwargs.keys():
+            if key not in kwargs:
                 setting = self._graphite_settings[key]
             else:
                 setting = kwargs[key]

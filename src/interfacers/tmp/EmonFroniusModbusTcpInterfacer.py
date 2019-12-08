@@ -1,6 +1,6 @@
 from pymodbus.constants import Endian
 from pymodbus.payload import BinaryPayloadDecoder
-import EmonModbusTcpInterfacer as EmonModbusTcpInterfacer
+from . import EmonModbusTcpInterfacer as EmonModbusTcpInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Solar Inverter using modbus tcp
@@ -14,7 +14,7 @@ class EmonFroniusModbusTcpInterfacer(EmonModbusTcpInterfacer):
         """
 
         # Initialization
-        super(EmonFroniusModbusTcpInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # Connection opened by parent class INIT
         # Retrieve Fronius specific inverter info if connection successful
