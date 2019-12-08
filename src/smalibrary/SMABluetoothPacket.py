@@ -81,7 +81,7 @@ class SMABluetoothPacket:
             self.UnescapedArray.append(value)
 
     def sendPacket(self, btSocket):
-        l = btSocket.send(str(self.header) + str(self.SourceAddress) + str(self.DestinationAddress) + str(self.cmdcode) + str(self.RawByteArray))
+        return btSocket.send(str(self.header) + str(self.SourceAddress) + str(self.DestinationAddress) + str(self.cmdcode) + str(self.RawByteArray))
 
     def containsLevel2Packet(self):
         return (len(self.UnescapedArray) >= 5 and
