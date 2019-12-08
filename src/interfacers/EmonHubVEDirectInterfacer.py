@@ -125,7 +125,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         Convert package from vedirect dictionary format to emonhub expected format
 
         """
-        clean_data = "%s"%self._settings['nodeoffset']
+        clean_data = [str(self._settings['nodeoffset'])]
         for key in self._extract:
             if key in data:
                 # Emonhub doesn't like strings so we convert them to ints
@@ -140,7 +140,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
                     else:
                         data[key] = 1
 
-                clean_data = clean_data + " " + str(data[key])
+                clean_data.append(str(data[key]))
         return clean_data
 
     def _read_serial(self):
@@ -186,7 +186,6 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         # Create a Payload object
         c = Cargo.new_cargo(rawdata=self._rx_buf)
         f = self.parse_package(self._rx_buf)
-        f = f.split()
 
         # Reset buffer
         self._rx_buf = ''
