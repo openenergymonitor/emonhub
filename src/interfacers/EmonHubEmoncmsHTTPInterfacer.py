@@ -88,7 +88,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # add apikey
         post_url = post_url + self._settings['apikey']
         # send request
-        reply = self._send_post(post_url, None)
+        self._send_post(post_url)
 
     def set(self, **kwargs):
         """

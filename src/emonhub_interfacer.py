@@ -10,11 +10,8 @@
 import time
 import logging
 import threading
-try:
-    import urllib
-except ImportError:
-    import urllib2 as urllib  # FIXME Python2 compatibility
 import traceback
+import requests
 
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
@@ -249,25 +246,15 @@ class EmonHubInterfacer(threading.Thread):
 
         """
 
-        reply = ""
-        request = urllib.Request(post_url, post_body)
         try:
-            response = urllib.urlopen(request, timeout=60)
-        except urllib.HTTPError as e:
-            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
-                              str(e.code))
-        except urllib.URLError as e:
-            self._log.warning(self.name + " couldn't send to server, URLError: " +
-                              str(e.reason))
-        except urllib.HTTPException:
-            self._log.warning(self.name + " couldn't send to server, HTTPException")
-        except Exception:
-            self._log.warning(self.name + " couldn't send to server, Exception: " +
-                              traceback.format_exc())
-        else:
-            reply = response.read()
-        finally:
-            return reply
+            if post_body:
+                reply = requests.post(post_url, post_body)
+            else:
+                reply = requests.get(post_url)
+            reply.raise_for_status()  # Raise an exception if status code isn't 200
+        except requests.exceptions.RequestException as ex:
+            self._log.warning(self.name + " couldn't send to server: " + str(ex))
+        return reply.text
 
     def _process_rx(self, cargo):
         """Process a frame of data
