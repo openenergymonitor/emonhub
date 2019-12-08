@@ -1,5 +1,4 @@
 import serial
-import time
 from emonhub_interfacer import EmonHubInterfacer
 
 import Cargo

@@ -141,7 +141,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         #Prevent roll over
         if self._packet_send_counter >= 0x0FFF:
-            self._packet_send_counter = 0
+            self._packet_send_counter = 0  # FIXME is this the same as "_reset_packet_send_counter" or not?
 
         #Appears that comms hangs on certain numbers
         #simple reset for now to resolve
@@ -203,46 +203,44 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             if self._btSocket is None:
                 return
 
-            readingsToMake = {}
+            readingsToMake = {
+                "EnergyProduction": [0x54000200, 0x00260100, 0x002622FF],
 
-            readingsToMake["EnergyProduction"] = [0x54000200, 0x00260100, 0x002622FF]
+                #This causes problems with some inverters
+                #readingsToMake["SpotDCPower"] = [0x53800200, 0x00251E00, 0x00251EFF]
 
-            #This causes problems with some inverters
-            #readingsToMake["SpotDCPower"] = [0x53800200, 0x00251E00, 0x00251EFF]
+                "SpotACPower": [0x51000200, 0x00464000, 0x004642FF],
+                "SpotACTotalPower": [0x51000200, 0x00263F00, 0x00263FFF],
+                "SpotDCVoltage": [0x53800200, 0x00451F00, 0x004521FF],
+                "SpotACVoltage": [0x51000200, 0x00464800, 0x004655FF],
+                "SpotGridFrequency": [0x51000200, 0x00465700, 0x004657FF],
+                "OperationTime": [0x54000200, 0x00462E00, 0x00462FFF],
+                "InverterTemperature": [0x52000200, 0x00237700, 0x002377FF],
+                #Not very useful for reporting
+                #"MaxACPower": [0x51000200, 0x00411E00, 0x004120FF],
+                #"MaxACPower2": [0x51000200, 0x00832A00, 0x00832AFF],
+                #"GridRelayStatus": [0x51800200, 0x00416400, 0x004164FF],
 
-            readingsToMake["SpotACPower"] = [0x51000200, 0x00464000, 0x004642FF]
-            readingsToMake["SpotACTotalPower"] = [0x51000200, 0x00263F00, 0x00263FFF]
-            readingsToMake["SpotDCVoltage"] = [0x53800200, 0x00451F00, 0x004521FF]
-            readingsToMake["SpotACVoltage"] = [0x51000200, 0x00464800, 0x004655FF]
-            readingsToMake["SpotGridFrequency"] = [0x51000200, 0x00465700, 0x004657FF]
-            readingsToMake["OperationTime"] = [0x54000200, 0x00462E00, 0x00462FFF]
-            readingsToMake["InverterTemperature"] = [0x52000200, 0x00237700, 0x002377FF]
-            #Not very useful for reporting
-            #readingsToMake["MaxACPower"] = [0x51000200, 0x00411E00, 0x004120FF]
-            #readingsToMake["MaxACPower2"] = [0x51000200, 0x00832A00, 0x00832AFF]
-            #readingsToMake["GridRelayStatus"] = [0x51800200, 0x00416400, 0x004164FF]
+                #Only useful on off grid battery systems
+                #"ChargeStatus": [0x51000200, 0x00295A00, 0x00295AFF],
+                #"BatteryInfo": [0x51000200, 0x00491E00, 0x00495DFF],
+            }
 
-            #Only useful on off grid battery systems
-            #readingsToMake["ChargeStatus"] = [0x51000200, 0x00295A00, 0x00295AFF]
-            #readingsToMake["BatteryInfo"] = [0x51000200, 0x00491E00, 0x00495DFF]
-
-
-            #Get first inverter in dictionary
-            inverter = self._Inverters[self._Inverters.keys()[0]]
+            #Get first inverter in dictionary  # FIXME dicts aren't sorted, there is no "first"
+            inverter = self._Inverters[list(self._Inverters.keys())[0]]
             self._log.debug("Reading from inverter " + inverter["inverterName"])
-
 
             #Loop through dictionary and take readings, building "output" dictionary as we go
             output = {}
-            for key in readingsToMake:
-
-                data = SMASolar_library.request_data(self._btSocket,
+            for reading, command in readingsToMake.items():
+                data = SMASolar_library.request_data(
+                    self._btSocket,
                     self._packet_send_counter,
                     self.mylocalBTAddress,
                     self.MySerialNumber,
-                    readingsToMake[key][0],
-                    readingsToMake[key][1],
-                    readingsToMake[key][2],
+                    command[0],
+                    command[1],
+                    command[2],
                     inverter["susyid"],
                     inverter["serialNumber"])
 
@@ -250,21 +248,18 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 if data is not None:
                     output.update(SMASolar_library.extract_data(data))
                     if self._packettrace:
-                        self._log.debug("Packet reply for " + key + ". Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14), data.getFourByteLong(16)))
+                        self._log.debug("Packet reply for " + reading + ". Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14), data.getFourByteLong(16)))
                         self._log.debug(data.debugViewPacket())
-
-            #Sort the output to keep the keys in a consistent order
-            names = []
-            values = []
-            for key in sorted(output):
-                names.append(output[key].Label)
-                values.append(output[key].Value)
 
             #self._log.debug("Building cargo")
             c = Cargo.new_cargo()
             c.rawdata = None
-            c.realdata = values
-            c.names = names
+            #Sort the output to keep the keys in a consistent order
+            c.names = []
+            c.realdata = []
+            for key in sorted(output):
+                c.names.append(output[key].Label)
+                c.realdata.append(output[key].Value)
 
             #TODO: We need to revisit this once we know how multiple inverters communicate with us
             c.nodeid = inverter["NodeId"]

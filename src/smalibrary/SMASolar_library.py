@@ -57,8 +57,8 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
 
     bluetoothbuffer = Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress)
 
-    v = namedtuple("SMAPacket", ["levelone", "leveltwo"], verbose=False)
-    v.levelone = bluetoothbuffer
+    v = namedtuple("SMAPacket", ["levelone", "leveltwo"])
+    v.levelone = bluetoothbuffer  # FIXME that's not how namedtuples work!
 
     if bluetoothbuffer.containsLevel2Packet():
         # Instance to hold level 2 packet
@@ -97,15 +97,12 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
 #    """Convert a byte string to it's hex string representation e.g. for output."""
 #    return ''.join(["%02X " % x  for x in byteStr])
 
-def BTAddressToByteArray(hexStr, sep):
-    """Convert a  hex string containing seperators to a bytearray object"""
-    b = bytearray()
-    for i in hexStr.split(sep):
-        b.append(int(i, 16))
-    return b
+def BTAddressToByteArray(hexStr, sep=':'):
+    """Convert a hex string containing separators to a bytearray object"""
+    return bytearray([int(i, 16) for i in hexStr.split(sep)])
 
 def encodeInverterPassword(InverterPassword):
-    # """Encodes InverterPassword (digit number) into array for passing to SMA protocol"""
+    """Encodes InverterPassword (digit number) into array for passing to SMA protocol"""
     if len(InverterPassword) > 12:
         raise Exception("Password can only be up to 12 digits in length")
 
@@ -123,29 +120,31 @@ def encodeInverterPassword(InverterPassword):
     return a
 
 def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber):
-    DeviceClass = {}
-    DeviceClass['8000'] = 'AllDevices'
-    DeviceClass['8001'] = 'SolarInverter'
-    DeviceClass['8002'] = 'WindTurbineInverter'
-    DeviceClass['8007'] = 'BatteryInverter'
-    DeviceClass['8033'] = 'Consumer'
-    DeviceClass['8064'] = 'SensorSystem'
-    DeviceClass['8065'] = 'ElectricityMeter'
-    DeviceClass['8128'] = 'CommunicationProduct'
+    DeviceClass = {
+        '8000': 'AllDevices',
+        '8001': 'SolarInverter',
+        '8002': 'WindTurbineInverter',
+        '8007': 'BatteryInverter',
+        '8033': 'Consumer',
+        '8064': 'SensorSystem',
+        '8065': 'ElectricityMeter',
+        '8128': 'CommunicationProduct',
+        }
 
-    DeviceType = {}
-    DeviceType['9073'] = 'SB 3000HF-30'
-    DeviceType['9074'] = 'SB 3000TL-21'
-    DeviceType['9075'] = 'SB 4000TL-21'
-    DeviceType['9076'] = 'SB 5000TL-21'
-    DeviceType['9119'] = 'Sunny HomeManager'
+    DeviceType = {
+        '9073': 'SB 3000HF-30',
+        '9074': 'SB 3000TL-21',
+        '9075': 'SB 4000TL-21',
+        '9076': 'SB 5000TL-21',
+        '9119': 'Sunny HomeManager',
+        }
 
     data = request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber, 0x58000200, 0x00821E00, 0x008220FF)
 
-    reply = {}
-
-    reply["susyid"] = data.getDestinationSusyid()
-    reply["serialNumber"] = data.getDestinationSerial()
+    reply = {
+        "susyid": data.getDestinationSusyid(),
+        "serialNumber": data.getDestinationSerial(),
+    }
 
     # idate = bluetoothbuffer.leveltwo.getFourByteLong(40 + 4)
     # t = time.localtime(long(idate))
@@ -244,9 +243,9 @@ def initaliseSMAConnection(btSocket, mylocalBTAddress, MySerialNumber, packet_se
     # Reply to 0x0002 cmd with our data
     send = SMABluetoothPacket(0x1F, 0x00, 0x00, 0x02, 0x00, mylocalBTAddress, inverterAddress)
     send.pushUnescapedByteArray(bytearray([0x00, 0x04, 0x70, 0x00,
-                                netid,
-                                0x00, 0x00, 0x00, 0x00,
-                                0x01, 0x00, 0x00, 0x00]))
+                                           netid,
+                                           0x00, 0x00, 0x00, 0x00,
+                                           0x01, 0x00, 0x00, 0x00]))
     send.finish()
     send.sendPacket(btSocket)
 
@@ -319,7 +318,7 @@ def request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber
     bluetoothbuffer = read_SMA_BT_Packet(btSocket, packet_send_counter, True, mylocalBTAddress)
 
     if bluetoothbuffer.leveltwo.errorCode() > 0:
-        return None
+        return None  # FIXME raise an Exception like all the other error paths
 
     leveltwo = bluetoothbuffer.leveltwo
 
@@ -335,51 +334,47 @@ def request_data(btSocket, packet_send_counter, mylocalBTAddress, MySerialNumber
     #If no errors return packet
     return leveltwo
 
+SpotValue = namedtuple("spotvalue", ["Description", "Scale", "RecSize"])
+spotvalues = {
+    0x263f: SpotValue("ACTotalPower", 1, 28),
+    0x411e: SpotValue("Ph1ACMax", 1, 28),
+    0x411f: SpotValue("Ph2ACMax", 1, 28),
+    0x4120: SpotValue("Ph3ACMax", 1, 28),
+    0x4640: SpotValue("Ph1Power", 1, 28),
+    0x4641: SpotValue("Ph2Power", 1, 28),
+    0x4642: SpotValue("Ph3Power", 1, 28),
+    0x4648: SpotValue("Ph1ACVolt", 100, 28),
+    0x4649: SpotValue("Ph2ACVolt", 100, 28),
+    0x464a: SpotValue("Ph3ACVolt", 100, 28),
+    0x4650: SpotValue("Ph1ACCurrent", 1000, 28),
+    0x4651: SpotValue("Ph2ACCurrent", 1000, 28),
+    0x4652: SpotValue("Ph3ACCurrent", 1000, 28),
+    0x4657: SpotValue("ACGridFreq", 100, 28),
+
+    0x2601: SpotValue("TotalYield", 1, 16),  # 8 byte word
+    0x2622: SpotValue("DayYield", 1, 16),  # 8 byte word
+    0x462f: SpotValue("FeedInTime", 3600, 16),  # 8 byte word
+    0x462e: SpotValue("OperatingTime", 3600, 16),  # 8 byte word
+
+    0x251e: SpotValue("DCPower1", 1, 28),
+    0x451f: SpotValue("DCVoltage1", 100, 28),
+    0x4521: SpotValue("DCCurrent1", 1000, 28),
+
+    0x2377: SpotValue("InvTemperature", 100, 28),
+    0x821e: SpotValue("Inverter Name", 0, 28),
+    0x295A: SpotValue("ChargeStatus", 1, 28),
+}
+
+SpotValueOutput = namedtuple("SpotValueOutput", ["Label", "Value"])
+
 def extract_data(level2Packet):
     #Return a dictionary
     outputlist = {}
 
-    spotvaluelist = {}
-
-    SpotValue = namedtuple("spotvalue", ["Description", "Scale", "RecSize"])
-    spotvaluelist[0x263f] = SpotValue("ACTotalPower", 1, 28)
-    spotvaluelist[0x411e] = SpotValue("Ph1ACMax", 1, 28)
-    spotvaluelist[0x411f] = SpotValue("Ph2ACMax", 1, 28)
-    spotvaluelist[0x4120] = SpotValue("Ph3ACMax", 1, 28)
-    spotvaluelist[0x4640] = SpotValue("Ph1Power", 1, 28)
-    spotvaluelist[0x4641] = SpotValue("Ph2Power", 1, 28)
-    spotvaluelist[0x4642] = SpotValue("Ph3Power", 1, 28)
-    spotvaluelist[0x4648] = SpotValue("Ph1ACVolt", 100, 28)
-    spotvaluelist[0x4649] = SpotValue("Ph2ACVolt", 100, 28)
-    spotvaluelist[0x464a] = SpotValue("Ph3ACVolt", 100, 28)
-    spotvaluelist[0x4650] = SpotValue("Ph1ACCurrent", 1000, 28)
-    spotvaluelist[0x4651] = SpotValue("Ph2ACCurrent", 1000, 28)
-    spotvaluelist[0x4652] = SpotValue("Ph3ACCurrent", 1000, 28)
-    spotvaluelist[0x4657] = SpotValue("ACGridFreq", 100, 28)
-
-    spotvaluelist[0x2601] = SpotValue("TotalYield", 1, 16)  #8 byte word
-    spotvaluelist[0x2622] = SpotValue("DayYield", 1, 16)  #8 byte word
-    spotvaluelist[0x462f] = SpotValue("FeedInTime", 3600, 16)  #8 byte word
-    spotvaluelist[0x462e] = SpotValue("OperatingTime", 3600, 16)  #8 byte word
-
-    spotvaluelist[0x251e] = SpotValue("DCPower1", 1, 28)
-    spotvaluelist[0x451f] = SpotValue("DCVoltage1", 100, 28)
-    spotvaluelist[0x4521] = SpotValue("DCCurrent1", 1000, 28)
-
-    spotvaluelist[0x2377] = SpotValue("InvTemperature", 100, 28)
-    #spotvaluelist[0x821e] = SpotValue("Inverter Name", 0, 28)
-    spotvaluelist[0x295A] = SpotValue("ChargeStatus", 1, 28)
-
-    SpotValueOutput = namedtuple("SpotValueOutput", ["Label", "Value"])
-
     #Start here
     offset = 40
 
-    if level2Packet.totalPayloadLength() == 0:
-        return outputlist
-
     while offset < level2Packet.totalPayloadLength():
-        recordSize = 28
         value = 0
         classtype = level2Packet.getByte(offset)
         #classtype should always be =1
@@ -398,8 +393,8 @@ def extract_data(level2Packet):
             if value == 0x8000 or value == 0xFFFF:
                 value = 0
 
-            if readingtype in spotvaluelist:
-                v = spotvaluelist[readingtype]
+            if readingtype in spotvalues:
+                v = spotvalues[readingtype]
 
                 #Check if its an 4 byte value (QWORD)
                 if v.RecSize == 16:

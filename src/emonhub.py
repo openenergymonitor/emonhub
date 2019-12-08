@@ -35,6 +35,7 @@ for f in glob.glob(path + "/interfacers/*.py"):
     if name != "__init__":
         # print "Loading: " + name
         setattr(ehi, name, getattr(getattr(namespace, name), name))
+del name
 
 """class EmonHub
 

@@ -2,13 +2,6 @@ import time
 
 class EmonHubCargo(object):
     uri = 0
-    timestamp = 0.0
-    target = 0
-    nodeid = 0
-    nodename = False
-    names = []
-    realdata = []
-    rssi = 0
 
     # The class "constructor" - It's actually an initializer
     def __init__(self, timestamp, target, nodeid, nodename, names, realdata, rssi, rawdata):
@@ -31,12 +24,4 @@ class EmonHubCargo(object):
         # self.realdatacodes = []
 
 def new_cargo(rawdata="", nodename=False, names=[], realdata=[], nodeid=0, timestamp=0.0, target=0, rssi=0.0):
-    """
-
-    :rtype : object
-    """
-
-    if not timestamp:
-        timestamp = time.time()
-    cargo = EmonHubCargo(timestamp, target, nodeid, nodename, names, realdata, rssi, rawdata)
-    return cargo
+    return EmonHubCargo(timestamp or time.time(), target, nodeid, nodename, names, realdata, rssi, rawdata)

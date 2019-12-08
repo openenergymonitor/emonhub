@@ -12,7 +12,7 @@ Monitors the serial port for data from "Jee" type device
 
 class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
 
-    def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=0):
+    def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=38400):
         """Initialize Interfacer
 
         com_port (string): path to COM port
@@ -20,16 +20,13 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         # Initialization
-        if com_baud != 0:
-            super(EmonHubJeeInterfacer, self).__init__(name, com_port, com_baud)
-        else:
-            super(EmonHubJeeInterfacer, self).__init__(name, com_port, 38400)
+        super().__init__(name, com_port, 38400)
 
         # Display device firmware version and current settings
         self.info = ["", ""]
         if self._ser is not None:
             self._ser.write("v")
-            time.sleep(2)
+            time.sleep(2)  # FIXME sleep in initialiser smells
             self._rx_buf = self._rx_buf + self._ser.readline()
             if '\r\n' in self._rx_buf:
                 self._rx_buf = ""
@@ -137,7 +134,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             try:
                 c.rssi = int(r)
             except ValueError:
-                self._log.warning("Packet discarded as the RSSI format is invalid: "+ str(f))
+                self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
                 return
             f = f[:-1]
 
@@ -172,7 +169,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 setting = self._jee_settings[key]
             # convert bools to ints
             if str(setting).capitalize() in ['True', 'False']:
-                setting = int(setting == "True")
+                setting = int(setting.capitalize() == "True")
             # confirmation string always contains baseid, group and freq
             if all(i in self.info[1] for i in (" i", " g", " @ ", " MHz")):
                 # If setting confirmed as already set, continue without changing
