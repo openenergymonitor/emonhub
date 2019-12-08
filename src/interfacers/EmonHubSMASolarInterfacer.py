@@ -36,15 +36,12 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._port = 1
         self._nodeid = int(nodeid)
 
-        if packettrace == 0:
-            self._packettrace = False
-        else:
-            self._packettrace = True
+        self._packettrace = bool(packettrace)
 
         self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd])
 
         self._reset_packet_send_counter()
-        self._Inverters = None
+        self._Inverters = {}
         #Duration in seconds
         self._time_inverval = int(timeinverval)
         self._InverterPasswordArray = SMASolar_library.encodeInverterPassword(self._inverterpincode)

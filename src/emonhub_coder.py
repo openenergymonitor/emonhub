@@ -5,15 +5,9 @@ nodelist = {}
 
 
 def check_datacode(datacode):
-    # Data types & sizes (number of bytes)
-    datacodes = {'b': '1', 'h': '2', 'i': '4', 'l': '4', 'q': '8', 'f': '4', 'd': '8',
-                 'B': '1', 'H': '2', 'I': '4', 'L': '4', 'Q': '8', 'c': '1', '?': '1'}
-
-    # if datacode is valid return the data size in bytes
-    if datacode in datacodes:
-        return int(datacodes[datacode])
-    # if not valid return False
-    else:
+    try:
+        return struct.calcsize(datacode)
+    except struct.error:
         return False
 
 
@@ -42,5 +36,4 @@ def encode(datacode, value):
 
     #value = 60
     #datacode = "b"
-    result = struct.unpack(e + b*s, struct.pack(e + datacode, value))
-    return result
+    return struct.unpack(e + b*s, struct.pack(e + datacode, value))

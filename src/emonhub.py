@@ -18,6 +18,7 @@ import argparse
 import pprint
 import glob
 import os
+from collections import defaultdict
 
 import emonhub_setup as ehs
 import emonhub_coder as ehc
@@ -87,9 +88,7 @@ class EmonHub(object):
         signal.signal(signal.SIGINT, self._sigint_handler)
 
         # Initialise thread restart counters
-        restart_count = {}
-        for I in self._interfacers.itervalues():
-            restart_count[I.name] = 0
+        restart_count = defaultdict(int)
 
         # Until asked to stop
         while not self._exit:

@@ -8,10 +8,10 @@ class SMABluetoothPacket:
         return "I am an instance of SMABluetoothPacket"
 
     def getLevel2Checksum(self):
-        return self.UnescapedArray[len(self.UnescapedArray) - 2] * 256 + self.UnescapedArray[len(self.UnescapedArray) - 3]
+        return (self.UnescapedArray[-2] << 8) + self.UnescapedArray[-3]
 
     def lastByte(self):
-        return self.UnescapedArray[len(self.UnescapedArray) - 1]
+        return self.UnescapedArray[-1]
 
     def getLevel2Payload(self):
         skipendbytes = 0
@@ -23,9 +23,9 @@ class SMABluetoothPacket:
         if self.lastByte() == 0x7e:
             skipendbytes = 3
 
+        # FIXME This comment says to skip the first 3 bytes, but the code skips the *last* 3 bytes
         # Skip the first 3 bytes, they are the command code 0x0001 and 0x7E start byte
-        l = len(self.UnescapedArray) - skipendbytes
-        return self.UnescapedArray[startbyte:l]
+        return self.UnescapedArray[startbyte:-skipendbytes]
 
     def pushRawByteArray(self, barray):
         # Raw byte array
@@ -68,14 +68,14 @@ class SMABluetoothPacket:
         previousUnescapedByte = 0
 
         if len(self.RawByteArray) > 0:
-            previousUnescapedByte = self.RawByteArray[len(self.RawByteArray) - 1]
+            previousUnescapedByte = self.RawByteArray[-1]
 
         # Store the raw byte as it was received into RawByteArray
         self.RawByteArray.append(value)
 
         # did we receive the escape char in previous byte?
         if len(self.RawByteArray) > 0 and previousUnescapedByte == 0x7d:
-            self.UnescapedArray[len(self.UnescapedArray) - 1] = value ^ 0x20
+            self.UnescapedArray[-1] = value ^ 0x20
         else:
             # Unescaped array is same as raw array
             self.UnescapedArray.append(value)
@@ -84,17 +84,15 @@ class SMABluetoothPacket:
         l = btSocket.send(str(self.header) + str(self.SourceAddress) + str(self.DestinationAddress) + str(self.cmdcode) + str(self.RawByteArray))
 
     def containsLevel2Packet(self):
-        if len(self.UnescapedArray) < 5:
-            return False
-
-        return (self.UnescapedArray[0] == 0x7e and
+        return (len(self.UnescapedArray) >= 5 and
+                self.UnescapedArray[0] == 0x7e and
                 self.UnescapedArray[1] == 0xff and
                 self.UnescapedArray[2] == 0x03 and
                 self.UnescapedArray[3] == 0x60 and
                 self.UnescapedArray[4] == 0x65)
 
     def CommandCode(self):
-        return self.cmdcode[0] + (self.cmdcode[1] * 256)
+        return self.cmdcode[0] + (self.cmdcode[1] << 8)
 
     def setCommandCode(self, byteone, bytetwo):
         self.cmdcode = bytearray([byteone, bytetwo])
@@ -110,7 +108,7 @@ class SMABluetoothPacket:
         return len(self.UnescapedArray) + self.headerlength
 
     def TotalRawPacketLength(self):
-        return self.header[1] + (self.header[2] * 256)
+        return self.header[1] + (self.header[2] << 8)
 
     def TotalPayloadLength(self):
         return self.TotalRawPacketLength() - self.headerlength
@@ -126,11 +124,7 @@ class SMABluetoothPacket:
         self.SourceAddress = SourceAddress
         self.DestinationAddress = DestinationAddress
 
-        self.header = bytearray()
-        self.header.append(0x7e)
-        self.header.append(length1)
-        self.header.append(length2)
-        self.header.append(checksum)
+        self.header = bytearray([0x7e, length1, length2, checksum])
 
         # Create our array to hold the payload bytes
         self.RawByteArray = bytearray()
