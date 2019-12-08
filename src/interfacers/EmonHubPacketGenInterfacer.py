@@ -37,22 +37,16 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         req = self._settings['url'] + \
               "/emoncms/packetgen/getpacket.json?apikey="
 
-        try:
-            packet = urllib2.urlopen(req + self._settings['apikey']).read()
-        except:
-            return
-
         # logged without apikey added for security
         self._log.info("requesting packet: " + req + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
 
         try:
-            packet = json.loads(packet)
-        except ValueError:
-            self._log.warning("no packet returned")
+            packet = requests.get(req + self._settings['apikey']).json()
+        except (ValueError, requests.exceptions.RequestException) as ex:
+            self._log.warning("no packet returned: " + str(ex))
             return
 
         raw = ""
-        target = 0
         values = []
         datacodes = []
 
@@ -100,9 +94,9 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 return
 
             try:
-                z = urllib2.urlopen(self._settings['url'] +
-                                    "/emoncms/packetgen/getinterval.json?apikey="
-                                    + self._settings['apikey']).read()
+                z = requests.get(self._settings['url'] +
+                                 "/emoncms/packetgen/getinterval.json?apikey="
+                                 + self._settings['apikey']).text
                 i = int(z[1:-1])
             except:
                 self._log.info("request interval not returned")
