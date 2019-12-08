@@ -2,7 +2,6 @@
 # See LICENCE and README file for details
 
 import array
-import math
 try:
     from __builtin__ import long
 except ImportError:
@@ -86,26 +85,26 @@ class SMANET2PlusPacket:
         return self.packet[offset]
 
     def getTwoByte(self, offset):
-        value = self.packet[offset] * math.pow(256, 0)
-        value += self.packet[offset + 1] * math.pow(256, 1)
+        value = self.packet[offset]
+        value += self.packet[offset + 1] << 8
         return long(value)
 
     def getFourByteLong(self, offset):
-        value = self.packet[offset] * math.pow(256, 0)
-        value += self.packet[offset + 1] * math.pow(256, 1)
-        value += self.packet[offset + 2] * math.pow(256, 2)
-        value += self.packet[offset + 3] * math.pow(256, 3)
+        value = self.packet[offset]
+        value += self.packet[offset + 1] << 0x08
+        value += self.packet[offset + 2] << 0x10
+        value += self.packet[offset + 3] << 0x18
         return long(value)
 
     def getEightByte(self, offset):
-        return self.packet[offset] * math.pow(256, 0) \
-                    + self.packet[offset + 1] * math.pow(256, 1) \
-                    + self.packet[offset + 2] * math.pow(256, 2) \
-                    + self.packet[offset + 3] * math.pow(256, 3) \
-                    + self.packet[offset + 4] * math.pow(256, 4) \
-                    + self.packet[offset + 5] * math.pow(256, 5) \
-                    + self.packet[offset + 6] * math.pow(256, 6) \
-                    + self.packet[offset + 7] * math.pow(256, 7)
+        return self.packet[offset] \
+                    + (self.packet[offset + 1] << 0x08) \
+                    + (self.packet[offset + 2] << 0x10) \
+                    + (self.packet[offset + 3] << 0x18) \
+                    + (self.packet[offset + 4] << 0x20) \
+                    + (self.packet[offset + 5] << 0x28) \
+                    + (self.packet[offset + 6] << 0x30) \
+                    + (self.packet[offset + 7] << 0x38)
 
     def getArray(self):
         return self.packet
@@ -139,8 +138,7 @@ class SMANET2PlusPacket:
         return self.packet[24]
 
     def getTwoByteuShort(self, offset):
-        value = self.packet[offset] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1)
-        return value
+        return self.packet[offset] + (self.packet[offset + 1] << 8)
 
     def errorCode(self):
         return self.getTwoByteuShort(22)
@@ -151,6 +149,7 @@ class SMANET2PlusPacket:
             myfcs = (myfcs >> 8) ^ self.fcstab[(myfcs ^ bte) & 0xff]
 
         myfcs ^= 0xffff
+        return myfcs
 
     def pushByteArray(self, barray):
         for bte in barray:
