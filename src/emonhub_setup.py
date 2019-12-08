@@ -9,8 +9,8 @@
 
 import time
 import logging
-from configobj import ConfigObj
 import json
+from configobj import ConfigObj
 
 """class EmonHubSetup
 

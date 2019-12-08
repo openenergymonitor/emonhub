@@ -265,11 +265,11 @@ class SMANET2PlusPacket:
         pos += 4
 
         s = ""
-        for j in range(pos, len(self.packet)):
+        for j, b in enumerate(self.packet[pos:]):
             if j % 16 == 0 or j == pos:
                 s += "\n    %08x: " % j
 
-            s += "%02x " % self.packet[j]
+            s += "%02x " % b
 
         str_list.append("L2 Payload= %s" % s)
         myfcs = self.FCSChecksum ^ 0xffff

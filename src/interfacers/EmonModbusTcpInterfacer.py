@@ -50,7 +50,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         # Close TCP connection
         if self._con is not None:
             self._log.debug("Closing tcp port")
-        self._con.close()
+            self._con.close()
 
     def _open_modTCP(self, modbus_IP, modbus_port):
         """ Open connection to modbus device """

@@ -39,7 +39,7 @@ def log_exceptions_from_class_method(f):
 
 class EmonHubInterfacer(threading.Thread):
     def __init__(self, name):
-        # Initialize logger
+        # Initialise logger
         self._log = logging.getLogger("EmonHub")
 
         # Initialise thread
@@ -61,7 +61,7 @@ class EmonHubInterfacer(threading.Thread):
         self.init_settings = {}
         self._settings = {}
 
-        # Initialize message queue
+        # Initialise message queue
         self._sub_channels = {}
         self._pub_channels = {}
 
@@ -106,7 +106,7 @@ class EmonHubInterfacer(threading.Thread):
                         for channel in self._settings["pubchannels"]:
                             self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
 
-                            # Initialize channel if needed
+                            # Initialise channel if needed
                             if channel not in self._pub_channels:
                                 self._pub_channels[channel] = []
 
@@ -141,6 +141,7 @@ class EmonHubInterfacer(threading.Thread):
         try:
             f.append(cargo.timestamp)
             f.append(cargo.nodeid)
+            # FIXME replace with f.extend(cargo.realdata)
             for i in cargo.realdata:
                 f.append(i)
             if cargo.rssi:
@@ -218,12 +219,10 @@ class EmonHubInterfacer(threading.Thread):
             if self._process_post(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItems(retrievedlength)
-                # log the time of last succesful post
-                self._interval_timestamp = time.time()
-            else:
-                # slow down retry rate in the case where the last attempt failed
-                # stops continuous retry attempts filling up the log
-                self._interval_timestamp = time.time()
+            # log the time of last successful post
+            # slow down retry rate in the case where the last attempt failed
+            # stops continuous retry attempts filling up the log
+            self._interval_timestamp = time.time()
 
 
     def _process_post(self, data):

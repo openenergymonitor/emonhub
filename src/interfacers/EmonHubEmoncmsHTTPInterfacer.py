@@ -121,7 +121,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 # Next line will log apikey if uncommented (privacy ?)
                 #self._log.debug(self.name + " apikey: " + str(setting))
                 continue
-            elif key == 'url' and setting[:4] == "http":
+            elif key == 'url' and setting.startswith("http"):
                 self._log.info("Setting " + self.name + " url: " + setting)
                 self._settings[key] = setting
                 continue

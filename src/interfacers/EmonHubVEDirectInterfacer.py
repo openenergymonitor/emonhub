@@ -50,16 +50,14 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         """
         Parse serial byte code from VE.Direct
         """
+        # FIXME This whole setup is just to parse 'key\tvalue\r\n' lines with 'Checksum' keys over serial
+        self.bytes_sum += ord(byte)
         if self.state == self.WAIT_HEADER:
-            self.bytes_sum += ord(byte)
             if byte == self.header1:
                 self.state = self.WAIT_HEADER
             elif byte == self.header2:
                 self.state = self.IN_KEY
-
-            return
         elif self.state == self.IN_KEY:
-            self.bytes_sum += ord(byte)
             if byte == self.delimiter:
                 if self.key == 'Checksum':
                     self.state = self.IN_CHECKSUM
@@ -67,9 +65,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
                     self.state = self.IN_VALUE
             else:
                 self.key += byte
-            return
         elif self.state == self.IN_VALUE:
-            self.bytes_sum += ord(byte)
             if byte == self.header1:
                 self.state = self.WAIT_HEADER
                 self.dict[self.key] = self.value
@@ -77,18 +73,15 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
                 self.value = ''
             else:
                 self.value += byte
-            return
         elif self.state == self.IN_CHECKSUM:
-            self.bytes_sum += ord(byte)
             self.key = ''
             self.value = ''
             self.state = self.WAIT_HEADER
             if self.bytes_sum % 256 == 0:
                 self.bytes_sum = 0
                 return self.dict
-            else:
-                self.bytes_sum = 0
-
+            # FIXME if the checksum is wrong should we not throw away the dict?
+            self.bytes_sum = 0
         else:
             raise AssertionError()
 

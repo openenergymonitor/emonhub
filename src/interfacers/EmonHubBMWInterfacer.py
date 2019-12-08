@@ -46,7 +46,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         self._TempCredentialFile = tempcredentialfile
         self._first_time_loop = True
 
-        if os.path.exists(self._TempCredentialFile):
+        if os.path.exists(self._TempCredentialFile):  # FIXME race condition
             with open(self._TempCredentialFile, "r") as cf:
                 credentials = json.load(cf)
 
@@ -91,7 +91,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
                 access_token = parts[0].split("#")
                 for word in access_token[1:]:
                     values = word.split("=")
-                    d[values[0]] = values[1]
+                    d[values[0]] = values[1]  # FIXME dict comprehension
 
                 # We should now have a dictionary object with three entries
                 # token_type, access_token, expires_in
@@ -131,7 +131,6 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
     def _reset_duration_timer(self):
         """Reset timer to current date/time"""
         self._last_time_reading = time.time()
-        return
 
     def _is_it_time(self):
         """Checks to see if the duration has expired

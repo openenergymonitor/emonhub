@@ -1,3 +1,6 @@
+import time
+import requests
+from Cargo import new_cargo
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubPacketGenInterfacer
@@ -111,8 +114,6 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
             self._interval_timestamp = t
 
-        return
-
     def set(self, **kwargs):
         """
 
@@ -127,7 +128,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if setting[:4].lower() == 'xxxx':  # FIXME compare whole string to 'x'*32?
+                if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
                     self._log.warning("Setting " + self.name + " apikey: obscured")
                 elif len(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
@@ -140,7 +141,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 # Next line will log apikey if uncommented (privacy ?)
                 #self._log.debug(self.name + " apikey: " + str(setting))
                 continue
-            elif key == 'url' and setting[:4] == "http":
+            elif key == 'url' and setting.startswith("http"):
                 self._log.info("Setting " + self.name + " url: " + setting)
                 self._settings[key] = setting
                 continue
