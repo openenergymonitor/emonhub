@@ -121,7 +121,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     elif 'datacodes' in ehc.nodelist[node]['rx']:
                         datacodes = ehc.nodelist[node]['rx']['datacodes']
                     else:
-                        _self._log.error("please provide a datacode or a list of datacodes")
+                        self._log.error("please provide a datacode or a list of datacodes")
                         return
                 
                 # check if number of registers and number of names are the same
