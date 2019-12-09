@@ -94,7 +94,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.info("Connecting to MQTT Server")
             try:
                 self._mqttc.username_pw_set(self.init_settings['mqtt_user'], self.init_settings['mqtt_passwd'])
-                self._mqttc.connect(self.init_settings['mqtt_host'], self.init_settings['mqtt_port'], 60)
+                self._mqttc.connect(self.init_settings['mqtt_host'], int(self.init_settings['mqtt_port']), 60)
             except Exception:
                 self._log.info("Could not connect...")
                 time.sleep(1.0)  # FIXME why sleep? we're just about to return True
