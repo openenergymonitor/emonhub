@@ -25,12 +25,12 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         # Display device firmware version and current settings
         self.info = ["", ""]
         if self._ser is not None:
-            self._ser.write("v")
+            self._ser.write(b"v")
             time.sleep(2)  # FIXME sleep in initialiser smells
-            self._rx_buf = self._rx_buf + self._ser.readline()
+            self._rx_buf = self._rx_buf + self._ser.readline().decode()
             if '\r\n' in self._rx_buf:
                 self._rx_buf = ""
-                info = self._rx_buf + self._ser.readline()[:-2]
+                info = self._rx_buf + self._ser.readline().decode()[:-2]
                 if info != "":
                     # Split the returned "info" string into firmware version & current settings
                     self.info[0] = info.strip().split(' ')[0]
@@ -81,7 +81,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline()
+        self._rx_buf = self._rx_buf + self._ser.readline().decode()
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
@@ -195,7 +195,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 continue
             self._settings[key] = setting
             self._log.info("Setting " + self.name + " %s: %s" % (key, setting) + " (" + command + ")")
-            self._ser.write(command)
+            self._ser.write(command.encode())
             # Wait a sec between two settings
             time.sleep(1)
 
@@ -218,7 +218,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 self._interval_timestamp = t
                 now = datetime.datetime.now()
                 self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
-                self._ser.write("00,%02d,%02d,00,s" % (now.hour, now.minute))
+                self._ser.write(b"00,%02d,%02d,00,s" % (now.hour, now.minute))
 
     def _process_post(self, databuffer):
         """Send data to server/broker or other output
@@ -249,4 +249,4 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         payload += cmd
 
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
-        self._ser.write(payload)
+        self._ser.write(payload.encode())
