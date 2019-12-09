@@ -48,7 +48,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
+            self._log.debug("Opening serial port: " + str(com_port) + " @ " + str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             s = False
@@ -66,7 +66,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
             return False
 
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline()
+        self._rx_buf = self._rx_buf + self._ser.readline().decode()
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
