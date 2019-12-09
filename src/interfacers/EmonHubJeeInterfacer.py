@@ -20,7 +20,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         # Initialization
-        super().__init__(name, com_port, 38400)
+        super().__init__(name, com_port, com_baud)
 
         # Display device firmware version and current settings
         self.info = ["", ""]
