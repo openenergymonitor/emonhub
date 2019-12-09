@@ -68,7 +68,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # body, this should be moved from the url to the body as soon as this is widely
         # adopted
 
-        reply = self._send_post(post_url, post_body)
+        reply = self._send_post(post_url, {'data': data_string, 'sentat': str(sentat)})
         if reply == 'ok':
             self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
             return True
