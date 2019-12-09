@@ -140,7 +140,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         self._log.debug(" Starting Serial read")
         try:
             while self._rx_buf == '':
-                byte = self._ser.read(1)
+                byte = self._ser.read(1).decode()
                 packet = self.input(byte)
                 if packet is not None:
                     self._rx_buf = packet
