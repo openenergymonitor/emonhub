@@ -49,7 +49,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub:
 
-    __version__ = "emonHub emon-pi variant v3"
+    __version__ = "emonHub emon-pi variant v3-beta"
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
