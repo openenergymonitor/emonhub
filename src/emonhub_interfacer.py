@@ -347,7 +347,7 @@ class EmonHubInterfacer(threading.Thread):
                 return False
             else:
             # Determine the number of values in the frame of the specified code & size
-                count = len(rxc.realdata) / ehc.check_datacode(datacode)
+                count = len(rxc.realdata) // ehc.check_datacode(datacode)
 
         # Decode the string of data one value at a time into "decoded"
         if not decoded:
