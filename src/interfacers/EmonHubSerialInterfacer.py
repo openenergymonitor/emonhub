@@ -1,5 +1,4 @@
 import serial
-import time
 from emonhub_interfacer import EmonHubInterfacer
 
 import Cargo
@@ -20,17 +19,17 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubSerialInterfacer, self).__init__(name)
+        super().__init__(name)
 
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
-        
+
         # Initialize RX buffer
         self._rx_buf = ''
 
     def close(self):
         """Close serial port"""
-        
+
         # Close serial port
         if self._ser is not None:
             self._log.debug("Closing serial port")
@@ -49,7 +48,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.debug("Opening serial port: " + str(com_port) + " @ "+ str(com_baud) + " bits/s")
+            self._log.debug("Opening serial port: " + str(com_port) + " @ " + str(com_baud) + " bits/s")
         except serial.SerialException as e:
             self._log.error(e)
             s = False
@@ -60,14 +59,15 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """Read data from serial port and process if complete line received.
 
         Return data as a list: [NodeID, val1, val2]
-        
+
         """
-        
-        if not self._ser: return False
+
+        if not self._ser:
+            return False
 
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline()
-        
+        self._rx_buf = self._rx_buf + self._ser.readline().decode()
+
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
             return
@@ -91,4 +91,3 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
             c.realdata = f[1:]
 
         return c
-
