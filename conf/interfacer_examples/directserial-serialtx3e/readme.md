@@ -35,7 +35,7 @@ Add the following to `emonhub.conf` in the `[interfacers]` section:
            com_baud = 115200
       [[[runtimesettings]]]
            #nodeoffset = 1
-           # use nodeoffet for multiple devices. it will change the nodeID as seen by emonCMS Inputs.
+           # nodeoffet can be used for multiple devices. it will change the nodeID as seen by emonCMS Inputs.
            pubchannels = ToEmonCMS,
 ```
 
