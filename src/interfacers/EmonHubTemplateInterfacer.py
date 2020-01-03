@@ -103,7 +103,7 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
         for frame in databuffer:
             # Here we might typically publish or post the data
             # via MQTT, HTTP a socket or other output
-            self._log.debug("node = " + frame['node'] + " node_data = " + json.dumps(frame['data']))
+            self._log.debug("node = %s node_data = %s", frame['node'], json.dumps(frame['data']))
 
             # We could check for successful data receipt here
             # and return false to retry next time
@@ -121,11 +121,11 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'read_interval':
-                self._log.info("Setting " + self.name + " read_interval: " + str(setting))
+                self._log.info("Setting %s read_interval: %s", self.name, setting)
                 self._settings[key] = float(setting)
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
 
         # include kwargs from parent
         super().set(**kwargs)

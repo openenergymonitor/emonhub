@@ -103,7 +103,7 @@ class EmonHubFileSetup(EmonHubSetup):
             raise EmonHubSetupInitError(e)
         except SyntaxError as e:
             raise EmonHubSetupInitError(
-                'Error parsing config file \"%s\": ' % filename + str(e))
+                'Error parsing config file "%s": ' % filename + str(e))
         except KeyError as e:
             raise EmonHubSetupInitError(
                 'Configuration file error - section: ' + str(e))
@@ -134,18 +134,18 @@ class EmonHubFileSetup(EmonHubSetup):
                     self.settings = json.loads(f.read())
 
         except IOError as e:
-            self._log.warning('Could not get settings: ' + str(e) + self.retry_msg)
+            self._log.warning('Could not get settings: %s %s', e, self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         except SyntaxError as e:
             self._log.warning('Could not get settings: ' +
-                              'Error parsing config file: ' + str(e) + self.retry_msg)
+                              'Error parsing config file: %s %s', e, self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         except Exception:
             import traceback
-            self._log.warning("Couldn't get settings, Exception: " +
-                              traceback.format_exc() + self.retry_msg)
+            self._log.warning("Couldn't get settings, Exception: %s %s",
+                              traceback.format_exc(), self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
 
@@ -155,7 +155,7 @@ class EmonHubFileSetup(EmonHubSetup):
                 self.settings['hub']
                 self.settings['interfacers']
             except KeyError as e:
-                self._log.warning("Configuration file missing section: " + str(e))
+                self._log.warning("Configuration file missing section: %s", e)
             else:
                 return True
 

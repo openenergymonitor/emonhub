@@ -38,7 +38,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
 
         """
 
-        self._log.debug('Opening socket on port %s', port_nb)
+        self._log.debug('Opening socket on port %d', port_nb)
 
         try:
             s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -98,7 +98,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             if len(self._settings['apikey']) == 32 and self._settings['apikey'].lower() != "x" * 32:
                 # Discard if apikey is not in received frame
                 if self._settings['apikey'] not in f:
-                    self._log.warning(str(c.uri) + " discarded frame: apikey not matched")
+                    self._log.warning("%d discarded frame: apikey not matched", c.uri)
                     return
                 # Otherwise remove apikey from frame
                 f = [v for v in f if self._settings['apikey'] not in v]
@@ -139,24 +139,24 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'apikey':
                 if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
-                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    self._log.warning("Setting %s apikey: obscured", self.name)
                 elif len(setting) == 32:
-                    self._log.info("Setting " + self.name + " apikey: set")
+                    self._log.info("Setting %s apikey: set", self.name)
                 elif setting == "":
-                    self._log.info("Setting " + self.name + " apikey: null")
+                    self._log.info("Setting %s apikey: null", self.name)
                 else:
-                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    self._log.warning("Setting %s apikey: invalid format", self.name)
                     continue
                 self._settings[key] = setting
                 # Next line will log apikey if uncommented (privacy ?)
-                #self._log.debug(self.name + " apikey: " + str(setting))
+                #self._log.debug("%s apikey: %s", self.name, setting)
                 continue
             elif key == 'url' and setting.startswith("http"):
-                self._log.info("Setting " + self.name + " url: " + setting)
+                self._log.info("Setting %s url: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
 
         # include kwargs from parent
         super().set(**kwargs)

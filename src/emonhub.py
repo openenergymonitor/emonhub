@@ -68,7 +68,7 @@ class EmonHub:
         # Initialize logging
         self._log = logging.getLogger("EmonHub")
         self._set_logging_level('INFO', False)
-        self._log.info("EmonHub %s" % self.__version__)
+        self._log.info("EmonHub %s", self.__version__)
         self._log.info("Opening hub...")
 
         # Initialize Interfacers
@@ -115,7 +115,7 @@ class EmonHub:
 
                         # Post to each subscriber interface
                         for sub_interfacer in self._interfacers.values():
-                            # For each subsciber channel
+                            # For each subscriber channel
                             for sub_channel in sub_interfacer._settings['subchannels']:
                                 # If channel names match
                                 if sub_channel == pub_channel:
@@ -128,14 +128,14 @@ class EmonHub:
 
             # ->avoid modification of iterable within loop
             for name in kill_list:
-                self._log.warning(name + " thread is dead.")
+                self._log.warning("%s thread is dead.", name)
 
                 # The following should trigger a restart ... unless the
                 # interfacer is also removed from the settings table.
                 del self._interfacers[name]
 
                 # Trigger restart by calling update settings
-                self._log.warning("Attempting to restart thread " + name + " (thread has been restarted " + str(restart_count[name]) + " times...")
+                self._log.warning("Attempting to restart thread %s (thread has been restarted %d times...)", name, restart_count[name])
                 restart_count[name] += 1
                 self._update_settings(self._setup.settings)
 
@@ -184,14 +184,14 @@ class EmonHub:
                     settings['interfacers'][name]['runtimesettings']
                 except Exception as e:
                     # If interfacer's settings are incomplete, continue without updating
-                    self._log.error("Unable to update '" + name + "' configuration: " + str(e))
+                    self._log.error("Unable to update '%s' configuration: %s", name, e)
                     continue
                 else:
                     # check init_settings against the file copy, if they are the same move on to the next
                     if self._interfacers[name].init_settings == settings['interfacers'][name]['init_settings']:
                         continue
             # Delete interfacers if setting changed or name is unlisted or Type is missing
-            self._log.info("Deleting interfacer '%s' ", name)
+            self._log.info("Deleting interfacer '%s'", name)
             self._interfacers[name].stop = True
             del self._interfacers[name]
 
@@ -201,19 +201,19 @@ class EmonHub:
                 try:
                     if 'Type' not in I:
                         continue
-                    self._log.info("Creating " + I['Type'] + " '%s' ", name)
+                    self._log.info("Creating %s '%s'", I['Type'], name)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                     interfacer.start()
                 except ehi.EmonHubInterfacerInitError as e:
                     # If interfacer can't be created, log error and skip to next
-                    self._log.error("Failed to create '" + name + "' interfacer: " + str(e))
+                    self._log.error("Failed to create '%s' interfacer: %s", name, e)
                     continue
                 except Exception as e:
                     # If interfacer can't be created, log error and skip to next
-                    self._log.error("Unable to create '" + name + "' interfacer: " + str(e))
+                    self._log.error("Unable to create '%s' interfacer: %s", name, e)
                     continue
                 else:
                     self._interfacers[name] = interfacer
@@ -240,17 +240,17 @@ class EmonHub:
         try:
             loglevel = getattr(logging, level)
         except AttributeError:
-            self._log.error('Logging level %s invalid' % level)
+            self._log.error('Logging level %s invalid', level)
             return False
         except Exception as e:
-            self._log.error('Logging level %s ' % str(e))
+            self._log.error('Logging level %s', e)
             return False
 
         # Change level if different from current level
         if loglevel != self._log.getEffectiveLevel():
             self._log.setLevel(level)
             if log:
-                self._log.info('Logging level set to %s' % level)
+                self._log.info('Logging level set to %s', level)
 
 
 if __name__ == "__main__":
@@ -275,7 +275,7 @@ if __name__ == "__main__":
 
     # Display version number and exit
     if args.version:
-        print('emonHub %s' % EmonHub.__version__)
+        print('emonHub', EmonHub.__version__)
         sys.exit()
 
     # Logging configuration

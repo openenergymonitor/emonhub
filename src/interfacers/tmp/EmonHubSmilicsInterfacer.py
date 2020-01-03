@@ -65,7 +65,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                     rxc = self._process_rx(rxc)
                     if rxc:
                         for channel in self._settings["pubchannels"]:
-                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
+                            self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
 
                             # Initialize channel if needed
                             if channel not in self._pub_channels:
@@ -74,7 +74,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                             # Add cargo item to channel
                             self._pub_channels[channel].append(rxc)
 
-                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+                            self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
 
             # Don't loop too fast
             time.sleep(0.1)
@@ -98,7 +98,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
 
             c.nodeid = smilics_dict['mac'][0]
             if c.nodeid not in ehc.nodelist.keys():
-                self._log.debug(str(c.nodeid) + " Not in config")
+                self._log.debug("%d Not in config", c.nodeid)
                 return None
 
             node_config = ehc.nodelist[str(c.nodeid)]

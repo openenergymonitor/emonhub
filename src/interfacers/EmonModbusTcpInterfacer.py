@@ -28,23 +28,24 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         # Initialization
         super().__init__(name)
 
+        self._modcon = False
         if not pymodbus_found:
             self._log.error("PYMODBUS NOT PRESENT BUT NEEDED !!")
         # open connection
         if pymodbus_found:
             self._log.info("pymodbus installed")
-            self._log.debug("EmonModbusTcpInterfacer args: " + str(modbus_IP) + " - " + str(modbus_port))
+            self._log.debug("EmonModbusTcpInterfacer args: %s - %d", modbus_IP, modbus_port)
             self._con = self._open_modTCP(modbus_IP, modbus_port)
             if self._modcon:
-                 self._log.info("Modbustcp client Connected")
+                self._log.info("Modbustcp client Connected")
             else:
-                 self._log.info("Connection to ModbusTCP client failed. Will try again")
+                self._log.info("Connection to ModbusTCP client failed. Will try again")
 
     def set(self, **kwargs):
         for key in kwargs:
             setting = kwargs[key]
             self._settings[key] = setting
-            self._log.debug("Setting " + self.name + " %s: %s" % (key, setting))
+            self._log.debug("Setting %s %s: %s", self.name, key, setting)
 
     def close(self):
         # Close TCP connection
@@ -58,13 +59,13 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         try:
             c = ModbusClient(modbus_IP, modbus_port)
             if c.connect():
-                self._log.info("Opening modbusTCP connection: " + str(modbus_port) + " @ " + str(modbus_IP))
+                self._log.info("Opening modbusTCP connection: %d @ %s", modbus_port, modbus_IP)
                 self._modcon = True
             else:
                 self._log.debug("Connection failed")
                 self._modcon = False
         except Exception as e:
-            self._log.error("modbusTCP connection failed" + str(e))
+            self._log.error("modbusTCP connection failed %s", e)
             #raise EmonHubInterfacerInitError('Could not open connection to host %s' %modbus_IP)
         else:
             return c
@@ -81,7 +82,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
 
             if not self._modcon:
                 self._con.close()
-                self._log.info("Not connected, retrying connect" + str(self.init_settings))
+                self._log.info("Not connected, retrying connect %s", self.init_settings)
                 self._con = self._open_modTCP(self.init_settings["modbus_IP"], self.init_settings["modbus_port"])
 
             if self._modcon:
@@ -145,7 +146,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     else:
                         expectedSize = len(rNames) * valid_datacodes[datacode] * 2
 
-                self._log.debug("expected bytes number after encoding: " + str(expectedSize))
+                self._log.debug("expected bytes number after encoding: %s", expectedSize)
 
                 # at this stage, we don't have any invalid datacode(s)
                 # so we can loop and read registers
@@ -158,21 +159,21 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     if datacodes is not None:
                         datacode = datacodes[idx]
 
-                    self._log.debug("datacode " + datacode)
+                    self._log.debug("datacode %s", datacode)
                     qty = valid_datacodes[datacode]
-                    self._log.debug("reading register # :" + str(register) + ", qty #: " + str(qty) + ", unit #: " + str(unitId))
+                    self._log.debug("reading register #: %s, qty #: %s, unit #: %s", register, qty, unitId)
 
                     try:
                         self.rVal = self._con.read_holding_registers(register - 1, qty, unit=unitId)
                         assert self.rVal.function_code < 0x80
                     except Exception as e:
-                        self._log.error("Connection failed on read of register: " + str(register) + " : " + str(e))
+                        self._log.error("Connection failed on read of register: %s : %s", register, e)
                         self._modcon = False
                         #missing datas will lead to an incorrect encoding
                         #we have to drop the payload
                         return
                     else:
-                        #self._log.debug("register value:" + str(self.rVal.registers) + " type= " + str(type(self.rVal.registers)))
+                        #self._log.debug("register value: %s type= %s", self.rVal.registers, type(self.rVal.registers))
                         #f = f + self.rVal.registers
                         decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=Endian.Big, wordorder=Endian.Big)
                         if datacode == 'h':
@@ -198,16 +199,16 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
 
                         t = ehc.encode(datacode, rValD)
                         f = f + list(t)
-                        self._log.debug("Encoded value: " + str(t))
-                        self._log.debug("value: " + str(rValD))
+                        self._log.debug("Encoded value: %s", t)
+                        self._log.debug("value: %s", rValD)
 
                 #test if payload length is OK
                 if len(f) == expectedSize:
-                    self._log.debug("payload size OK (" + str(len(f)) + ")")
-                    self._log.debug("reporting data: " + str(f))
+                    self._log.debug("payload size OK (%d)", len(f))
+                    self._log.debug("reporting data: %s", f)
                     c.nodeid = node
                     c.realdata = f
-                    self._log.debug("Return from read data: " + str(c.realdata))
+                    self._log.debug("Return from read data: %s", c.realdata)
                     return c
                 else:
-                    self._log.error("incorrect payload size :" + str(len(f)) + " expecting " + str(expectedSize))
+                    self._log.error("incorrect payload size: %d expecting %d", len(f), expectedSize)
