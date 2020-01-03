@@ -105,7 +105,6 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
                 c.rawdata = ' '.join(f)
 
         # Extract timestamp value if one is expected or use 0
-        timestamp = 0.0
         if self._settings['timestamped']:
             c.timestamp = f[0]
             f = f[1:]
@@ -114,13 +113,10 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         f = f[1:]
         # Extract the Target id if one is expected
         if self._settings['targeted']:
-            #setting = str(setting).capitalize()
             c.target = int(f[0])
             f = f[1:]
         # Extract list of data values
-        c.realdata = f#[1:]
-        # Create a Payload object
-        #f = new_cargo(data, node, timestamp, dest)
+        c.realdata = f
 
         return c
 

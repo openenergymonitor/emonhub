@@ -67,12 +67,8 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                         for channel in self._settings["pubchannels"]:
                             self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
 
-                            # Initialize channel if needed
-                            if channel not in self._pub_channels:
-                                self._pub_channels[channel] = []
-
                             # Add cargo item to channel
-                            self._pub_channels[channel].append(rxc)
+                            self._pub_channels.setdefault(channel, []).append(rxc)
 
                             self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
 
@@ -120,13 +116,13 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
             c.timestamp = time.mktime(datetime.datetime.now().timetuple())
 
             return c
-        except:
+        except Exception:
             return None
 
     def set(self, **kwargs):
         """ Override default settings with settings entered in the config file
         """
-        for key, setting in self._settings.iteritems():
+        for key, setting in self._settings.tems():
             if key in kwargs.keys():
                 # replace default
                 self._settings[key] = kwargs[key]

@@ -89,8 +89,8 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
 
         """
 
-        host = str(self._settings['graphite_host']).strip('[\'\']')
-        port = int(str(self._settings['graphite_port']).strip('[\'\']'))
+        host = self._settings['graphite_host'].strip("[']")
+        port = int(self._settings['graphite_port'].strip("[']"))
         self._log.debug("Graphite target: %s:%s", host, port)
         message = '\n'.join(metrics) + '\n'
         self._log.debug("Sending metrics: %s", message)
