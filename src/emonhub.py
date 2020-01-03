@@ -85,8 +85,9 @@ class EmonHub:
 
         """
 
-        # Set signal handler to catch SIGINT and shutdown gracefully
-        signal.signal(signal.SIGINT, self._sigint_handler)
+        # Set signal handler to catch SIGINT or SIGTERM and shutdown gracefully
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
 
         # Initialise thread restart counters
         restart_count = defaultdict(int)
@@ -149,10 +150,10 @@ class EmonHub:
 
         self._log.info("Exit completed")
 
-    def _sigint_handler(self, signal, frame):
-        """Catch SIGINT (Ctrl+C)."""
+    def _signal_handler(self, signal, frame):
+        """Catch fatal signals like SIGINT (Ctrl+C) and SIGTERM (service stop)."""
 
-        self._log.debug("SIGINT received.")
+        self._log.debug("Signal %d received.", signal)
         # hub should exit at the end of current iteration.
         self._exit = True
 
