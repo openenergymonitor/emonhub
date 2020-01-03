@@ -101,7 +101,7 @@ class EmonHubInterfacer(threading.Thread):
                     rxc = self._process_rx(rxc)
                     if rxc:
                         for channel in self._settings["pubchannels"]:
-                            self._log.debug("%d Sent to channel(start)' : %d", rxc.uri, channel)
+                            self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
 
                             # Initialise channel if needed
                             if channel not in self._pub_channels:
@@ -110,7 +110,7 @@ class EmonHubInterfacer(threading.Thread):
                             # Add cargo item to channel
                             self._pub_channels[channel].append(rxc)
 
-                            self._log.debug("%d Sent to channel(end)' : %d", rxc.uri, channel)
+                            self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
 
             # Subscriber channels
             for channel in self._settings["subchannels"]:
