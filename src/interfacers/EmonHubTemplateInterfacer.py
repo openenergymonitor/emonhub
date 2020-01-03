@@ -1,4 +1,7 @@
-import time, json, Cargo
+import time
+import json
+from itertools import zip_longest
+import Cargo
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubTemplateInterfacer
@@ -78,17 +81,18 @@ class EmonHubTemplateInterfacer(EmonHubInterfacer):
         if cargo.nodename:
             nodename = cargo.nodename
 
-        f = {}
-        f['node'] = nodename
-        f['data'] = {}
+        f = {'node': nodename,
+             'data': {}
+            }
 
-        # FIXME replace with zip
-        for i in range(len(cargo.realdata)):
-            name = str(i + 1)
-            if i < len(cargo.names):
-                name = cargo.names[i]
-            value = cargo.realdata[i]
-            f['data'][name] = value
+        # FIXME zip_longest mimics the previous behaviour of this code which
+        # filled the gaps with a numeric string. However it's surely an error
+        # to provide more data than the schema expects, so it should either
+        # be an explicit error or silently dropped.
+        # If that's the case all this code can be simplified to:
+        # f['data'] = {name: value for name, value in zip(cargo.names, cargo.realdata)}
+        for i, (name, value) in enumerate(zip_longest(cargo.names, cargo.realdata, fill_value=None), start=1):
+            f['data'][name or str(i)] = value
 
         if cargo.rssi:
             f['data']['rssi'] = cargo.rssi

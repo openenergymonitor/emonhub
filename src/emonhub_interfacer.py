@@ -303,8 +303,7 @@ class EmonHubInterfacer(threading.Thread):
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
             if whitening is True or whitening == "1":
-                for i in range(len(rxc.realdata)):
-                    rxc.realdata[i] = rxc.realdata[i] ^ 0x55
+                rxc.realdata = [x ^ 0x55 for x in rxc.realdata]
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacodes' in ehc.nodelist[node]['rx']:
