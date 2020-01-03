@@ -164,6 +164,16 @@ class EmonHub:
         else:
             self._set_logging_level()
 
+        if 'log_backup_count' in settings['hub']:
+            for handler in self._log.handlers:
+                if isinstance(handler, logging.handlers.RotatingFileHandler):
+                    handler.backupCount = settings['hub']['log_backup_count']
+                    self._log.info("Logging backup count set to %d", handler.backupCount)
+        if 'log_max_bytes' in settings['hub']:
+            for handler in self._log.handlers:
+                if isinstance(handler, logging.handlers.RotatingFileHandler):
+                    handler.maxBytes = settings['hub']['log_max_bytes']
+                    self._log.info("Logging max file size set to %d bytes", handler.maxBytes)
 
         # Interfacers
         for name in self._interfacers:
@@ -279,8 +289,10 @@ if __name__ == "__main__":
         # this ensures it is writable
         # Close the file for now and get its path
         args.logfile.close()
+        # These maxBytes and backupCount defaults can be overridden in the config file.
         loghandler = logging.handlers.RotatingFileHandler(args.logfile.name,
-                                                          'a', 5000 * 1024, 1)
+                                                          maxBytes=5000 * 1024,
+                                                          backupCount=1)
     else:
         # Otherwise, if no path was specified, everything goes to sys.stderr
         loghandler = logging.StreamHandler()
