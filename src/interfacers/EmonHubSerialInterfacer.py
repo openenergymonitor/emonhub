@@ -43,12 +43,12 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         """
 
         #if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
-        #    self._log.debug("Invalid 'com_baud': " + str(com_baud) + " | Default of 9600 used")
+        #    self._log.debug("Invalid 'com_baud': %d | Default of 9600 used", com_baud)
         #    com_baud = 9600
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.debug("Opening serial port: " + str(com_port) + " @ " + str(com_baud) + " bits/s")
+            self._log.debug("Opening serial port: %s @ %d bits/s", com_port, com_baud)
         except serial.SerialException as e:
             self._log.error(e)
             s = False

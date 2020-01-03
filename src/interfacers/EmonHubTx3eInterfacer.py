@@ -72,12 +72,12 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
                     try:
                         value = float(parts[1])
                     except Exception:
-                        self._log.debug("input value is not numeric: " + parts[1])
+                        self._log.debug("input value is not numeric: %s", parts[1])
 
                     names.append(parts[0])
                     values.append(value)
                 else:
-                    self._log.debug("invalid input name: " + parts[0])
+                    self._log.debug("invalid input name: %s", parts[0])
 
         if self._settings["nodename"] != "":
             c.nodename = self._settings["nodename"]

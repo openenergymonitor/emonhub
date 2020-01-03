@@ -59,7 +59,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         post_body = "data=" + data_string + "&sentat=" + str(sentat)
 
         # logged before apikey added for security
-        self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
+        self._log.info("sending: %sE-M-O-N-C-M-S-A-P-I-K-E-Y&%s", post_url, post_body)
 
         # Add apikey to post_url
         post_url = post_url + self._settings['apikey']
@@ -70,10 +70,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         reply = self._send_post(post_url, {'data': data_string, 'sentat': str(sentat)})
         if reply == 'ok':
-            self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
+            self._log.debug("acknowledged receipt with '%s' from %s", reply, self._settings['url')
             return True
         else:
-            self._log.warning("send failure: wanted 'ok' but got '" + reply + "'")
+            self._log.warning("send failure: wanted 'ok' but got '%s'", reply)
             return False
 
     def sendstatus(self):
@@ -109,29 +109,29 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'apikey':
                 if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
-                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    self._log.warning("Setting %s apikey: obscured", self.name)
                 elif len(setting) == 32:
-                    self._log.info("Setting " + self.name + " apikey: set")
+                    self._log.info("Setting %s apikey: set", self.name)
                 elif setting == "":
-                    self._log.info("Setting " + self.name + " apikey: null")
+                    self._log.info("Setting %s apikey: null", self.name)
                 else:
-                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    self._log.warning("Setting %s apikey: invalid format", self.name)
                     continue
                 self._settings[key] = setting
                 # Next line will log apikey if uncommented (privacy ?)
-                #self._log.debug(self.name + " apikey: " + str(setting))
+                #self._log.debug("%s apikey: %s", self.name, setting)
                 continue
             elif key == 'url' and setting.startswith("http"):
-                self._log.info("Setting " + self.name + " url: " + setting)
+                self._log.info("Setting %s url: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'senddata':
-                self._log.info("Setting " + self.name + " senddata: " + setting)
+                self._log.info("Setting %s senddata: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'sendstatus':
-                self._log.info("Setting " + self.name + " sendstatus: " + setting)
+                self._log.info("Setting %s sendstatus: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)

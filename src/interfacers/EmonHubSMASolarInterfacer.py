@@ -49,13 +49,13 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._reset_duration_timer()
         self._reset_time_to_disconnect_timer()
 
-        self._log.info("Reading from SMASolar every " + str(self._time_inverval) + " seconds")
+        self._log.info("Reading from SMASolar every %d seconds", self._time_inverval)
 
 
     def _login_inverter(self):
         """Log into the SMA solar inverter"""
 
-        self._log.info("Log into the SMA solar inverter " + str(self._inverteraddress))
+        self._log.info("Log into the SMA solar inverter %s", self._inverteraddress)
 
         self._btSocket = self._open_bluetooth(self._inverteraddress, self._port)
 
@@ -85,10 +85,10 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         dictInverterData = SMASolar_library.getInverterDetails(self._btSocket, self._packet_send_counter, self.mylocalBTAddress, self.MySerialNumber)
         self._increment_packet_send_counter()
 
-        #Returns dictionary like
+        #Returns dictionary like  # FIXME this is dumped from python2, get an updated example dictionary from python3.
         #{'inverterName': u'SN2120051742\x00\x00', 'serialNumber': 2120051742L, 'ClassName': 'SolarInverter', 'TypeName': 'SB 3000HF-30', 'susyid': 131L, 'Type': 9073L, 'Class': 8001L}
 
-        self._log.debug(str(dictInverterData))
+        self._log.debug("%s", dictInverterData)
 
         #Clear rogue characters from name
         dictInverterData["inverterName"] = re.sub(r'[^a-zA-Z0-9]', '', dictInverterData["inverterName"])
@@ -100,8 +100,12 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         self._Inverters[nodeName]["NodeId"] = self._nodeid
 
-        self._log.info("Connected to SMA inverter named [" + self._Inverters[nodeName]["inverterName"] + "] with serial number [" + str(self._Inverters[nodeName]["serialNumber"])
-        + "] using NodeId=" + str(self._Inverters[nodeName]["NodeId"]) + ".  Model " + self._Inverters[nodeName]["TypeName"])
+        self._log.info("Connected to SMA inverter named [%s] with serial number [%d] using NodeId=%d. Model %s",
+                       self._Inverters[nodeName]["inverterName"],
+                       self._Inverters[nodeName]["serialNumber"],
+                       self._Inverters[nodeName]["NodeId"],
+                       self._Inverters[nodeName]["TypeName"],
+                      )
 
     def close(self):
         """Close bluetooth port"""
@@ -117,7 +121,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         """
         try:
-            self._log.info("Opening bluetooth address " + str(inverteraddress))
+            self._log.info("Opening bluetooth address %s", inverteraddress)
             btSocket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
             # Connect
             btSocket.connect((inverteraddress, port))
@@ -126,7 +130,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
         except bluetooth.btcommon.BluetoothError as err:
             self._log.error(err)
-            self._log.error('Bluetooth error while connecting to %s' % inverteraddress)
+            self._log.error('Bluetooth error while connecting to %s', inverteraddress)
 
         else:
             return btSocket
@@ -228,7 +232,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
 
             #Get first inverter in dictionary  # FIXME dicts aren't sorted, there is no "first"
             inverter = self._Inverters[list(self._Inverters.keys())[0]]
-            self._log.debug("Reading from inverter " + inverter["inverterName"])
+            self._log.debug("Reading from inverter %s", inverter["inverterName"])
 
             #Loop through dictionary and take readings, building "output" dictionary as we go
             output = {}
@@ -248,7 +252,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 if data is not None:
                     output.update(SMASolar_library.extract_data(data))
                     if self._packettrace:
-                        self._log.debug("Packet reply for " + reading + ". Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14), data.getFourByteLong(16)))
+                        self._log.debug("Packet reply for %s. Packet from {0:04x}/{1:08x}".format(data.getTwoByte(14), data.getFourByteLong(16)), reading)
                         self._log.debug(data.debugViewPacket())
 
             #self._log.debug("Building cargo")
