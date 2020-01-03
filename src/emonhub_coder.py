@@ -1,6 +1,7 @@
 import struct
 
 # Initialize nodes data
+# FIXME this shouldn't live here
 nodelist = {}
 
 

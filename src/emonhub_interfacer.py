@@ -25,12 +25,12 @@ their data source.
 
 """
 
-def log_exceptions_from_class_method(f):
+def log_exceptions_from_class_method(func):
     def wrapper(*args):
         self = args[0]
         try:
-            return f(*args)
-        except:
+            return func(*args)
+        except Exception:
             self._log.warning("Exception caught in " + self.name + " thread. " + traceback.format_exc())
     return wrapper
 
@@ -533,10 +533,7 @@ class EmonHubInterfacer(threading.Thread):
                 datacode = ehc.nodelist[dest]['tx']['datacode']
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
-                if 'datacode' in self._settings:
-                    datacode = self._settings['datacode']
-                else:
-                    datacode = "h"
+                datacode = self._settings.get('datacode', 'h')
 
             # Ensure only int 0 is passed not str 0
             if datacode == '0':

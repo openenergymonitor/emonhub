@@ -23,7 +23,6 @@ from collections import defaultdict
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
-from interfacers import *
 
 # this namespace and path
 namespace = sys.modules[__name__]
@@ -119,12 +118,8 @@ class EmonHub:
                             for sub_channel in sub_interfacer._settings['subchannels']:
                                 # If channel names match
                                 if sub_channel == pub_channel:
-                                    # init if empty
-                                    if sub_channel not in sub_interfacer._sub_channels:
-                                        sub_interfacer._sub_channels[sub_channel] = []
-
                                     # APPEND cargo item
-                                    sub_interfacer._sub_channels[sub_channel].append(cargo)
+                                    sub_interfacer._sub_channels.setdefault(sub_channel, []).append(cargo)
 
             # ->avoid modification of iterable within loop
             for name in kill_list:
@@ -152,7 +147,6 @@ class EmonHub:
             I.join()
 
         self._log.info("Exit completed")
-        logging.shutdown()
 
     def _sigint_handler(self, signal, frame):
         """Catch SIGINT (Ctrl+C)."""
@@ -170,8 +164,6 @@ class EmonHub:
         else:
             self._set_logging_level()
 
-        # Create a place to hold buffer contents whilst a deletion & rebuild occurs
-        self.temp_buffer = {}
 
         # Interfacers
         for name in self._interfacers:
@@ -251,6 +243,7 @@ class EmonHub:
             self._log.setLevel(level)
             if log:
                 self._log.info('Logging level set to %s', level)
+        return True
 
 
 if __name__ == "__main__":
