@@ -48,7 +48,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
 
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
-            self._log.debug("Opening serial port: %s @ %d bits/s", com_port, com_baud)
+            self._log.debug("Opening serial port: %s @ %s bits/s", com_port, com_baud)
         except serial.SerialException as e:
             self._log.error(e)
             s = False
