@@ -43,7 +43,7 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
             return False
 
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline()
+        self._rx_buf = self._rx_buf + self._ser.readline().decode()
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
