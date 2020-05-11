@@ -40,8 +40,23 @@ class EmonHubTeslaPowerWallInterfacer(EmonHubInterfacer):
             # If URL is set, fetch the SOC
             if self._settings['url']:
                 # HTTP Request
-                ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
-                response = urllib2.urlopen(self._settings['url'], context=ctx)
+                try:
+                    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
+                    response = urllib2.urlopen(self._settings['url'], context=ctx, timeout=int(self._settings['readinterval']))
+                except urllib2.HTTPError as e:
+                    self._log.warning("HTTPError: "+str(e.code))
+                    return
+                except urllib2.URLError as e:
+                    self._log.warning("URLError: "+str(e.reason))
+                    return
+                except httplib.HTTPException:
+                    self._log.warning("HTTPException")
+                    return
+                except Exception:
+                    import traceback
+                    self._log.warning("Exception: "+traceback.format_exc())
+                    return
+               
                 jsonstr = response.read().rstrip()
                 self._log.debug("Request response: "+str(jsonstr))
                 
