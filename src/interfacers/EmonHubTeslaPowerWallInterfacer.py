@@ -1,4 +1,4 @@
-import time, json, Cargo, urllib2
+import time, json, Cargo, urllib2, ssl
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubTeslaPowerWallInterfacer
@@ -40,7 +40,8 @@ class EmonHubTeslaPowerWallInterfacer(EmonHubInterfacer):
             # If URL is set, fetch the SOC
             if self._settings['url']:
                 # HTTP Request
-                response = urllib2.urlopen(self._settings['url'])
+                ctx = ssl.SSLContext(ssl.PROTOCOL_SSLv23)
+                response = urllib2.urlopen(self._settings['url'], context=ctx)
                 jsonstr = response.read().rstrip()
                 self._log.debug("Request response: "+str(jsonstr))
                 
