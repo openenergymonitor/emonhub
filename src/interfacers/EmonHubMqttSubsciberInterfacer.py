@@ -103,7 +103,7 @@ class EmonHubMqttSubsciberInterfacer(EmonHubInterfacer):
             
         if value!="invalid":
         
-            rxc = Cargo.new_cargo(realdata=value)
+            rxc = Cargo.new_cargo(realdata=[value])
 
             topic_parts = msg.topic.split("/")
             
@@ -119,7 +119,8 @@ class EmonHubMqttSubsciberInterfacer(EmonHubInterfacer):
             topic_parts.pop(0)
             
             # create input name
-            rxc.names = ["_".join(topic_parts)]
+            rxc.names = []
+            rxc.names.append("_".join(topic_parts))
 
             self._log.debug("Message received: "+str(rxc.nodeid)+" "+str(rxc.names[0])+" "+str(msg.payload))
             
