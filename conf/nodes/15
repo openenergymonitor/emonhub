@@ -1,0 +1,8 @@
+[[15]]
+    nodename = emontx3cm15
+    [[[rx]]]
+        names = MSG, Vrms, P1, P2, P3, P4, E1, E2, E3, E4, T1, T2, T3, pulse
+        datacodes = L,h,h,h,h,h,L,L,L,L,h,h,h,L
+        scales = 1,0.01,1,1,1,1,1,1,1,1,0.01,0.01,0.01,1
+        units = n,V,W,W,W,W,Wh,Wh,Wh,Wh,C,C,C,p
+        whitening = 1
