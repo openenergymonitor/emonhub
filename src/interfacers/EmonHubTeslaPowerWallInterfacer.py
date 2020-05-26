@@ -1,4 +1,4 @@
-import time, json, Cargo, urllib2, ssl
+import time, json, Cargo, requests
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubTeslaPowerWallInterfacer
@@ -41,23 +41,12 @@ class EmonHubTeslaPowerWallInterfacer(EmonHubInterfacer):
             if self._settings['url']:
                 # HTTP Request
                 try:
-                    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS)
-                    response = urllib2.urlopen(self._settings['url'], context=ctx, timeout=int(self._settings['readinterval']))
-                except urllib2.HTTPError as e:
-                    self._log.warning("HTTPError: "+str(e.code))
-                    return
-                except urllib2.URLError as e:
-                    self._log.warning("URLError: "+str(e.reason))
-                    return
-                except httplib.HTTPException:
-                    self._log.warning("HTTPException")
-                    return
-                except Exception:
-                    import traceback
-                    self._log.warning("Exception: "+traceback.format_exc())
-                    return
-               
-                jsonstr = response.read().rstrip()
+                    reply = requests.get(self._settings['url'],timeout=int(self._settings['readinterval']))
+                    reply.raise_for_status()  # Raise an exception if status code isn't 200
+                except requests.exceptions.RequestException as ex:
+                    self._log.warning(self.name + " couldn't send to server: " + str(ex))
+                
+                jsonstr = reply.text.rstrip()
                 self._log.debug("Request response: "+str(jsonstr))
                 
                 # Decode JSON
@@ -90,7 +79,7 @@ class EmonHubTeslaPowerWallInterfacer(EmonHubInterfacer):
 
         """
 
-        for key, setting in self._template_settings.iteritems():
+        for key, setting in self._template_settings.items():
             # Decide which setting value to use
             if key in kwargs.keys():
                 setting = kwargs[key]
