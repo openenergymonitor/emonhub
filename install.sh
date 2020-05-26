@@ -53,6 +53,8 @@ fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
     sudo cp $usrdir/emonhub/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
+    # requires write permission for configuration from emoncms:config module
+    sudo chmod 666 /etc/emonhub/emonhub.conf
 
     # Temporary: replace with update to default settings file
     sed -i "s/loglevel = DEBUG/loglevel = WARNING/" /etc/emonhub/emonhub.conf
@@ -61,7 +63,7 @@ fi
 # ---------------------------------------------------------
 # Symlink emonhub source to /usr/share/emonhub
 # ---------------------------------------------------------
-sudo ln -sf $usrdir/emonhub/src /usr/share/emonhub
+sudo ln -sf $usrdir/emonhub/src /usr/local/bin/emonhub
 
 # ---------------------------------------------------------
 # Install service

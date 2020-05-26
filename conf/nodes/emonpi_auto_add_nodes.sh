@@ -6,7 +6,7 @@ if [ "$homedir" = "" ]; then
   homedir="/home/pi"
 fi
 
-emonhub_location=$homedir/data/emonhub.conf
+emonhub_location=/etc/emonhub/emonhub.conf
 path=$homedir/emonhub/conf/nodes
 
 if [ ! -f $emonhub_location ]; then
