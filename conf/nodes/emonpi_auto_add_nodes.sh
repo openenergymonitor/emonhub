@@ -1,7 +1,18 @@
 #!/bin/bash
-echo "EUID: $EUID"
-emonhub_location=/home/pi/data/emonhub.conf
-path=/home/pi/emonhub/conf/nodes
+homedir=$1
+
+# default
+if [ "$homedir" = "" ]; then
+  homedir="/home/pi"
+fi
+
+emonhub_location=/etc/emonhub/emonhub.conf
+path=$homedir/emonhub/conf/nodes
+
+if [ ! -f $emonhub_location ]; then
+  echo "emonhub location does not exist"
+  exit 0
+fi
 
 max=31
 for var in `seq 2 $max`

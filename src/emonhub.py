@@ -25,7 +25,7 @@ from interfacers import *
 
 # this namespace and path
 namespace = sys.modules[__name__]
-path = os.path.dirname(__file__)
+path = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 
 # scan interfacers directory and import all interfacers
 for f in glob.glob(path+"/interfacers/*.py"):
@@ -46,7 +46,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub(object):
 
-    __version__ = "emonHub emon-pi variant v2.1.0"
+    __version__ = "emonHub emon-pi variant v2.1.2"
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
@@ -206,8 +206,6 @@ class EmonHub(object):
                     if not 'Type' in I:
                         continue
                     self._log.info("Creating " + I['Type'] + " '%s' ", name)
-                    if I['Type'] in ('EmonModbusTcpInterfacer','EmonFroniusModbusTcpInterfacer') and not pymodbus_found :
-                        self._log.error("Python module pymodbus not installed. unable to load modbus interfacer")
                     # This gets the class from the 'Type' string
                     interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
                     interfacer.set(**I['runtimesettings'])

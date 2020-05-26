@@ -1,0 +1,21 @@
+[Unit]
+Description=emonHub service description
+DefaultDependencies=no
+Before=shutdown.target
+Conflicts=shutdown.target
+Requires=local-fs.target
+After=sysinit.target syslog.target local-fs.target
+
+[Service]
+User=emonhub
+PIDFile=/var/run/emonhub.pid
+ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p /var/log/emonhub/
+ExecStartPre=/bin/chgrp -R emonhub /var/log/emonhub/
+ExecStartPre=/bin/chmod 775 /var/log/emonhub/
+Type=simple
+Restart=always
+
+[Install]
+WantedBy=multi-user.target
