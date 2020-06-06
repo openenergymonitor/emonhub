@@ -31,6 +31,7 @@ import time
 import paho.mqtt.client as mqtt
 from emonhub_interfacer import EmonHubInterfacer
 import Cargo
+import json
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
@@ -54,7 +55,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
             # nodes/emontx/power1 format
             'nodevar_format_enable': 0,
-            'nodevar_format_basetopic': "nodes/"
+            'nodevar_format_basetopic': "nodes/",
             
             # JSON format
             'node_JSON_enable': 0,
@@ -80,7 +81,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     def add(self, cargo):
         """Append data to buffer.
 
-          format: {"emontx":{"power1":100,"power2":200,"power3":300}}
+        format: {"emontx":{"power1":100,"power2":200,"power3":300}}
 
         """
 
@@ -93,6 +94,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         f['node'] = nodename
         f['names'] = cargo.names
         f['data'] = cargo.realdata
+        f['timestamp'] = cargo.timestamp
 
         if cargo.rssi:
             f['rssi'] = cargo.rssi
@@ -229,12 +231,12 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def on_connect(self, client, userdata, flags, rc):
 
-        connack_string = {0: 'Connection successful',
-                          1: 'Connection refused - incorrect protocol version',
-                          2: 'Connection refused - invalid client identifier',
-                          3: 'Connection refused - server unavailable',
-                          4: 'Connection refused - bad username or password',
-                          5: 'Connection refused - not authorised'}
+        connack_string = {  0: 'Connection successful',
+                            1: 'Connection refused - incorrect protocol version',
+                            2: 'Connection refused - invalid client identifier',
+                            3: 'Connection refused - server unavailable',
+                            4: 'Connection refused - bad username or password',
+                            5: 'Connection refused - not authorised'}
 
         if rc:
             self._log.warning(connack_string[rc])
