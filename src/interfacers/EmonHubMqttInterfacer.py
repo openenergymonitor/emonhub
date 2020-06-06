@@ -1,5 +1,31 @@
 """class EmonHubMqttGenInterfacer
 
+Example emonhub configuration
+[[MQTT]]
+
+    Type = EmonHubMqttInterfacer
+    [[[init_settings]]]
+        mqtt_host = 127.0.0.1
+        mqtt_port = 1883
+        mqtt_user = emonpi
+        mqtt_passwd = emonpimqtt2016
+
+    [[[runtimesettings]]]
+        subchannels = ToEmonCMS,
+
+        # emonhub/rx/10/values format
+        # Use with emoncms Nodes module
+        node_format_enable = 1
+        node_format_basetopic = emonhub/
+
+        # emon/emontx/power1 format - use with Emoncms MQTT input
+        # http://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md
+        nodevar_format_enable = 1
+        nodevar_format_basetopic = emon/
+
+        node_JSON_enable = 1
+        node_JSON_basetopic = emon/JSON/
+
 """
 import time
 import paho.mqtt.client as mqtt
@@ -29,6 +55,10 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # nodes/emontx/power1 format
             'nodevar_format_enable': 0,
             'nodevar_format_basetopic': "nodes/"
+            
+            # JSON format
+            'node_JSON_enable': 0,
+            'node_JSON_basetopic': "emon/"
         }
         self._settings.update(self._mqtt_settings)
 
@@ -156,6 +186,25 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     self._log.info("Publishing error? returned 4")
                     return False
 
+            # ----------------------------------------------------------
+            # Emoncms JSON format: <basetopic>/<nodeid> {"key":Value, ... "time":<timestamp>}
+            # ----------------------------------------------------------
+            if int(self._settings["node_JSON_enable"]) == 1:
+                topic = self._settings["node_JSON_basetopic"] + nodename
+                payload = dict(zip(frame['names'],frame['data']))
+                payload['time'] = frame['timestamp']
+                if 'rssi' in frame:
+                    payload['rssi'] = frame['rssi']
+
+                payloadJSON = json.dumps(payload)
+
+                self._log.debug("Publishing: " + topic + " " + payloadJSON)
+                result = self._mqttc.publish(topic, payload=payloadJSON, qos=2, retain=False)
+
+                if result[0] == 4:
+                    self._log.info("Publishing error? returned 4")
+                    return False
+
         return True
 
     def action(self):
@@ -263,6 +312,14 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'nodevar_format_basetopic':
                 self._log.info("Setting " + self.name + " nodevar_format_basetopic: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'node_JSON_enable':
+                self._log.info("Setting " + self.name + " node_JSON_enable: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'node_JSON_basetopic':
+                self._log.info("Setting " + self.name + " node_JSON_basetopic: " + setting)
                 self._settings[key] = setting
                 continue
             else:
