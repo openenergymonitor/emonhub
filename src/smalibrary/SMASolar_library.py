@@ -102,7 +102,7 @@ def encodeInverterPassword(InverterPassword):
     if len(InverterPassword) > 12:
         raise Exception("Password can only be up to 12 digits in length")
 
-    a = bytearray(InverterPassword)
+    a = bytearray(InverterPassword,encoding='utf8')
 
     for i in range(12 - len(a)):
         a.append(0)
@@ -128,6 +128,7 @@ def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, MySerial
         }
 
     DeviceType = {
+        '359':  'SB 5000TL-20',
         '9073': 'SB 3000HF-30',
         '9074': 'SB 3000TL-21',
         '9075': 'SB 4000TL-21',
@@ -353,8 +354,8 @@ spotvalues = {
     0x462e: SpotValue("OperatingTime", 3600, 16),  # 8 byte word
 
     0x251e: SpotValue("DCPower1", 1, 28),
-    0x451f: SpotValue("DCVoltage1", 100, 28),
-    0x4521: SpotValue("DCCurrent1", 1000, 28),
+    0x451f: SpotValue("DCVoltage", 100, 28),
+    0x4521: SpotValue("DCCurrent", 1000, 28),
 
     0x2377: SpotValue("InvTemperature", 100, 28),
     0x821e: SpotValue("Inverter Name", 0, 28),
@@ -397,16 +398,13 @@ def extract_data(level2Packet):
                     value = level2Packet.getEightByte(offset + 8)
                     if value == 0x80000000 or value == 0xFFFFFFFF:
                         value = 0
-                # Special case for DC voltage input (aka SPOT_UDC1 / SPOT_UDC2)
-                #if readingtype == 0x451f:
-                #    if classtype == 1:
-                #        outputlist["DCVoltage1"] = SpotValueOutput("DCVoltage1".format(readingtype), toVolt(value))
-                #    if classtype == 2:
-                #        outputlist["DCVoltage2"] = SpotValueOutput("DCVoltage2".format(readingtype), toVolt(value))
-                #else:
-                #    outputlist[v.Description] = SpotValueOutput(v.Description, float(value) / float(v.Scale))
-
-                outputlist[v.Description] = SpotValueOutput(v.Description, round(float(value) / float(v.Scale), 4))
+                # Special case for DC voltage/current input (aka SPOT_UDC1 / SPOT_UDC2, etc)
+                if (readingtype==0x451f or readingtype==0x4521):
+                    readingDescription = v.Description + str(classtype)
+                    outputlist[readingDescription] = SpotValueOutput(readingDescription, round(float(value) / float(v.Scale),4) )
+                else:
+                    # normal condition
+                    outputlist[v.Description] = SpotValueOutput(v.Description, round(float(value) / float(v.Scale),4) )
                 offset += v.RecSize
             else:
                 #Output to caller in raw format for debugging
