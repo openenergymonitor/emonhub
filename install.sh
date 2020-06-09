@@ -17,7 +17,7 @@ if [ "$emonSD_pi_env" = "" ]; then
 fi
 
 sudo apt-get install -y python3-serial python3-configobj python3-pip
-sudo pip3 install paho-mqtt requests
+pip3 install paho-mqtt requests
 
 if [ "$emonSD_pi_env" = "1" ]; then
     # RaspberryPi Serial configuration
