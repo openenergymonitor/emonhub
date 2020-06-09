@@ -139,18 +139,31 @@ The 'node only format' is used with the emoncms [Nodes Module](https://github.co
 
 The 'Node variable format' is the current default format from Emoncms V9. It's a more generic MQTT publishing format that can more easily be used by applications such as NodeRED and OpenHab. This format can also be used with the emoncms `phpmqtt_input.php` script in conjunction with the emoncms inputs module. See [User Guide > Technical MQTT](https://guide.openenergymonitor.org/technical/mqtt/).
 
-#### **3. JSON format***
+#### **3. JSON format**
 
-(default base topic is `emon`)
+##### Defaults
+
+```python
+'node_format_enable': 1,
+'node_format_basetopic': 'emonhub/',
+'nodevar_format_enable': 0,
+'nodevar_format_basetopic': "nodes/",
+'node_JSON_enable': 0,
+'node_JSON_basetopic': "emon/"
+```
+
+Emoncms default base topic that it listens for is `emon/`.
 
 ```text
-    topic: basetopic/<noeid>
-    payload: {"key1":value1, "key2":value2, .... "time":<timestamp>, "rssi":<rssi>}
+topic: basetopic/<noeid>
+payload: {"key1":value1, "key2":value2, .... "time":<timestamp>, "rssi":<rssi>}
 ```
 
 This forat exports the data as a single JSOn string with key:value pairs. The timestamp is automatically added and used for the input time to emoncms. The RSSI is added if available (RF in use).
 
-**Default `[MQTT]` config:**
+### Default `[MQTT]` config
+
+Note - the trailing `/` is required on the topic definition.
 
 ```text
 [[MQTT]]
@@ -223,7 +236,7 @@ This time, the API key will be the API key from your account at emoncms.example.
 
 ### d.) [[Serial]] (EmonTX V3)
 
-There are 2 different serial interfacers. The TX3e interfacer is for connecting an RPi directly to the serial output (UART) of the emonTX.
+There are 2 different serial interfacers. The TX3e interfacer is for connecting an RPi directly to the serial output (UART) of the emonTX.  COM port speed on newer devices is 115200.
 
 The default nodeID is `0` and the `nodeoffset` optional parameter will increase that nodeID by its value.
 
