@@ -14,22 +14,25 @@ __author__ = 'Stuart Pittaway'
 # https://github.com/Rincewind76/SMAInverter/blob/master/76_SMAInverter.pm
 # https://sbfspot.codeplex.com/ (credit back to myself!!)
 
+def Read_Int_From_BT (btSocket):
+    return int.from_bytes(btSocket.recv(1), "big")
+
+
 def Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress):
     while True:
-        #print "Waiting for SMA level 1 packet from Bluetooth stream"
-        start = btSocket.recv(1)
+        #print ("Waiting for SMA level 1 packet from Bluetooth stream")
+        start = Read_Int_From_BT(btSocket)
 
-        # Need to add in some timeout stuff here
-        while start != '\x7e':
-            start = btSocket.recv(1)
+        while start != 0x7e:
+            start = Read_Int_From_BT(btSocket)
 
-        length1 = btSocket.recv(1)
-        length2 = btSocket.recv(1)
-        checksum = btSocket.recv(1)
+        length1 = Read_Int_From_BT(btSocket)
+        length2 = Read_Int_From_BT(btSocket)
+        checksum = Read_Int_From_BT(btSocket)
         SrcAdd = bytearray(btSocket.recv(6))
         DestAdd = bytearray(btSocket.recv(6))
 
-        packet = SMABluetoothPacket(length1, length2, checksum, btSocket.recv(1), btSocket.recv(1), SrcAdd, DestAdd)
+        packet = SMABluetoothPacket(length1, length2, checksum, Read_Int_From_BT(btSocket), Read_Int_From_BT(btSocket), SrcAdd, DestAdd)
 
         # Read the whole byte stream unaltered (this contains ESCAPED characters)
         b = bytearray(btSocket.recv(packet.TotalPayloadLength()))
@@ -39,6 +42,7 @@ def Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress):
 
         # Tidy up the packet lengths
         packet.finish()
+        #LogMessageWithByteArray("Received Packet",b)
 
         if DestAdd == mylocalBTAddress and packet.ValidateHeaderChecksum():
             break
@@ -47,9 +51,9 @@ def Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress):
 
 def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, mylocalBTAddress=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])):
     #if waitForPacket:
-    #    print "Waiting for reply to packet number {0:02x}".format(waitPacketNumber)
+    #    print ("Waiting for reply to packet number {0:02x}".format(waitPacketNumber))
     #else:
-    #    print "Waiting for reply to any packet"
+    #    print ("Waiting for reply to any packet")
 
     bluetoothbuffer = Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress)
 
@@ -63,12 +67,14 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
         # Write the payload into a level2 class structure
         level2Packet.pushByteArray(bluetoothbuffer.getLevel2Payload())
 
+        # print ("CmdCode:\t{0:04x}  LastByte:\t{1:02x}".format(bluetoothbuffer.CommandCode(),bluetoothbuffer.lastByte()))
+
         if waitForPacket and level2Packet.getPacketCounter() != waitPacketNumber:
             #print("Received packet number {0:02x} expected {1:02x}".format(level2Packet.getPacketCounter(),waitPacketNumber))
             raise Exception("Wrong Level 2 packet returned!")
 
         # if bluetoothbuffer.CommandCode() == 0x0008:
-            # print "Level 2 packet length (according to packet): %d" % level2Packet.totalCalculatedPacketLength()
+            # print ("Level 2 packet length (according to packet): %d" % level2Packet.totalCalculatedPacketLength())
 
         # Loop until we have the entire packet rebuilt (may take several level 1 packets)
         while bluetoothbuffer.CommandCode() != 0x0001 and bluetoothbuffer.lastByte() != 0x7e:
@@ -103,7 +109,6 @@ def encodeInverterPassword(InverterPassword):
         raise Exception("Password can only be up to 12 digits in length")
 
     a = bytearray(InverterPassword,encoding='utf8')
-
     for i in range(12 - len(a)):
         a.append(0)
 
@@ -211,7 +216,7 @@ def logon(btSocket, mylocalBTAddress, MySerialNumber, packet_send_counter, Inver
     #Timeout = 900sec ?
     pluspacket1.pushLong(0x00000384)
 
-    pluspacket1.pushLong(time.mktime(datetime.today().timetuple()))
+    pluspacket1.pushLong(int(time.mktime(datetime.today().timetuple())))
 
     pluspacket1.pushLong(0x00000000)
     pluspacket1.pushByteArray(InverterPasswordArray)
@@ -230,11 +235,12 @@ def logon(btSocket, mylocalBTAddress, MySerialNumber, packet_send_counter, Inver
 
 def initaliseSMAConnection(btSocket, mylocalBTAddress, MySerialNumber, packet_send_counter):
     # Wait for 1st message from inverter to arrive (should be an 0002 command)
+
     bluetoothbuffer = read_SMA_BT_Packet(btSocket, mylocalBTAddress)
     checkPacketReply(bluetoothbuffer, 0x0002)
 
     netid = bluetoothbuffer.levelone.getByte(4)
-    #print "netid=%02x" % netid
+    #print ("netid=%02x" % netid)
     inverterAddress = bluetoothbuffer.levelone.SourceAddress
 
     # Reply to 0x0002 cmd with our data
@@ -353,7 +359,7 @@ spotvalues = {
     0x462f: SpotValue("FeedInTime", 3600, 16),  # 8 byte word
     0x462e: SpotValue("OperatingTime", 3600, 16),  # 8 byte word
 
-    0x251e: SpotValue("DCPower1", 1, 28),
+    0x251e: SpotValue("DCPower", 1, 28),
     0x451f: SpotValue("DCVoltage", 100, 28),
     0x4521: SpotValue("DCCurrent", 1000, 28),
 
