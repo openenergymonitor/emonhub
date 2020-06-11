@@ -74,7 +74,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
         self._connected = False
 
-        self._mqttc = mqtt.Client(client_id="emonhub-"+name)
+        self._mqttc = mqtt.Client()
         self._mqttc.on_connect = self.on_connect
         self._mqttc.on_disconnect = self.on_disconnect
         self._mqttc.on_message = self.on_message
