@@ -26,6 +26,8 @@ Example emonhub configuration
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
 
+        # Default NodeID is 0. Use nodeoffset to set NodeID
+        # No decoder required as key:value pair returned
         nodeoffset = 3
 """
 
