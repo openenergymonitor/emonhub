@@ -8,8 +8,25 @@ import Cargo
 
 """class EmonhubPulseCounterInterfacer
 
+Authors @borpin & @bwduncan
+Version: 1
+Date: 11 June 2020
+
 Monitors GPIO pins for pulses
 
+Example emonhub configuration
+[[pulse2]]
+    Type = EmonHubPulseCounterInterfacer
+    [[[init_settings]]]
+        # pin number must be specified. Create a second 
+        # interfacer for more than one pulse sensor
+        pulse_pin = 15
+        # bouncetime default to 1.
+        # bouncetime = 2
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+
+        nodeoffset = 3
 """
 
 class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
@@ -31,8 +48,6 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
         self._pulse_settings = {}
 
-#        self._settings.update(self._pulse_settings)
-
         self.pulse_count = defaultdict(int)
 
         self.pulse_received = 0
@@ -46,13 +61,13 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
         atexit.register(GPIO.cleanup)
         GPIO.setmode(GPIO.BOARD)
-        self._log.debug('Pulse pin set to: %d', self.gpio_pin)
+        self._log.info('%s : Pulse pin set to: %d', self.name, self.gpio_pin)
         GPIO.setup(self.gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
         GPIO.add_event_detect(self.gpio_pin, GPIO.FALLING, callback=self.process_pulse, bouncetime=int(self._settings['bouncetime']))
 
     def process_pulse(self, channel):
         self.pulse_count[channel] += 1
-        self._log.debug('Pulse Channel %d pulse: %d', channel, self.pulse_count[channel])
+        self._log.debug('%s : Pulse Channel %d pulse: %d', self.name, channel, self.pulse_count[channel])
         self.pulse_received += 1
 
     def read(self):
@@ -63,8 +78,8 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         self.pulse_received = 0
 
         # Create a Payload object
-        c = Cargo.new_cargo()
-        c.names = ["Pulse"]
+        c = Cargo.new_cargo(nodename=self.name)
+        c.names = ["PulseCount"]
         c.realdata = [self.pulse_count[self.gpio_pin]]
 
         if int(self._settings['nodeoffset']):
@@ -80,14 +95,11 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         for key, setting in self._pulse_settings.items():
 
             if key not in kwargs:
-#                self._log.error("ERROR 1 %s", key)
                 setting = self._pulse_settings[key]
             else:
-#                self._log.error("ERROR 2")
                 setting = kwargs[key]
 
             if key in self._settings and self._settings[key] == setting:
-#                self._log.error("ERROR 3 %s", key)
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
