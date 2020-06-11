@@ -40,11 +40,9 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         super().__init__(name)
 
         self._settings.update( {
-            'pulse_pin': pulse_pin,
+            'pulse_pin': int(pulse_pin),
             'bouncetime' : bouncetime,
         })
-
-        self.gpio_pin = int(pulse_pin)
 
         self._pulse_settings = {}
 
@@ -61,9 +59,9 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
         atexit.register(GPIO.cleanup)
         GPIO.setmode(GPIO.BOARD)
-        self._log.info('%s : Pulse pin set to: %d', self.name, self.gpio_pin)
-        GPIO.setup(self.gpio_pin, GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.add_event_detect(self.gpio_pin, GPIO.FALLING, callback=self.process_pulse, bouncetime=int(self._settings['bouncetime']))
+        self._log.info('%s : Pulse pin set to: %d', self.name, self._settings['pulse_pin'])
+        GPIO.setup(self._settings['pulse_pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
+        GPIO.add_event_detect(self._settings['pulse_pin'], GPIO.FALLING, callback=self.process_pulse, bouncetime=int(self._settings['bouncetime']))
 
     def process_pulse(self, channel):
         self.pulse_count[channel] += 1
@@ -80,7 +78,7 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         # Create a Payload object
         c = Cargo.new_cargo(nodename=self.name)
         c.names = ["PulseCount"]
-        c.realdata = [self.pulse_count[self.gpio_pin]]
+        c.realdata = [self.pulse_count[self._settings['pulse_pin']]]
 
         if int(self._settings['nodeoffset']):
             c.nodeid = int(self._settings['nodeoffset'])
