@@ -31,7 +31,7 @@ Example emonhub configuration
 
 class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, pulse_pins=None, bouncetime=1):
+    def __init__(self, name, pulse_pin=None, bouncetime=1):
         """Initialize interfacer
 
         """
@@ -40,17 +40,17 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         super().__init__(name)
 
         self._settings.update( {
-            'pulse_pins': pulse_pins,
+            'pulse_pin': pulse_pin,
             'bouncetime' : bouncetime,
         })
 
-        self.gpio_pin = int(pulse_pins)
+        self.gpio_pin = int(pulse_pin)
 
         self._pulse_settings = {}
 
         self.pulse_count = defaultdict(int)
 
-        self.pulse_received = 0
+        self.pulse_received = False
 
         self.init_gpio()
 
@@ -68,14 +68,14 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
     def process_pulse(self, channel):
         self.pulse_count[channel] += 1
         self._log.debug('%s : Pulse Channel %d pulse: %d', self.name, channel, self.pulse_count[channel])
-        self.pulse_received += 1
+        self.pulse_received = True
 
     def read(self):
 
-        if self.pulse_received == 0:
+        if not self.pulse_received:
             return False
 
-        self.pulse_received = 0
+        self.pulse_received = False
 
         # Create a Payload object
         c = Cargo.new_cargo(nodename=self.name)
