@@ -1,4 +1,4 @@
-rom emonhub_interfacer import EmonHubInterfacer
+from emonhub_interfacer import EmonHubInterfacer
 from collections import defaultdict
 import time
 import atexit
@@ -22,14 +22,17 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         # Initialization
         super().__init__(name)
 
-        self.gpio_pin = int(pulse_pins)
-
-        self._pulse_settings = {
+        self._settings.update( {
             'pulse_pins': pulse_pins,
             'bouncetime' : bouncetime,
-        }
+        })
 
-        self._settings.update(self._pulse_settings)
+        self.gpio_pin = int(pulse_pins)
+
+        self._pulse_settings = {}
+
+#        self._settings.update(self._pulse_settings)
+
         self.pulse_count = defaultdict(int)
 
         self.pulse_received = 0
@@ -58,22 +61,16 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
             return False
 
         self.pulse_received = 0
-        t = time.time()
-        f = '{t} {nodeid}'.format(t=t, nodeid=self._settings['nodeoffset'])
-        f += ' {}'.format(self.pulse_count[self.gpio_pin])
 
         # Create a Payload object
-        c = Cargo.new_cargo(rawdata=f)
-
-        f = f.split()
+        c = Cargo.new_cargo()
+        c.names = ["Pulse"]
+        c.realdata = [self.pulse_count[self.gpio_pin]]
 
         if int(self._settings['nodeoffset']):
             c.nodeid = int(self._settings['nodeoffset'])
-            c.realdata = f
         else:
-            c.nodeid = int(f[0])
-            c.realdata = f[1:]
-
+            c.nodeid = 0
         return c
 
 
@@ -83,14 +80,14 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         for key, setting in self._pulse_settings.items():
 
             if key not in kwargs:
-                self._log.error("ERROR 1 %s", key)
+#                self._log.error("ERROR 1 %s", key)
                 setting = self._pulse_settings[key]
             else:
-                self._log.error("ERROR 2")
+#                self._log.error("ERROR 2")
                 setting = kwargs[key]
 
             if key in self._settings and self._settings[key] == setting:
-                self._log.error("ERROR 3 %s", key)
+#                self._log.error("ERROR 3 %s", key)
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
