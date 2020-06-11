@@ -23,6 +23,8 @@ Example emonhub configuration
         nodevar_format_enable = 1
         nodevar_format_basetopic = emon/
 
+        # JSON format data that can have a timestamp
+        timestamped = True
         node_JSON_enable = 1
         node_JSON_basetopic = emon/JSON/
 
