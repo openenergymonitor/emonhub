@@ -21,7 +21,7 @@ sudo pip3 install paho-mqtt requests
 
 if [ "$emonSD_pi_env" = "1" ]; then
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
-    sudo apt install python3-gpiozero
+    pip3 install RPi.GPIO
     # Need to add the emonhub user to the GPIO group
     sudo adduser emonhub gpio
 
