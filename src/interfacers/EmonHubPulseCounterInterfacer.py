@@ -2,9 +2,14 @@ from emonhub_interfacer import EmonHubInterfacer
 from collections import defaultdict
 import time
 import atexit
-import RPi.GPIO as GPIO
 
 import Cargo
+
+try:
+    import RPi.GPIO as GPIO
+    RPi_found = True
+except:
+    RPi_found = False
 
 """class EmonhubPulseCounterInterfacer
 
@@ -52,7 +57,10 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
         self.pulse_received = False
 
-        self.init_gpio()
+        if RPi_found:
+            self.init_gpio()
+        else:
+            self._log.error("Pulse counter not initialised. Please install the RPi GPIO Python3 module")
 
     def init_gpio(self):
         """Register GPIO callbacks
