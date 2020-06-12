@@ -9,6 +9,11 @@ fi
 emonhub_location=/etc/emonhub/emonhub.conf
 path=$homedir/emonhub/conf/nodes
 
+if [ ! -d $path ]; then
+  echo "$path directory does not exist"
+  exit 0
+fi
+
 if [ ! -f $emonhub_location ]; then
   echo "emonhub location does not exist"
   exit 0
