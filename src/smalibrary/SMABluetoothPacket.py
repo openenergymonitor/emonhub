@@ -25,7 +25,10 @@ class SMABluetoothPacket:
 
         # FIXME This comment says to skip the first 3 bytes, but the code skips the *last* 3 bytes
         # Skip the first 3 bytes, they are the command code 0x0001 and 0x7E start byte
-        return self.UnescapedArray[startbyte:-skipendbytes]
+#        return self.UnescapedArray[startbyte:-skipendbytes]
+        l = len(self.UnescapedArray) - skipendbytes
+        return self.UnescapedArray[startbyte:l]
+
 
     def pushRawByteArray(self, barray):
         # Raw byte array
@@ -81,7 +84,15 @@ class SMABluetoothPacket:
             self.UnescapedArray.append(value)
 
     def sendPacket(self, btSocket):
-        return btSocket.send(str(self.header) + str(self.SourceAddress) + str(self.DestinationAddress) + str(self.cmdcode) + str(self.RawByteArray))
+#        print ("-------------Send Packet-----------")
+#        print ("Header:\t\t 0x" + bytes(self.header).hex())
+#        print ("SourceAddress:\t 0x" + bytes(self.SourceAddress).hex())
+#        print ("DestinAddress:\t 0x" + bytes(self.DestinationAddress).hex())
+#        print ("CommandCode:\t 0x" + bytes(self.cmdcode).hex())
+#        print ("Data: " + bytes(self.RawByteArray).hex())
+#        print ("-------------Send Packet-----------")
+
+        return btSocket.send(bytes(self.header + self.SourceAddress + self.DestinationAddress + self.cmdcode + self.RawByteArray))
 
     def containsLevel2Packet(self):
         return (len(self.UnescapedArray) >= 5 and
@@ -92,10 +103,17 @@ class SMABluetoothPacket:
                 self.UnescapedArray[4] == 0x65)
 
     def CommandCode(self):
+        code = self.cmdcode[0] + (self.cmdcode[1] << 8)
+        #print ("get CommandCode:\t 0x"+ bytes(code).hex())
         return self.cmdcode[0] + (self.cmdcode[1] << 8)
 
     def setCommandCode(self, byteone, bytetwo):
-        self.cmdcode = bytearray([byteone, bytetwo])
+        self.cmdcode = bytearray()
+        self.cmdcode.append(byteone)
+        self.cmdcode.append(bytetwo)
+        #print ("Code1:  0x{0:02x} ".format(byteone))
+        #print ("Code2:  0x{0:02x} ".format(bytetwo))
+        #print ("set CommandCode:\t 0x"+ bytes(self.cmdcode).hex())
 
     def getByte(self, indexfromstartofdatapayload):
         return self.UnescapedArray[indexfromstartofdatapayload]
@@ -124,7 +142,10 @@ class SMABluetoothPacket:
         self.SourceAddress = SourceAddress
         self.DestinationAddress = DestinationAddress
 
+
         self.header = bytearray([0x7e, length1, length2, checksum])
+
+        #print ("Header:  %s" % self.header)
 
         # Create our array to hold the payload bytes
         self.RawByteArray = bytearray()
