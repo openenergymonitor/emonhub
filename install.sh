@@ -18,7 +18,7 @@ fi
 
 sudo apt update
 sudo apt-get install -y python3-serial python3-configobj python3-pip
-pip3 install paho-mqtt requests
+sudo pip3 install paho-mqtt requests
 
 if [ "$emonSD_pi_env" = "1" ]; then
     # RaspberryPi Serial configuration
