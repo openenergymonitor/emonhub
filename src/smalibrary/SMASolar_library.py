@@ -14,13 +14,12 @@ __author__ = 'Stuart Pittaway'
 # https://github.com/Rincewind76/SMAInverter/blob/master/76_SMAInverter.pm
 # https://sbfspot.codeplex.com/ (credit back to myself!!)
 
-def Read_Int_From_BT (btSocket):
+def Read_Int_From_BT(btSocket):
     return int.from_bytes(btSocket.recv(1), "big")
 
 
 def Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress):
     while True:
-        #print ("Waiting for SMA level 1 packet from Bluetooth stream")
         start = Read_Int_From_BT(btSocket)
 
         while start != 0x7e:
@@ -42,7 +41,6 @@ def Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress):
 
         # Tidy up the packet lengths
         packet.finish()
-        #LogMessageWithByteArray("Received Packet",b)
 
         if DestAdd == mylocalBTAddress and packet.ValidateHeaderChecksum():
             break
@@ -50,11 +48,6 @@ def Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress):
     return packet
 
 def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, mylocalBTAddress=bytearray([0x00, 0x00, 0x00, 0x00, 0x00, 0x00])):
-    #if waitForPacket:
-    #    print ("Waiting for reply to packet number {0:02x}".format(waitPacketNumber))
-    #else:
-    #    print ("Waiting for reply to any packet")
-
     bluetoothbuffer = Read_Level1_Packet_From_BT_Stream(btSocket, mylocalBTAddress)
 
     v = namedtuple("SMAPacket", ["levelone", "leveltwo"])
@@ -67,14 +60,8 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
         # Write the payload into a level2 class structure
         level2Packet.pushByteArray(bluetoothbuffer.getLevel2Payload())
 
-        # print ("CmdCode:\t{0:04x}  LastByte:\t{1:02x}".format(bluetoothbuffer.CommandCode(),bluetoothbuffer.lastByte()))
-
         if waitForPacket and level2Packet.getPacketCounter() != waitPacketNumber:
-            #print("Received packet number {0:02x} expected {1:02x}".format(level2Packet.getPacketCounter(),waitPacketNumber))
             raise Exception("Wrong Level 2 packet returned!")
-
-        # if bluetoothbuffer.CommandCode() == 0x0008:
-            # print ("Level 2 packet length (according to packet): %d" % level2Packet.totalCalculatedPacketLength())
 
         # Loop until we have the entire packet rebuilt (may take several level 1 packets)
         while bluetoothbuffer.CommandCode() != 0x0001 and bluetoothbuffer.lastByte() != 0x7e:
@@ -91,14 +78,6 @@ def read_SMA_BT_Packet(btSocket, waitPacketNumber=0, waitForPacket=False, myloca
         v.leveltwo = level2Packet
     return v
 
-#def LogMessageWithByteArray(message, ba):
-#    """Simple output of message and bytearray data in hex for debugging"""
-#    print("{0}:{1}".format(message.rjust(21), ByteToHex(ba)))
-
-#def ByteToHex(byteStr):
-#    """Convert a byte string to it's hex string representation e.g. for output."""
-#    return ''.join(["%02X " % x  for x in byteStr])
-
 def BTAddressToByteArray(hexStr, sep=':'):
     """Convert a hex string containing separators to a bytearray object"""
     return bytearray([int(i, 16) for i in hexStr.split(sep)])
@@ -108,7 +87,7 @@ def encodeInverterPassword(InverterPassword):
     if len(InverterPassword) > 12:
         raise Exception("Password can only be up to 12 digits in length")
 
-    a = bytearray(InverterPassword,encoding='utf8')
+    a = bytearray(InverterPassword, encoding='utf8')
     for i in range(12 - len(a)):
         a.append(0)
 
@@ -147,9 +126,6 @@ def getInverterDetails(btSocket, packet_send_counter, mylocalBTAddress, MySerial
         "susyid": data.getDestinationSusyid(),
         "serialNumber": data.getDestinationSerial(),
     }
-
-    # idate = bluetoothbuffer.leveltwo.getFourByteLong(40 + 4)
-    # t = time.localtime(long(idate))
 
     offset = 40
 
@@ -240,7 +216,6 @@ def initaliseSMAConnection(btSocket, mylocalBTAddress, MySerialNumber, packet_se
     checkPacketReply(bluetoothbuffer, 0x0002)
 
     netid = bluetoothbuffer.levelone.getByte(4)
-    #print ("netid=%02x" % netid)
     inverterAddress = bluetoothbuffer.levelone.SourceAddress
 
     # Reply to 0x0002 cmd with our data
@@ -283,18 +258,6 @@ def initaliseSMAConnection(btSocket, mylocalBTAddress, MySerialNumber, packet_se
         raise Exception("Error code returned from inverter")
 
     packet_send_counter += 1
-
-    #inverterSerial = bluetoothbuffer.leveltwo.getDestinationAddress()
-
-    #This is a logoff command..
-    #send = SMABluetoothPacket(0x3B, 0, 0x00, 0x01, 0x00, mylocalBTAddress)
-    #pluspacket1 = SMANET2PlusPacket(0x08, 0xA0, packet_send_counter, MySerialNumber, 0x00, 0x03, 0x03)
-    #pluspacket1.pushLong(0xFFFD010E)
-    #pluspacket1.pushLong(0xFFFFFFFF)
-    #send.pushRawByteArray(pluspacket1.getBytesForSending())
-    #send.finish()
-    #send.sendPacket(btSocket)
-    #packet_send_counter += 1
 
 def checkPacketReply(bluetoothbuffer, commandcode):
     if bluetoothbuffer.levelone.CommandCode() != commandcode:
@@ -378,12 +341,10 @@ def extract_data(level2Packet):
     offset = 40
 
     while offset < level2Packet.totalPayloadLength():
-        value = 0
         classtype = level2Packet.getByte(offset)
         #classtype should always be =1
         readingtype = level2Packet.getTwoByte(offset + 1)
         dataType = level2Packet.getByte(offset + 3)
-        datetime = level2Packet.getFourByteLong(offset + 4)
 
         if readingtype == 0:
             break
@@ -405,12 +366,12 @@ def extract_data(level2Packet):
                     if value == 0x80000000 or value == 0xFFFFFFFF:
                         value = 0
                 # Special case for DC voltage/current input (aka SPOT_UDC1 / SPOT_UDC2, etc)
-                if (readingtype==0x451f or readingtype==0x4521):
+                if readingtype == 0x451f or readingtype == 0x4521:
                     readingDescription = v.Description + str(classtype)
-                    outputlist[readingDescription] = SpotValueOutput(readingDescription, round(float(value) / float(v.Scale),4) )
+                    outputlist[readingDescription] = SpotValueOutput(readingDescription, round(float(value) / float(v.Scale), 4))
                 else:
                     # normal condition
-                    outputlist[v.Description] = SpotValueOutput(v.Description, round(float(value) / float(v.Scale),4) )
+                    outputlist[v.Description] = SpotValueOutput(v.Description, round(float(value) / float(v.Scale), 4))
                 offset += v.RecSize
             else:
                 #Output to caller in raw format for debugging
