@@ -75,7 +75,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
             conn, addr = self._socket.accept()
 
             # Read data
-            self._sock_rx_buf = self._sock_rx_buf + conn.recv(1024)
+            self._sock_rx_buf = self._sock_rx_buf + conn.recv(1024).decode("utf-8")
 
             # Close connection
             conn.close()
