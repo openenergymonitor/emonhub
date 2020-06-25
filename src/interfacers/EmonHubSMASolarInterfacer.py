@@ -12,7 +12,7 @@ except ImportError:
 
 import time
 import sys
-import subprocess, shlex, shutil
+import subprocess
 import traceback
 import re
 import Cargo
@@ -37,6 +37,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._port = 1
         self._nodeid = int(nodeid)
         self._btRetrySleepTime = 10
+        self.no_bluetooth_reported = False
 
         self._packettrace = bool(packettrace)
 
@@ -119,8 +120,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         inverteraddress (string): bluetooth address for inverter
 
         """
-        retryAttempts = 0
-        while retryAttempts < 3:
+        for retry_attempt in range(3):
             try:
                 self._log.info("Opening bluetooth address " + str(inverteraddress))
                 btSocket = bluetooth.BluetoothSocket(bluetooth.RFCOMM)
@@ -134,12 +134,11 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
                 self._log.error('Bluetooth error while connecting to %s' % inverteraddress)
                 btSocket.close()
                 errCode = eval(err[0])[0]
-                if ((errCode == 16) or (errCode == 115)):
+                if errCode == 16 or errCode == 115:
                     # We need to reset the bluetooth connection
                     self._reset_bluetooth()
 
             else:
-                self._btRetrySleepTime = 10
                 return btSocket
 
     def _reset_packet_send_counter(self):
@@ -185,15 +184,10 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._last_time_auto_disconnect = time.time()
 
     def _reset_bluetooth(self):
-        cmd_args = ("sudo systemctl restart bluetooth")
-        with open(os.devnull, 'wb') as devnull:
-            subprocess.call(
-                shlex.split(cmd_args),
-                stdout=devnull,
-                stderr=subprocess.STDOUT)
-        self._log.warn('Bluetooth processes restarted - not responding')
-
-
+        subprocess.call(['sudo', 'systemctl', 'restart', 'bluetooth'],
+                        stdout=subprocess.DEVNULL,
+                        stderr=subprocess.STDOUT)
+        self._log.warning('Bluetooth processes restarted - not responding')
 
     #Override base _process_rx code from emonhub_interfacer
     def _process_rx(self, rxc):
@@ -206,9 +200,9 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
     def read(self):
         """Read data from inverter and process"""
         if not bluetooth_found:
-            if not noBluetooth_reported:
-                self._log.warn('Bluetooth not available...')
-                noBluetooth_reported = True
+            if not self.no_bluetooth_reported:
+                self._log.warning('Bluetooth not available...')
+                self.no_bluetooth_reported = True
             return False
 
         #Wait until we are ready to read from inverter
