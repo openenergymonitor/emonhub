@@ -28,6 +28,12 @@ Example emonhub configuration
         pulse_pin = 15
         # bouncetime default to 1.
         # bouncetime = 2
+        # Rate_limit is the rate at which the interfacer will pass data 
+        # to emonhub for sending on. Too short and pulses will be missed.
+        # rate_limit is minimum number of seconds between data output.
+        # pulses are accumulated in this period.
+        # rate_limit default to 2.
+        # rate_limit = 2
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
 
@@ -38,7 +44,7 @@ Example emonhub configuration
 
 class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, pulse_pin=None, bouncetime=1):
+    def __init__(self, name, pulse_pin=None, bouncetime=1, rate_limit=2):
         """Initialize interfacer
 
         """
@@ -47,8 +53,9 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         super().__init__(name)
 
         self._settings.update( {
-            'pulse_pin': int(pulse_pin),
-            'bouncetime' : bouncetime,
+            'pulse_pin'  : int(pulse_pin),
+            'bouncetime' : int(bouncetime),
+            'rate_limit' : int(rate_limit)
         })
 
         self._pulse_settings = {}
@@ -73,7 +80,7 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         GPIO.setmode(GPIO.BOARD)
         self._log.info('%s : Pulse pin set to: %d', self.name, self._settings['pulse_pin'])
         GPIO.setup(self._settings['pulse_pin'], GPIO.IN, pull_up_down=GPIO.PUD_DOWN)
-        GPIO.add_event_detect(self._settings['pulse_pin'], GPIO.FALLING, callback=self.process_pulse, bouncetime=int(self._settings['bouncetime']))
+        GPIO.add_event_detect(self._settings['pulse_pin'], GPIO.FALLING, callback=self.process_pulse, bouncetime=self._settings['bouncetime'])
 
     def process_pulse(self, channel):
         self.pulse_count += 1
@@ -85,7 +92,7 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
         if self.last_pulse == self.pulse_count:
             return False
-        elif self.last_time + 2 > time_now:
+        elif self.last_time + self._settings['rate_limit'] > time_now:
             return False
 
         self._log.debug('Data to Post: last_time: %d  time_now: %d', self.last_time, time_now)
