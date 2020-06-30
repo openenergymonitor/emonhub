@@ -23,7 +23,7 @@ Example emonhub configuration
 [[pulse2]]
     Type = EmonHubPulseCounterInterfacer
     [[[init_settings]]]
-        # pin number must be specified. Create a second 
+        # pin number must be specified. Create a second
         # interfacer for more than one pulse sensor
         pulse_pin = 15
         # bouncetime default to 1.
@@ -53,9 +53,11 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
 
         self._pulse_settings = {}
 
-        self.pulse_count = defaultdict(int)
+        self.pulse_count = 0
 
-        self.pulse_received = False
+        self.last_pulse = 0
+
+        self.last_time = (time.time()//10)*10
 
         if RPi_found:
             self.init_gpio()
@@ -74,21 +76,25 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         GPIO.add_event_detect(self._settings['pulse_pin'], GPIO.FALLING, callback=self.process_pulse, bouncetime=int(self._settings['bouncetime']))
 
     def process_pulse(self, channel):
-        self.pulse_count[channel] += 1
-        self._log.debug('%s : Pulse Channel %d pulse: %d', self.name, channel, self.pulse_count[channel])
-        self.pulse_received = True
+        self.pulse_count += 1
+        self._log.debug('%s : pulse received -  count: %d', self.name, self.pulse_count)
 
     def read(self):
 
-        if not self.pulse_received:
+        time_now = time.time()
+
+        if self.last_pulse == self.pulse_count:
+            return False
+        elif self.last_time + 2 > time_now:
             return False
 
-        self.pulse_received = False
+        self._log.debug('Data to Post: last_time: %d  time_now: %d', self.last_time, time_now)
+        self.last_pulse = self.pulse_count
+        self.last_time = int(time_now)
 
-        # Create a Payload object
-        c = Cargo.new_cargo(nodename=self.name)
-        c.names = ["PulseCount"]
-        c.realdata = [self.pulse_count[self._settings['pulse_pin']]]
+        c = Cargo.new_cargo(nodename=self.name, timestamp=time_now)
+        c.names = ["Pulse"]
+        c.realdata = [self.last_pulse]
 
         if int(self._settings['nodeoffset']):
             c.nodeid = int(self._settings['nodeoffset'])
