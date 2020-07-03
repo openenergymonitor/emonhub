@@ -17,7 +17,7 @@ if [ "$emonSD_pi_env" = "" ]; then
 fi
 
 sudo apt update
-sudo apt-get install -y python3-serial python3-configobj python3-pip
+sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus
 sudo pip3 install paho-mqtt requests
 
 if [ "$emonSD_pi_env" = "1" ]; then
