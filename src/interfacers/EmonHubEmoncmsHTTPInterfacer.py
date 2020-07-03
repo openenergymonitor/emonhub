@@ -70,10 +70,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         reply = self._send_post(post_url, {'data': data_string, 'sentat': str(sentat)})
         if reply == 'ok':
-            self._log.debug("acknowledged receipt with '" + reply + "' from " + self._settings['url'])
+            self._log.debug("acknowledged receipt with '%s' from %s", reply, self._settings['url'])
             return True
         else:
-            self._log.warning("send failure: wanted 'ok' but got '" + reply + "'")
+            self._log.warning("send failure: wanted 'ok' but got '%s'", reply)
             return False
 
     def sendstatus(self):

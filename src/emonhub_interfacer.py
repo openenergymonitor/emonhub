@@ -252,9 +252,9 @@ class EmonHubInterfacer(threading.Thread):
             else:
                 reply = requests.get(post_url)
             reply.raise_for_status()  # Raise an exception if status code isn't 200
+            return reply.text
         except requests.exceptions.RequestException as ex:
             self._log.warning(self.name + " couldn't send to server: " + str(ex))
-        return reply.text
 
     def _process_rx(self, cargo):
         """Process a frame of data
