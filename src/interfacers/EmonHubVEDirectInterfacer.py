@@ -101,10 +101,10 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         """
 
         try:
-            self._log.debug("Opening serial port: %s @ %d bits/s", com_port, com_baud)
+            self._log.debug("Opening serial port: %s @ %s bits/s", com_port, com_baud)
             return serial.Serial(com_port, com_baud, timeout=10)
         except serial.SerialException:
-            self._log.exception()
+            self._log.exception("Open error")
 
     def parse_package(self, data):
         """
@@ -134,7 +134,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
                 if packet is not None:
                     return packet
         except Exception:  # FIXME Too general Exception. Maybe SerialException?
-            self._log.exception()
+            self._log.exception("Read error")
 
     def read(self):
         """Read data from serial port and process if complete line received.
