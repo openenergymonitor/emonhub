@@ -442,7 +442,7 @@ class EmonHubInterfacer(threading.Thread):
         nodename = False
         if node in ehc.nodelist and 'nodename' in ehc.nodelist[node]:
             nodename = ehc.nodelist[node]['nodename']
-        rxc.nodename = self._settings['serial_num']+nodename
+        rxc.nodename = str(self._settings['serial_num'])+str(nodename)
 
         if not rxc:
             return False
