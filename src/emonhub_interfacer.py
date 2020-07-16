@@ -161,7 +161,7 @@ class EmonHubInterfacer(threading.Thread):
         f = []
         try:
             f.append(cargo.timestamp)
-            f.append(cargo.nodeid)
+            f.append(str(self._settings['serial_num'])+str(cargo.nodeid))
             # FIXME replace with f.extend(cargo.realdata)
             for i in cargo.realdata:
                 f.append(i)
