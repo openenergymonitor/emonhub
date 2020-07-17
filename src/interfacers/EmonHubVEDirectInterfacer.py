@@ -47,6 +47,9 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
     def input(self, byte):
         """
         Parse serial byte code from VE.Direct
+
+        Return None if more data is needed, return an empty dict if the
+        checksum was wrong, return a dict of valid data otherwise.
         """
         self.bytes_sum += ord(byte)
         if self.state == self.WAIT_HEADER:
@@ -78,6 +81,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
                 if self.bytes_sum % 256 == 0:
                     return self.dict
                 self._log.error("Invalid checksum, discarding data")
+                return {}
             finally:
                 self.dict = {}
                 self.bytes_sum = 0
@@ -147,8 +151,8 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
 
         rx_buf = self._read_serial()
         self.last_read = now
-        # If _read_serial raised an exception, exit
-        if rx_buf is None:
+        # If _read_serial raised an exception or returned empty dict, exit
+        if not rx_buf:
             return
 
         #Sample data looks like {'FW': '0307', 'SOC': '1000', 'Relay': 'OFF', 'PID': '0x203', 'H10': '6', 'BMV': '700', 'TTG': '-1', 'H12': '0', 'H18': '0', 'I': '0', 'H11': '0', 'Alarm': 'OFF', 'CE': '0', 'H17': '9', 'P': '0', 'AR': '0', 'V': '26719', 'H8': '29011', 'H9': '0', 'H2': '0', 'H3': '0', 'H1': '-1633', 'H6': '-5775', 'H7': '17453', 'H4': '0', 'H5': '0'}
