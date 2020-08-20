@@ -248,9 +248,9 @@ class EmonHubInterfacer(threading.Thread):
 
         try:
             if post_body:
-                reply = requests.post(post_url, post_body)
+                reply = requests.post(post_url, post_body, timeout=60)
             else:
-                reply = requests.get(post_url)
+                reply = requests.get(post_url, timeout=60)
             reply.raise_for_status()  # Raise an exception if status code isn't 200
             return reply.text
         except requests.exceptions.RequestException as ex:

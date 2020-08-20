@@ -35,7 +35,7 @@ class EmonHubTeslaPowerWallInterfacer(EmonHubInterfacer):
             if self._settings['url']:
                 # HTTP Request
                 try:
-                    reply = requests.get(self._settings['url'], timeout=int(self._settings['readinterval']), verify=False)
+                    reply = requests.get(self._settings['url'], timeout=int(self._settings['readinterval']), verify=False, timeout=60)
                     reply.raise_for_status()  # Raise an exception if status code isn't 200
                 except requests.exceptions.RequestException as ex:
                     self._log.warning("%s couldn't send to server: %s", self.name, ex)

@@ -41,7 +41,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         self._log.info("requesting packet: " + req + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
 
         try:
-            packet = requests.get(req + self._settings['apikey']).json()
+            packet = requests.get(req + self._settings['apikey'], timeout=60).json()
         except (ValueError, requests.exceptions.RequestException) as ex:
             self._log.warning("no packet returned: " + str(ex))
             return
@@ -96,7 +96,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
             try:
                 z = requests.get(self._settings['url'] +
                                  "/emoncms/packetgen/getinterval.json?apikey="
-                                 + self._settings['apikey']).text
+                                 + self._settings['apikey'], timeout=60).text
                 i = int(z[1:-1])
             except:
                 self._log.info("request interval not returned")
