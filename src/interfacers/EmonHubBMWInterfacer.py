@@ -168,9 +168,9 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         #self._log.debug("headers=" + str(headers))
 
         if post_data is None:
-            r = requests.get(self.ROOT_URL + path, headers=headers)
+            r = requests.get(self.ROOT_URL + path, headers=headers, timeout=60)
         else:
-            r = requests.post(self.ROOT_URL + path, headers=headers, data=post_data)
+            r = requests.post(self.ROOT_URL + path, headers=headers, data=post_data, timeout=60)
 
         #Raise exception if problem with request
         r.raise_for_status()
