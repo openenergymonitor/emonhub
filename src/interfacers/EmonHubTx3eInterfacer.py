@@ -1,8 +1,6 @@
-import serial
-import time
-import Cargo
 import re
-import EmonHubSerialInterfacer as ehi
+import Cargo
+from . import EmonHubSerialInterfacer as ehi
 
 """class EmonHubTx3eInterfacer
 
@@ -24,12 +22,12 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         # Initialization
-        super(EmonHubTx3eInterfacer, self).__init__(name, com_port, com_baud)
+        super().__init__(name, com_port, com_baud)
 
         self._settings.update({
             'nodename': ""
         })
-        
+
         # Initialize RX buffer
         self._rx_buf = ''
 
@@ -38,14 +36,15 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
 
         Read data format is key:value pairs e.g:
         ct1:0,ct2:0,ct3:0,ct4:0,vrms:524,pulse:0
-        
+
         """
 
-        if not self._ser: return False
-            
+        if not self._ser:
+            return False
+
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline()
-        
+        self._rx_buf = self._rx_buf + self._ser.readline().decode()
+
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
             return
@@ -60,44 +59,43 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
         self._rx_buf = ''
 
         # Parse the ESP format string
-        values=[]
-        names=[]
+        values = []
+        names = []
 
         for item in f.split(','):
             parts = item.split(':')
-            if len(parts)==2:
+            if len(parts) == 2:
                 # check for alphanumeric input name
-                if re.match('^[\w-]+$',parts[0]):
+                if re.match(r'^[\w-]+$', parts[0]):
                     # check for numeric value
                     value = 0
                     try:
                         value = float(parts[1])
                     except Exception:
-                        self._log.debug("input value is not numeric: "+parts[1])
-                    
+                        self._log.debug("input value is not numeric: " + parts[1])
+
                     names.append(parts[0])
                     values.append(value)
-                else: self._log.debug("invalid input name: "+parts[0])
+                else:
+                    self._log.debug("invalid input name: " + parts[0])
 
-            
-        if self._settings["nodename"]!="":
+        if self._settings["nodename"] != "":
             c.nodename = self._settings["nodename"]
             c.nodeid = self._settings["nodename"]
         else:
             c.nodeid = int(self._settings['nodeoffset'])
-            
+
         c.realdata = values
         c.names = names
-        
-        if len(values)==0: 
+
+        if len(values) == 0:
             return False
 
         return c
-        
+
     def set(self, **kwargs):
-        for key,setting in self._settings.iteritems():
-            if key in kwargs.keys():
+        for key, setting in self._settings.items():
+            if key in kwargs:
                 # replace default
                 # self._log.debug(kwargs[key])
                 self._settings[key] = kwargs[key]
-

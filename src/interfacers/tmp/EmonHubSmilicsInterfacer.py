@@ -34,7 +34,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
             name (str): Configuration name.
             port (int): The port the webserver should listen on.
         """
-        super(EmonHubSmilicsInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._settings = {
             'subchannels': ['ch1'],
@@ -66,23 +66,23 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                     if rxc:
                         for channel in self._settings["pubchannels"]:
                             self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                           
+
                             # Initialize channel if needed
-                            if not channel in self._pub_channels:
+                            if channel not in self._pub_channels:
                                 self._pub_channels[channel] = []
-                                
+
                             # Add cargo item to channel
                             self._pub_channels[channel].append(rxc)
-                            
+
                             self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
 
-            # Don't loop to fast
+            # Don't loop too fast
             time.sleep(0.1)
 
         self.close()
 
     def _process_rx(self, smilics_dict):
-        """ Converts the data recieved on the webserver to an instance of
+        """ Converts the data received on the webserver to an instance of
         the Cargo class
 
         Args:

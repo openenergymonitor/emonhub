@@ -1,3 +1,6 @@
+import time
+import requests
+from Cargo import new_cargo
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubPacketGenInterfacer
@@ -14,7 +17,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         """
 
         # Initialization
-        super(EmonHubPacketGenInterfacer, self).__init__(name)
+        super().__init__(name)
 
         self._control_timestamp = 0
         self._control_interval = 5
@@ -28,28 +31,22 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         """
         t = time.time()
 
-        if not (t - self._control_timestamp) > self._control_interval:
+        if t - self._control_timestamp <= self._control_interval:
             return
 
         req = self._settings['url'] + \
               "/emoncms/packetgen/getpacket.json?apikey="
 
-        try:
-            packet = urllib2.urlopen(req + self._settings['apikey']).read()
-        except:
-            return
-
         # logged without apikey added for security
         self._log.info("requesting packet: " + req + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
 
         try:
-            packet = json.loads(packet)
-        except ValueError:
-            self._log.warning("no packet returned")
+            packet = requests.get(req + self._settings['apikey'], timeout=60).json()
+        except (ValueError, requests.exceptions.RequestException) as ex:
+            self._log.warning("no packet returned: " + str(ex))
             return
 
         raw = ""
-        target = 0
         values = []
         datacodes = []
 
@@ -64,7 +61,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
         # Extract the Target id if one is expected
         if self._settings['targeted']:
-                #setting = str.capitalize(str(setting))
+            #setting = str(setting).capitalize()
             c.target = int(values[0])
             values = values[1:]
             datacodes = datacodes[1:]
@@ -93,14 +90,14 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         # Keep in touch with PacketGen and update refresh time
         interval = int(self._settings['interval'])
         if interval:  # A value of 0 means don't do anything
-            if not (t - self._interval_timestamp) > interval:
+            if t - self._interval_timestamp < interval:
                 return
 
             try:
-                 z = urllib2.urlopen(self._settings['url'] +
-                                     "/emoncms/packetgen/getinterval.json?apikey="
-                                     + self._settings['apikey']).read()
-                 i = int(z[1:-1])
+                z = requests.get(self._settings['url'] +
+                                 "/emoncms/packetgen/getinterval.json?apikey="
+                                 + self._settings['apikey'], timeout=60).text
+                i = int(z[1:-1])
             except:
                 self._log.info("request interval not returned")
                 return
@@ -111,31 +108,26 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
             self._interval_timestamp = t
 
-        return
-
     def set(self, **kwargs):
         """
 
         """
 
-        for key, setting in self._pg_settings.iteritems():
+        for key, setting in self._pg_settings.items():
             # Decide which setting value to use
-            if key in kwargs.keys():
+            if key in kwargs:
                 setting = kwargs[key]
             else:
                 setting = self._pg_settings[key]
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'apikey':
-                if str.lower(setting[:4]) == 'xxxx':
+                if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
                     self._log.warning("Setting " + self.name + " apikey: obscured")
-                    pass
-                elif str.__len__(setting) == 32 :
+                elif len(setting) == 32:
                     self._log.info("Setting " + self.name + " apikey: set")
-                    pass
                 elif setting == "":
                     self._log.info("Setting " + self.name + " apikey: null")
-                    pass
                 else:
                     self._log.warning("Setting " + self.name + " apikey: invalid format")
                     continue
@@ -143,7 +135,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 # Next line will log apikey if uncommented (privacy ?)
                 #self._log.debug(self.name + " apikey: " + str(setting))
                 continue
-            elif key == 'url' and setting[:4] == "http":
+            elif key == 'url' and setting.startswith("http"):
                 self._log.info("Setting " + self.name + " url: " + setting)
                 self._settings[key] = setting
                 continue
@@ -151,5 +143,4 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
 
         # include kwargs from parent
-        super(EmonHubPacketGenInterfacer, self).set(**kwargs)
-
+        super().set(**kwargs)
