@@ -38,12 +38,12 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
               "/emoncms/packetgen/getpacket.json?apikey="
 
         # logged without apikey added for security
-        self._log.info("requesting packet: " + req + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
+        self._log.info("requesting packet: %sE-M-O-N-C-M-S-A-P-I-K-E-Y", req)
 
         try:
             packet = requests.get(req + self._settings['apikey'], timeout=60).json()
         except (ValueError, requests.exceptions.RequestException) as ex:
-            self._log.warning("no packet returned: " + str(ex))
+            self._log.warning("no packet returned: %s", ex)
             return
 
         raw = ""
@@ -104,7 +104,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
 
             if self._control_interval != i:
                 self._control_interval = i
-                self._log.info("request interval set to: " + str(i) + " seconds")
+                self._log.info("request interval set to: %d seconds", i)
 
             self._interval_timestamp = t
 
@@ -123,24 +123,24 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'apikey':
                 if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
-                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    self._log.warning("Setting %s apikey: obscured", self.name)
                 elif len(setting) == 32:
-                    self._log.info("Setting " + self.name + " apikey: set")
+                    self._log.info("Setting %s apikey: set", self.name)
                 elif setting == "":
-                    self._log.info("Setting " + self.name + " apikey: null")
+                    self._log.info("Setting %s apikey: null", self.name)
                 else:
-                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    self._log.warning("Setting %s apikey: invalid format", self.name)
                     continue
                 self._settings[key] = setting
                 # Next line will log apikey if uncommented (privacy ?)
-                #self._log.debug(self.name + " apikey: " + str(setting))
+                #self._log.debug("%s apikey: %s", self.name, setting)
                 continue
             elif key == 'url' and setting.startswith("http"):
-                self._log.info("Setting " + self.name + " url: " + setting)
+                self._log.info("Setting %s url: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
 
         # include kwargs from parent
         super().set(**kwargs)
