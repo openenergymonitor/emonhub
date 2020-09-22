@@ -231,7 +231,20 @@ This interfacer fetches the state of charge of a Tesla Power Wall on the local n
             name = powerwall
             url = http://POWERWALL-IP/api/system_status/soe
             readinterval = 10
-                    
+
+### f.) SDS011 Air Quality Sensor
+
+Read data from the SDS011 sensor. Note that this implementation keeps the SDS011 sensor on all the time and may reduce the lifespan of the sensor significantly. Further work required!
+
+    [[SDS011]]
+        Type = EmonHubSDS011Interfacer
+        [[[init_settings]]]
+            serial_port = /dev/ttyUSB0
+        [[[runtimesettings]]]
+            pubchannels = ToEmonCMS,
+            nodename = SDS011
+            readinterval = 10
+
 ***
 
 # 3. 'nodes' Configuration
