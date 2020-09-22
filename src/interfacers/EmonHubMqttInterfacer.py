@@ -1,10 +1,39 @@
 """class EmonHubMqttGenInterfacer
 
+Example emonhub configuration
+[[MQTT]]
+
+    Type = EmonHubMqttInterfacer
+    [[[init_settings]]]
+        mqtt_host = 127.0.0.1
+        mqtt_port = 1883
+        mqtt_user = emonpi
+        mqtt_passwd = emonpimqtt2016
+
+    [[[runtimesettings]]]
+        subchannels = ToEmonCMS,
+
+        # emonhub/rx/10/values format
+        # Use with emoncms Nodes module
+        node_format_enable = 1
+        node_format_basetopic = emonhub/
+
+        # emon/emontx/power1 format - use with Emoncms MQTT input
+        # http://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md
+        nodevar_format_enable = 1
+        nodevar_format_basetopic = emon/
+
+        # JSON format data that can have a timestamp
+        timestamped = True
+        node_JSON_enable = 1
+        node_JSON_basetopic = emon/JSON/
+
 """
 import time
 import paho.mqtt.client as mqtt
 from emonhub_interfacer import EmonHubInterfacer
 import Cargo
+import json
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
@@ -28,7 +57,11 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
             # nodes/emontx/power1 format
             'nodevar_format_enable': 0,
-            'nodevar_format_basetopic': "nodes/"
+            'nodevar_format_basetopic': "nodes/",
+            
+            # JSON format
+            'node_JSON_enable': 0,
+            'node_JSON_basetopic': "emon/"
         }
         self._settings.update(self._mqtt_settings)
 
@@ -50,14 +83,20 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     def add(self, cargo):
         """Append data to buffer.
 
-          format: {"emontx":{"power1":100,"power2":200,"power3":300}}
+        format: {"emontx":{"power1":100,"power2":200,"power3":300}}
 
         """
-        f = {'nodeid': cargo.nodeid,
-             'node': cargo.nodename or str(cargo.nodeid),
-             'names': cargo.names,
-             'data': cargo.realdata,
-            }
+
+        nodename = str(cargo.nodeid)
+        if cargo.nodename:
+            nodename = cargo.nodename
+
+        f = {}
+        f['nodeid'] = cargo.nodeid
+        f['node'] = nodename
+        f['names'] = cargo.names
+        f['data'] = cargo.realdata
+        f['timestamp'] = cargo.timestamp
 
         if cargo.rssi:
             f['rssi'] = cargo.rssi
@@ -149,6 +188,25 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     self._log.info("Publishing error? returned 4")
                     return False
 
+            # ----------------------------------------------------------
+            # Emoncms JSON format: <basetopic>/<nodeid> {"key":Value, ... "time":<timestamp>}
+            # ----------------------------------------------------------
+            if int(self._settings["node_JSON_enable"]) == 1:
+                topic = self._settings["node_JSON_basetopic"] + nodename
+                payload = dict(zip(frame['names'],frame['data']))
+                payload['time'] = frame['timestamp']
+                if 'rssi' in frame:
+                    payload['rssi'] = frame['rssi']
+
+                payloadJSON = json.dumps(payload)
+
+                self._log.debug("Publishing: " + topic + " " + payloadJSON)
+                result = self._mqttc.publish(topic, payload=payloadJSON, qos=2, retain=False)
+
+                if result[0] == 4:
+                    self._log.info("Publishing error? returned 4")
+                    return False
+
         return True
 
     def action(self):
@@ -168,12 +226,13 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self.flush()
 
     def on_connect(self, client, userdata, flags, rc):
-        connack_string = {0: 'Connection successful',
-                          1: 'Connection refused - incorrect protocol version',
-                          2: 'Connection refused - invalid client identifier',
-                          3: 'Connection refused - server unavailable',
-                          4: 'Connection refused - bad username or password',
-                          5: 'Connection refused - not authorised'}
+        
+        connack_string = {  0: 'Connection successful',
+                            1: 'Connection refused - incorrect protocol version',
+                            2: 'Connection refused - invalid client identifier',
+                            3: 'Connection refused - server unavailable',
+                            4: 'Connection refused - bad username or password',
+                            5: 'Connection refused - not authorised'}
 
         if rc:
             self._log.warning(connack_string[rc])
@@ -235,6 +294,14 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'nodevar_format_basetopic':
                 self._log.info("Setting %s nodevar_format_basetopic: %s", self.name, setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'node_JSON_enable':
+                self._log.info("Setting " + self.name + " node_JSON_enable: " + setting)
+                self._settings[key] = setting
+                continue
+            elif key == 'node_JSON_basetopic':
+                self._log.info("Setting " + self.name + " node_JSON_basetopic: " + setting)
                 self._settings[key] = setting
                 continue
             else:
