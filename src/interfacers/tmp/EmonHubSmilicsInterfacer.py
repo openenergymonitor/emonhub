@@ -65,16 +65,12 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
                     rxc = self._process_rx(rxc)
                     if rxc:
                         for channel in self._settings["pubchannels"]:
-                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-
-                            # Initialize channel if needed
-                            if channel not in self._pub_channels:
-                                self._pub_channels[channel] = []
+                            self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
 
                             # Add cargo item to channel
-                            self._pub_channels[channel].append(rxc)
+                            self._pub_channels.setdefault(channel, []).append(rxc)
 
-                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+                            self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
 
             # Don't loop too fast
             time.sleep(0.1)
@@ -98,7 +94,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
 
             c.nodeid = smilics_dict['mac'][0]
             if c.nodeid not in ehc.nodelist.keys():
-                self._log.debug(str(c.nodeid) + " Not in config")
+                self._log.debug("%d Not in config", c.nodeid)
                 return None
 
             node_config = ehc.nodelist[str(c.nodeid)]
@@ -120,13 +116,13 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
             c.timestamp = time.mktime(datetime.datetime.now().timetuple())
 
             return c
-        except:
+        except Exception:
             return None
 
     def set(self, **kwargs):
         """ Override default settings with settings entered in the config file
         """
-        for key, setting in self._settings.iteritems():
+        for key, setting in self._settings.tems():
             if key in kwargs.keys():
                 # replace default
                 self._settings[key] = kwargs[key]

@@ -53,16 +53,11 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
           format: {"emontx":{"power1":100,"power2":200,"power3":300}}
 
         """
-
-        nodename = str(cargo.nodeid)
-        if cargo.nodename:
-            nodename = cargo.nodename
-
-        f = {}
-        f['nodeid'] = cargo.nodeid
-        f['node'] = nodename
-        f['names'] = cargo.names
-        f['data'] = cargo.realdata
+        f = {'nodeid': cargo.nodeid,
+             'node': cargo.nodename or str(cargo.nodeid),
+             'names': cargo.names,
+             'data': cargo.realdata,
+            }
 
         if cargo.rssi:
             f['rssi'] = cargo.rssi
@@ -78,9 +73,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         # This is a bit of a hack, the final approach is currently being considered
         # as part of ongoing discussion on future direction of emonhub
 
-        databuffer = []
-        databuffer.append(f)
-        self._process_post(databuffer)
+        self._process_post([f])
 
         # To re-enable buffering comment the above three lines and uncomment the following
         # note that at preset _process_post will not handle buffered data correctly and
@@ -119,7 +112,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     topic = self._settings["nodevar_format_basetopic"] + nodename + "/" + inputname
                     payload = str(value)
 
-                    self._log.debug("Publishing: " + topic + " " + payload)
+                    self._log.debug("Publishing: %s %s", topic, payload)
                     result = self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
 
                     if result[0] == 4:
@@ -131,7 +124,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                     topic = self._settings["nodevar_format_basetopic"] + nodename + "/rssi"
                     payload = str(frame['rssi'])
 
-                    self._log.debug("Publishing: " + topic + " " + payload)
+                    self._log.debug("Publishing: %s %s", topic, payload)
                     result = self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
 
                     if result[0] == 4:
@@ -149,7 +142,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 if 'rssi' in frame:
                     payload = payload + "," + str(frame['rssi'])
 
-                self._log.info("Publishing: " + topic + " " + payload)
+                self._log.info("Publishing: %s %s", topic, payload)
                 result = self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
 
                 if result[0] == 4:
@@ -159,10 +152,6 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         return True
 
     def action(self):
-        """
-
-        :return:
-        """
         self._mqttc.loop(0)
 
         # pause output if 'pause' set to 'all' or 'out'
@@ -179,7 +168,6 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self.flush()
 
     def on_connect(self, client, userdata, flags, rc):
-
         connack_string = {0: 'Connection successful',
                           1: 'Connection refused - incorrect protocol version',
                           2: 'Connection refused - invalid client identifier',
@@ -190,12 +178,12 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if rc:
             self._log.warning(connack_string[rc])
         else:
-            self._log.info("connection status: " + connack_string[rc])
+            self._log.info("connection status: %s", connack_string[rc])
             self._connected = True
             # Subscribe to MQTT topics
             self._mqttc.subscribe(str(self._settings["node_format_basetopic"]) + "tx/#")
 
-        self._log.debug("CONACK => Return code: " + str(rc))
+        self._log.debug("CONACK => Return code: %d", rc)
 
     def on_disconnect(self, client, userdata, rc):
         if rc != 0:
@@ -213,36 +201,20 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
             payload = msg.payload
             realdata = payload.split(",")
-            self._log.debug("Nodeid: " + str(nodeid) + " values: " + msg.payload)
+            self._log.debug("Nodeid: %s values: %s", nodeid, msg.payload)
 
-            rxc = Cargo.new_cargo(realdata=realdata)
-            rxc.nodeid = nodeid
+            rxc = Cargo.new_cargo(realdata=realdata, nodeid=nodeid)
 
-            if rxc:
-                # rxc = self._process_tx(rxc)
-                if rxc:
-                    for channel in self._settings["pubchannels"]:
+            for channel in self._settings["pubchannels"]:
+                # Add cargo item to channel
+                self._pub_channels.setdefault(channel, []).append(rxc)
 
-                        # Initialize channel if needed
-                        if channel not in self._pub_channels:
-                            self._pub_channels[channel] = []
-
-                        # Add cargo item to channel
-                        self._pub_channels[channel].append(rxc)
-
-                        self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
+                self._log.debug("%d Sent to channel' : %s", rxc.uri, channel)
 
     def set(self, **kwargs):
-        """
-
-        :param kwargs:
-        :return:
-        """
-
         super().set(**kwargs)
 
         for key, setting in self._mqtt_settings.items():
-            #valid = False
             if key not in kwargs:
                 setting = self._mqtt_settings[key]
             else:
@@ -250,20 +222,20 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'node_format_enable':
-                self._log.info("Setting " + self.name + " node_format_enable: " + setting)
+                self._log.info("Setting %s node_format_enable: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'node_format_basetopic':
-                self._log.info("Setting " + self.name + " node_format_basetopic: " + setting)
+                self._log.info("Setting %s node_format_basetopic: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'nodevar_format_enable':
-                self._log.info("Setting " + self.name + " nodevar_format_enable: " + setting)
+                self._log.info("Setting %s nodevar_format_enable: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'nodevar_format_basetopic':
-                self._log.info("Setting " + self.name + " nodevar_format_basetopic: " + setting)
+                self._log.info("Setting %s nodevar_format_basetopic: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)

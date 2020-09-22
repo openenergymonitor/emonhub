@@ -35,12 +35,12 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                     # Split the returned "info" string into firmware version & current settings
                     self.info[0] = info.strip().split(' ')[0]
                     self.info[1] = info.replace(str(self.info[0]), "")
-                    self._log.info(self.name + " device firmware version: " + self.info[0])
-                    self._log.info(self.name + " device current settings: " + str(self.info[1]))
+                    self._log.info("%s device firmware version: %s", self.name, self.info[0])
+                    self._log.info("%s device current settings: %s", self.name, self.info[1])
                 else:
                     # since "v" command only v11> recommend firmware update ?
-                    #self._log.info(self.name + " device firmware is pre-version RFM12demo.11")
-                    self._log.info(self.name + " device firmware version & configuration: not available")
+                    #self._log.info("%s device firmware is pre-version RFM12demo.11", self.name)
+                    self._log.info("%s device firmware version & configuration: not available", self.name)
             else:
                 self._log.warning("Device communication error - check settings")
         self._rx_buf = ""
@@ -100,25 +100,25 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             return
 
         if f[0] == '\x01':
-            #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
+            #self._log.debug("Ignoring frame consisting of SOH character %s", f)
             return
 
         if f[0] == '?':
-            self._log.debug("Discarding RX frame 'unreliable content'" + str(f))
+            self._log.debug("Discarding RX frame 'unreliable content': %s", f)
             return False
 
         # Discard information messages
         if '>' in f:
             if '->' in f:
-                self._log.debug("confirmed sent packet size: " + str(f))
+                self._log.debug("confirmed sent packet size: %s", f)
                 return
-            self._log.debug("acknowledged command: " + str(f))
+            self._log.debug("acknowledged command: %s", f)
             return
 
         # Record current device settings
         if all(i in f for i in (" i", " g", " @ ", " MHz")):
             self.info[1] = f
-            self._log.debug("device settings updated: " + str(self.info[1]))
+            self._log.debug("device settings updated: %s", self.info[1])
             return
 
         # Save raw packet to new cargo object
@@ -137,7 +137,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             try:
                 c.rssi = int(r)
             except ValueError:
-                self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
+                self._log.warning("Packet discarded as the RSSI format is invalid: %s", f)
                 return
             f = f[:-1]
 
@@ -194,10 +194,10 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
                 command = '2p'
 
             else:
-                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s", setting, self.name, key)
                 continue
             self._settings[key] = setting
-            self._log.info("Setting " + self.name + " %s: %s" % (key, setting) + " (" + command + ")")
+            self._log.info("Setting %s %s: %s (%s)", self.name, key, setting, command)
             self._ser.write(command.encode())
             # Wait a sec between two settings
             time.sleep(1)
@@ -229,7 +229,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         for frame in databuffer:
-            self._log.debug("node = " + str(frame[1]) + " node_data = " + json.dumps(frame))
+            self._log.debug("node = %s node_data = %s", frame[1], json.dumps(frame))
             self.send(frame)
         return True
 
@@ -245,11 +245,11 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         payload = ""
         for value in data:
             if not 0 < int(value) < 255:
-                self._log.warning(self.name + " discarding Tx packet: values out of scope")
+                self._log.warning("%s discarding Tx packet: values out of scope", self.name)
                 return
             payload += str(int(value)) + ","
 
         payload += cmd
 
-        self._log.debug(str(f.uri) + " sent TX packet: " + payload)
+        self._log.debug("%d sent TX packet: %s", f.uri, payload)
         self._ser.write(payload.encode())
