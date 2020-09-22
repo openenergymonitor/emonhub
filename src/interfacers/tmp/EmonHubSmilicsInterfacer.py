@@ -122,7 +122,7 @@ class EmonHubSmilicsInterfacer(EmonHubInterfacer):
     def set(self, **kwargs):
         """ Override default settings with settings entered in the config file
         """
-        for key, setting in self._settings.tems():
+        for key, setting in self._settings.items():
             if key in kwargs.keys():
                 # replace default
                 self._settings[key] = kwargs[key]
