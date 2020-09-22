@@ -426,7 +426,7 @@ class EmonHubInterfacer(threading.Thread):
         if not rxc:
             return False
         self._log.debug("%d Timestamp : %f", rxc.uri, rxc.timestamp)
-        self._log.debug("%d From Node : %d", rxc.uri, rxc.nodeid)
+        self._log.debug("%d From Node : %s", rxc.uri, str(rxc.nodeid))
         if rxc.target:
             self._log.debug("%d To Target : %d", rxc.uri, rxc.target)
         self._log.debug("%d    Values : %s", rxc.uri, rxc.realdata)

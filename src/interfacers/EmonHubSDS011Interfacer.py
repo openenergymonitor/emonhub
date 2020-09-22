@@ -59,14 +59,16 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         
         self.lastbyte = self.byte
         self.byte = self._ser.read(size=1)
-
+        
         # Valid packet header
-        if self.lastbyte == "\xAA" and self.byte == "\xC0":
+        if self.lastbyte == b"\xaa" and self.byte == b"\xc0":
+        
             sentence = self._ser.read(size=8) # Read 8 more bytes
             readings = struct.unpack('<hhxxcc',sentence) # Decode the packet - big endian, 2 shorts for pm2.5 and pm10, 2 reserved bytes, checksum, message tail
             
             pm_25 = readings[0]/10.0
             pm_10 = readings[1]/10.0
+            
             # self._log.debug("PM 2.5:"+str(pm_25)+"μg/m^3  PM 10:"+str(pm_10)+"μg/m^3")
 
             self.pm_25_sum += pm_25
@@ -99,7 +101,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
 
         """
 
-        for key, setting in self._template_settings.iteritems():
+        for key, setting in self._template_settings.items():
             # Decide which setting value to use
             if key in kwargs.keys():
                 setting = kwargs[key]
