@@ -129,7 +129,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
     def _read_serial(self):
         self._log.debug("Starting Serial read from %s", self._ser)
         try:
-            while True:
+            while self._ser:
                 # Read one byte at a time from the serial port and pass it into
                 # the input FSM until we have a complete packet, then return it
                 packet = self.input(self._ser.read())
