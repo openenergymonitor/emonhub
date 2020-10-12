@@ -14,18 +14,18 @@ class SMABluetoothPacket:
         return self.UnescapedArray[-1]
 
     def getLevel2Payload(self):
-        skipendbytes = 0
+        skipendbytes = None
         startbyte = 0
 
         if self.UnescapedArray[0] == 0x7e:
             startbyte = 1
 
         if self.lastByte() == 0x7e:
-            skipendbytes = 3
+            skipendbytes = -3
 
         # FIXME This comment says to skip the first 3 bytes, but the code skips the *last* 3 bytes
         # Skip the first 3 bytes, they are the command code 0x0001 and 0x7E start byte
-        return self.UnescapedArray[startbyte:-skipendbytes]
+        return self.UnescapedArray[startbyte:skipendbytes]
 
     def pushRawByteArray(self, barray):
         # Raw byte array

@@ -18,10 +18,15 @@ if [ "$emonSD_pi_env" = "" ]; then
     sudo apt update
 fi
 
-sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus
-sudo pip3 install paho-mqtt requests
+sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev
+sudo pip3 install paho-mqtt requests pybluez
 
 if [ "$emonSD_pi_env" = "1" ]; then
+    # Only install the GPIO library if on a Pi. Used by Pulse interfacer
+    pip3 install RPi.GPIO
+    # Need to add the emonhub user to the GPIO group
+    sudo adduser emonhub gpio
+
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=pi3-miniuart-bt?

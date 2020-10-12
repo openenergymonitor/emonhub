@@ -66,8 +66,8 @@ class InMemoryBuffer(AbstractBuffer):
     def discardOldestItemsIfFull(self):
         if self.isFull():
             self._log.warning(
-                "In-memory buffer (%s) reached limit of %d items, deleting oldest"
-                % (self._bufferName, self._maximumEntriesInBuffer))
+                "In-memory buffer (%s) reached limit of %d items, deleting oldest",
+                self._bufferName, self._maximumEntriesInBuffer)
         self.discardOldestItems()
 
     def storeItem(self, data):
