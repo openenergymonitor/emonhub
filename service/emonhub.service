@@ -1,9 +1,9 @@
 [Unit]
-Description=emonHub data multiplexer
-# The config file lives in /home/pi/data (symlinked from /etc/emonhub)
-# The log file lives in the tmpfs at /var/log
+Description=emonHub data multiplexe
+# The config file lives in /etc/emonhub/emonhub.conf
+# The log file lives in /var/log/emonhub/emonhub.log
 Requires=var-log.mount home-pi-data.mount
-After=var-log.mount home-pi-data.mount network.target
+After=var-log.mount network.target
 
 [Service]
 User=emonhub
