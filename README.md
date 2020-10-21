@@ -1,6 +1,6 @@
 # emonHub
 
-emonHub is used in the OpenEnergyMonitor system to read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board then forward the data to emonCMS in a decoded ready-to-use form - based on the configuration in [emonhub.conf](https://github.com/openenergymonitor/emonhub/configuration.md)
+emonHub is used in the OpenEnergyMonitor system to read data received over serial from either the EmonPi board or the RFM12/69Pi adapter board then forward the data to emonCMS in a decoded ready-to-use form - based on the configuration in [emonhub.conf](conf/emonhub.conf)
 
 More generally: Emonhub consists of a series of interfacers that can read/subscribe or send/publish data to and from a multitude of services. EmonHub supports decoding data from:
 
@@ -84,7 +84,7 @@ journalctl -f -u emonhub
 
 The emonhub configuration guide can be found here:
 
-[emonhub.conf configuration](https://github.com/openenergymonitor/emonhub/configuration.md)
+[emonhub.conf configuration](configuration.md)
 
 ## EmonHub Emoncms config module
 
