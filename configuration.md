@@ -10,7 +10,7 @@ Hub is a section for emonhub global settings such as the loglevel.
 
 ## 2. `interfacers`
 
-Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics. For more interfacer examples see [conf/interfacer_examples](https://github.com/openenergymonitor/emonhub/conf/interfacer_examples)
+Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics. For more interfacer examples see [conf/interfacer_examples](conf/interfacer_examples)
 
 ### Channels
 
@@ -54,7 +54,7 @@ Nodes holds the decoder configuration for rfm12/69 node data which are sent as b
         [nodes]
 ```
 
-**View full latest [default emonHub.conf](https://github.com/openenergymonitor/emonhub/conf/emonpi.default.emonhub.conf)**
+**View full latest [default emonHub.conf](conf/emonpi.default.emonhub.conf)**
 
 ***
 
@@ -126,7 +126,7 @@ There are two formats that can be used for publishing node data to MQTT:
     payload: 100,200,300
 ```
 
-The 'node only format' is used with the emoncms [Nodes Module](https://github.com/emoncms/nodes) (now deprecated on Emoncms V9+) and the emonPiLCD python service.
+The 'node only format' is used with the emoncms Nodes Module (now deprecated on Emoncms V9+) and the emonPiLCD python service.
 
 #### **2. Node variable format**
 
