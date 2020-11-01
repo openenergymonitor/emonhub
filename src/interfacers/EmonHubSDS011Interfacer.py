@@ -102,12 +102,15 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 return c
 
         if self.timenow >= (self.previous_time + self.readinterval):
+            if (self.previous_time + self.readinterval) >= self.timenow:
+                self.sensor.sleep(sleep=False)
+                time.sleep(1)
             self.previous_time = self.timenow
             readings = self.sensor.query()
             if readings is not None: readings = list(readings)
             else: return False
             self._log.debug("READINGS:" + str(readings))
-            if self.readinterval > 30:
+            if self.readinterval >= 30:
                 self.sensor.sleep()
                 self._log.debug("Sensor returned to sleep")
             self.sensor_waking=False
@@ -126,7 +129,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
             self._log.debug("Sensor warming up... 15s until reading")
             self.sensor_waking=True
             return False
-    
+
 
         # nothing to return
         return False
