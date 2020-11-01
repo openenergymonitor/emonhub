@@ -85,10 +85,10 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 self.first_reading_done = True
                 self.previous_time = self.timenow
                 readings = self.sensor.query()
+                self._log.debug("First readings:" + str(readings))
                 if readings is not None:
                     readings = list(readings)
                 else: return False
-                self._log.debug("First readings:" + str(readings))
                 self.count += 1
                 if self.readinterval > 30:
                     self.sensor.sleep()
@@ -152,11 +152,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 self.readinterval = int(setting) * 60
                 if int(setting) == 0:
                     self.readinterval = 1
-                    time.sleep(2)
-                if self.readinterval <= 30:
-                    self.sensor.sleep(sleep=False)
-                else: self.sensor.sleep(sleep=True)
-                self._log.debug("readinterval set to : " + str(self.readinterval))
+                self._log.debug("SDS011 readinterval set to : " + str(self.readinterval))
                 continue
             elif key == 'nodename':
                 self._log.info("Setting " + self.name + " nodename: " + str(setting))
