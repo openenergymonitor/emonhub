@@ -45,15 +45,16 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         self.sensor_waking = False
         self.timenow = time.time()
         self.count = 0
-
         self.readinterval = readinterval * 60 # convert to seconds.
+        
         ### INIT COM PORT ###
         try:
             print("INFO: Opening sensor serial port...")
-            self.sensor = SDS011(com_port, use_query_mode=False)
+            self.sensor = SDS011(com_port, use_query_mode=True)
+            self.sensor.set_work_period(read=False, work_time=0)
             # self.sensor.set_work_period
             self.sensor.sleep(sleep=False) # wake the sensor just in case.
-            time.sleep(1)
+            time.sleep(2)
             first_reading = self.sensor.query()
             # sensor.set_report_mode
             self.previous_time = time.time()
@@ -67,42 +68,46 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         except:
             self._log.error("Couldn't open COM port")
 
+
     def close(self):
         self._log.error("no closing script")
 
+
     def read(self):
-        """Read data and process"""
+        '''Read data and process'''
 
         if not self.sensor_present: return False
         
         self.timenow = time.time()
         
-        # readings = [0.0,0.0]
-
         if self.first_reading_done is False:
             if self.timenow >= (self.previous_time + self.warmup_time): # 15 seconds warmup for first reading, just in case.
+                self.first_reading_done = True
                 self.previous_time = self.timenow
                 readings = self.sensor.query()
-                readings = list(readings)
+                if readings is not None:
+                    readings = list(readings)
+                else: return False
                 self._log.debug("First readings:" + str(readings))
-                if self.readinterval:
+                self.count += 1
+                if self.readinterval > 30:
                     self.sensor.sleep()
                     self._log.debug("Sensor put to sleep")
-                self.first_reading_done = True
-                self.count += 1
                 # create a new cargo object, set data values
                 c = Cargo.new_cargo()
                 c.nodeid = self._settings['nodename']
-                c.names = ["pm_2.5","pm_10","msg"]
+                c.names = ["pm_25","pm_10","msg"]
                 c.realdata = [readings[0],readings[1],self.count]
-                return c 
+                self._log.info("SDS011 First Cargo : " + str(c.realdata))
+                return c
 
         if self.timenow >= (self.previous_time + self.readinterval):
             self.previous_time = self.timenow
             readings = self.sensor.query()
-            readings = list(readings)
-            self._log.debug("Readings:" + str(readings))
-            if self.readinterval:
+            if readings is not None: readings = list(readings)
+            else: return False
+            self._log.debug("READINGS:" + str(readings))
+            if self.readinterval > 30:
                 self.sensor.sleep()
                 self._log.debug("Sensor returned to sleep")
             self.sensor_waking=False
@@ -110,11 +115,12 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
             # create a new cargo object, set data values
             c = Cargo.new_cargo()
             c.nodeid = self._settings['nodename']
-            c.names = ["pm_2.5","pm_10","msg"]
+            c.names = ["pm_25","pm_10","msg"]
             c.realdata = [readings[0],readings[1],self.count]
+            self._log.info("SDS011 Cargo : " + str(c.realdata))
             return c 
         elif self.timenow >= (self.previous_time + self.readinterval - self.warmup_time):
-            if self.sensor_waking:
+            if (self.sensor_waking == True) or (self.readinterval <= 30):
                 return False    
             self.sensor.sleep(sleep=False)
             self._log.debug("Sensor warming up... 15s until reading")
@@ -141,6 +147,13 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 self._log.info("Setting " + self.name + " readinterval: " + str(setting))
                 self._settings[key] = int(setting)
                 self.readinterval = int(setting) * 60
+                if int(setting) == 0:
+                    self.readinterval = 1
+                    time.sleep(2)
+                if self.readinterval <= 30:
+                    self.sensor.sleep(sleep=False)
+                else: self.sensor.sleep(sleep=True)
+                self._log.debug("readinterval set to : " + str(self.readinterval))
                 continue
             elif key == 'nodename':
                 self._log.info("Setting " + self.name + " nodename: " + str(setting))
