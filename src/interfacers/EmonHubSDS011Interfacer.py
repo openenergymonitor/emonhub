@@ -37,77 +37,97 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
 
         self._template_settings = {'nodename':'SDS011','readinterval':5}
         
-        self.logcols = ["timestamp","pm2.5","pm10","devid"]
-        self.readinterval = readinterval
-        self.pm_25 = 0
-        self.pm_10 = 0
-        self.devid = 0
+        ### GLOBALS ###
+        self.previous_time = time.time()
+        self.warmup_time = 15 # seconds to spin up the SDS011 before taking a reading
+        self.sensor_present = False
+        self.first_reading_done = False
+        self.sensor_waking = False
+        self.timenow = time.time()
         self.count = 0
 
-        # init the serial port
-        self._log.info("Opening SDS011 serial port: " + str(com_port) + " @ "+ str(9600) + " bits/s")
-        self.sds = SDS011(port=com_port)
-        self._log.info(self.sds)
-        self._log.info(self.logcols)
-        self.sds.set_working_period(self.readinterval) # one measurment every x minutes offers decent granularity and at least a few years of lifetime to the sensor
+        self.readinterval = readinterval * 60 # convert to seconds.
+        ### INIT COM PORT ###
+        try:
+            print("INFO: Opening sensor serial port...")
+            self.sensor = SDS011(com_port, use_query_mode=False)
+            # self.sensor.set_work_period
+            self.sensor.sleep(sleep=False) # wake the sensor just in case.
+            time.sleep(1)
+            first_reading = self.sensor.query()
+            # sensor.set_report_mode
+            self.previous_time = time.time()
+            if first_reading is not None:
+                self._log.info("COM port open and SDS011 active")
+                self._log.info("testing reading PM2.5/PM10: " + str(first_reading))
+                self.sensor_present = True
+            else:
+                self._log.error("COM port opened but sensor readings unavailable.")
+                self._log.info("Check connections or the selected COM port in settings")
+        except:
+            self._log.error("Couldn't open COM port")
 
-        if self.sds is not None:
-            self._ser = True
-        else:
-            self._log.error("Serial port failed to open.")
-            self._ser = False
-
-        
-       
-
-        # Open serial port
-        # self._ser = self._open_serial_port(com_port, 9600, self.readinterval)      
-        
-
-    # def close(self):
-    #     """Close serial port"""
-        
-    #     # Close serial port
-    #     if self._ser is not None:
-
-    # def _open_serial_port(self, com_port, baudrate, readinterval):
-    #     """Open serial port"""
-        
-        
-    #     return s
+    def close(self):
+        self._log.error("no closing script")
 
     def read(self):
         """Read data and process"""
 
-        if not self._ser: return False
+        if not self.sensor_present: return False
         
-        meas = self.sds.read_measurement()
-        vals = [str(meas.get(k)) for k in self.logcols]
+        self.timenow = time.time()
+        
+        # readings = [0.0,0.0]
 
-        # Valid packet header
-        if vals is not None:
-        
-            self.pm_25 = vals[1]
-            self.pm_10 = vals[2]
-            self.devid = vals[3]
+        if self.first_reading_done is False:
+            if self.timenow >= (self.previous_time + self.warmup_time): # 15 seconds warmup for first reading, just in case.
+                self.previous_time = self.timenow
+                readings = self.sensor.query()
+                readings = list(readings)
+                self._log.debug("First readings:" + str(readings))
+                if self.readinterval:
+                    self.sensor.sleep()
+                    self._log.debug("Sensor put to sleep")
+                self.first_reading_done = True
+                self.count += 1
+                # create a new cargo object, set data values
+                c = Cargo.new_cargo()
+                c.nodeid = self._settings['nodename']
+                c.names = ["pm_2.5","pm_10","msg"]
+                c.realdata = [readings[0],readings[1],self.count]
+                return c 
+
+        if self.timenow >= (self.previous_time + self.readinterval):
+            self.previous_time = self.timenow
+            readings = self.sensor.query()
+            readings = list(readings)
+            self._log.debug("Readings:" + str(readings))
+            if self.readinterval:
+                self.sensor.sleep()
+                self._log.debug("Sensor returned to sleep")
+            self.sensor_waking=False
             self.count += 1
-
-            self._log.debug("PM2.5 : "+str(self.pm_25)+"μg/m³     PM10 : "+str(self.pm_10)+"μg/m³")
-
             # create a new cargo object, set data values
             c = Cargo.new_cargo()
             c.nodeid = self._settings['nodename']
-            c.names = ["pm_2.5","pm_10","msg","devID"]
-            c.realdata = [self.pm_25,self.pm_10,self.count,self.devid]
-            return c            
-            
+            c.names = ["pm_2.5","pm_10","msg"]
+            c.realdata = [readings[0],readings[1],self.count]
+            return c 
+        elif self.timenow >= (self.previous_time + self.readinterval - self.warmup_time):
+            if self.sensor_waking:
+                return False    
+            self.sensor.sleep(sleep=False)
+            self._log.debug("Sensor warming up... 15s until reading")
+            self.sensor_waking=True
+            return False
+    
+
         # nothing to return
         return False
+        
 
     def set(self, **kwargs):
-        """
-
-        """
+        """ Runtime Settings """
 
         for key, setting in self._template_settings.items():
             # Decide which setting value to use
@@ -120,8 +140,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
             elif key == 'readinterval':
                 self._log.info("Setting " + self.name + " readinterval: " + str(setting))
                 self._settings[key] = int(setting)
-                self.sds.set_working_period(int(setting))
-                # self._log.info(self.sds)
+                self.readinterval = int(setting) * 60
                 continue
             elif key == 'nodename':
                 self._log.info("Setting " + self.name + " nodename: " + str(setting))
