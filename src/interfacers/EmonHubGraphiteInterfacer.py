@@ -98,7 +98,7 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
         try:
             sock = socket.socket()
             sock.connect((host, port))
-            sock.sendall(message)
+            sock.sendall(message.encode())
             sock.close()
         except socket.error as e:
             self._log.error(e)
