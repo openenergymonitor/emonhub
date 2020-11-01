@@ -2,15 +2,16 @@ import time
 import json
 import datetime
 import Cargo
+import re
 from . import EmonHubSerialInterfacer as ehi
 
-"""class EmonHubSF2Interfacer
+"""class EmonHubOEMInterfacer
 
 Monitors the serial port for data from 'Serial Format 2' type devices
 
 """
 
-class EmonHubSF2Interfacer(ehi.EmonHubSerialInterfacer):
+class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
 
     def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=38400):
         """Initialize Interfacer
@@ -29,7 +30,7 @@ class EmonHubSF2Interfacer(ehi.EmonHubSerialInterfacer):
         # self._ser.flushInput()
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h'})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': 'test'})
         
         self._settings_map = {'g':'group','i':'baseid','b':'frequency','d':'period','k0':'vcal','k1':'ical1','k2':'ical2','k3':'ical3','k4':'ical4','f':'acfreq','m1':'m1','t0':'t0'}
         self._settings_map_inv = dict(map(reversed, self._settings_map.items()))
@@ -94,7 +95,6 @@ class EmonHubSF2Interfacer(ehi.EmonHubSerialInterfacer):
             self._log.debug(f)
             return
         
-        
         # Handle settings
         fp = f.split(' ')
         if len(fp)==1:
@@ -119,35 +119,83 @@ class EmonHubSF2Interfacer(ehi.EmonHubSerialInterfacer):
             
         # Save raw packet to new cargo object
         c = Cargo.new_cargo(rawdata=f)
+        c.names = []
+        c.realdata = []
 
-        # Convert single string to list of string values
-        f = f.split(' ')
-
-        # Strip leading 'OK' from frame if needed
-        if f[0] == 'OK':
-            f = f[1:]
-
-        # Extract RSSI value if it's available
-        if f[-1].startswith('(') and f[-1].endswith(')'):
-            r = f[-1][1:-1]
+        # Is the data in json format?
+        if f[0]=="{" or f[0]=="[":
             try:
-                c.rssi = int(r)
+                json_data = json.loads(f)
+                for key in json_data:
+                    value = float(json_data[key])
+                    c.names.append(key)
+                    c.realdata.append(value)
+                self._settings['datacode'] = False
+            except ValueError as e:
+               self._log.error("Invalid JSON: "+f)
+               return
+            if len(c.realdata) == 0:
+                return 
+            if self._settings["nodename"] != "":
+                c.nodename = self._settings["nodename"]
+                c.nodeid = self._settings["nodename"]
+        
+        # Is the data in key:value format?
+        # power1:100,power2:200
+        elif ":" in f and "," in f:
+            for item in f.split(','):
+                parts = item.split(':')
+                if len(parts) == 2:
+                    # check for alphanumeric input name
+                    if re.match(r'^[\w-]+$', parts[0]):
+                        # check for numeric value
+                        try:
+                            value = float(parts[1])
+                            c.names.append(parts[0])
+                            c.realdata.append(value)
+                        except Exception:
+                            self._log.debug("input value is not numeric: %s", parts[1])      
+                    else:
+                        self._log.debug("invalid input name: %s", parts[0])
+            if len(c.realdata) == 0:
+                return 
+            if self._settings["nodename"] != "":
+                c.nodename = self._settings["nodename"]
+                c.nodeid = self._settings["nodename"]
+            # Do not try and decode
+            self._settings['datacode'] = False
+            
+        # Assume binary format
+        # OK 5 0 0 0 0 0 0 134 91 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 (-0)
+        else:
+            # Convert single string to list of string values
+            f = f.split(' ')
+
+            # Strip leading 'OK' from frame if needed
+            if f[0] == 'OK':
+                f = f[1:]
+
+            # Extract RSSI value if it's available
+            if f[-1].startswith('(') and f[-1].endswith(')'):
+                r = f[-1][1:-1]
+                try:
+                    c.rssi = int(r)
+                except ValueError:
+                    self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
+                    return
+                f = f[:-1]
+
+            try:
+                # Extract node id from frame
+                c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
             except ValueError:
-                self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
                 return
-            f = f[:-1]
 
-        try:
-            # Extract node id from frame
-            c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
-        except ValueError:
-            return
-
-        try:
-            # Store data as a list of integer values
-            c.realdata = [int(i) for i in f[1:]]
-        except ValueError:
-            return
+            try:
+                # Store data as a list of integer values
+                c.realdata = [int(i) for i in f[1:]]
+            except ValueError:
+                return
 
         return c
 

@@ -3,7 +3,7 @@ __all__ = [
     "EmonHubSocketInterfacer",
     "EmonHubSerialInterfacer",
     "EmonHubJeeInterfacer",
-    "EmonHubSF2Interfacer",
+    "EmonHubOEMInterfacer",
     "EmonHubPacketGenInterfacer",
     "EmonHubEmoncmsHTTPInterfacer",
     "EmonHubMqttInterfacer",
