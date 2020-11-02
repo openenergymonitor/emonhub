@@ -151,7 +151,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 self._settings[key] = int(setting)
                 self.readinterval = int(setting) * 60
                 if int(setting) == 0:
-                    self.readinterval = 1
+                    self.readinterval = 5 # fastest interval is 5 seconds.
                 self._log.debug("SDS011 readinterval set to : " + str(self.readinterval))
                 continue
             elif key == 'nodename':
