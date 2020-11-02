@@ -244,6 +244,10 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
                 else:
                     self._settings[key] = " %.2f 0.00" % float(kwargs[key])
                 self.update_if_changed(key)
+        
+        if "cmd" in kwargs:
+            self._log.debug(kwargs["cmd"])
+        
                     
         self._last_settings = self._settings.copy()
 
