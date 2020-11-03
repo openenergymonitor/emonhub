@@ -80,56 +80,58 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         
         self.timenow = time.time()
         
-        if self.first_reading_done is False:
-            if self.timenow >= (self.previous_time + self.warmup_time): # 15 seconds warmup for first reading, just in case.
-                self.first_reading_done = True
+        try:
+            if self.first_reading_done is False:
+                if self.timenow >= (self.previous_time + self.warmup_time): # 15 seconds warmup for first reading, just in case.
+                    self.first_reading_done = True
+                    self.previous_time = self.timenow
+                    readings = self.sensor.query()
+                    self._log.debug("First readings:" + str(readings))
+                    if readings is not None:
+                        readings = list(readings)
+                    else: return False
+                    self.count += 1
+                    if self.readinterval > 30:
+                        self.sensor.sleep()
+                        self._log.debug("Sensor put to sleep")
+                    # create a new cargo object, set data values
+                    c = Cargo.new_cargo()
+                    c.nodeid = self._settings['nodename']
+                    c.names = ["pm_25","pm_10","msg"]
+                    c.realdata = [readings[0],readings[1],self.count]
+                    self._log.info("SDS011 First Cargo : " + str(c.realdata))
+                    return c
+
+            if self.timenow >= (self.previous_time + self.readinterval):
+                if (self.previous_time + self.readinterval) >= self.timenow:
+                    self.sensor.sleep(sleep=False)
+                    time.sleep(1)
                 self.previous_time = self.timenow
                 readings = self.sensor.query()
-                self._log.debug("First readings:" + str(readings))
-                if readings is not None:
-                    readings = list(readings)
+                if readings is not None: readings = list(readings)
                 else: return False
-                self.count += 1
-                if self.readinterval > 30:
+                self._log.debug("READINGS:" + str(readings))
+                if self.readinterval >= 30:
                     self.sensor.sleep()
-                    self._log.debug("Sensor put to sleep")
+                    self._log.debug("Sensor returned to sleep")
+                self.sensor_waking=False
+                self.count += 1
                 # create a new cargo object, set data values
                 c = Cargo.new_cargo()
                 c.nodeid = self._settings['nodename']
                 c.names = ["pm_25","pm_10","msg"]
                 c.realdata = [readings[0],readings[1],self.count]
-                self._log.info("SDS011 First Cargo : " + str(c.realdata))
-                return c
-
-        if self.timenow >= (self.previous_time + self.readinterval):
-            if (self.previous_time + self.readinterval) >= self.timenow:
+                self._log.info("SDS011 Cargo : " + str(c.realdata))
+                return c 
+            elif self.timenow >= (self.previous_time + self.readinterval - self.warmup_time):
+                if (self.sensor_waking == True) or (self.readinterval <= 30):
+                    return False    
                 self.sensor.sleep(sleep=False)
-                time.sleep(1)
-            self.previous_time = self.timenow
-            readings = self.sensor.query()
-            if readings is not None: readings = list(readings)
-            else: return False
-            self._log.debug("READINGS:" + str(readings))
-            if self.readinterval >= 30:
-                self.sensor.sleep()
-                self._log.debug("Sensor returned to sleep")
-            self.sensor_waking=False
-            self.count += 1
-            # create a new cargo object, set data values
-            c = Cargo.new_cargo()
-            c.nodeid = self._settings['nodename']
-            c.names = ["pm_25","pm_10","msg"]
-            c.realdata = [readings[0],readings[1],self.count]
-            self._log.info("SDS011 Cargo : " + str(c.realdata))
-            return c 
-        elif self.timenow >= (self.previous_time + self.readinterval - self.warmup_time):
-            if (self.sensor_waking == True) or (self.readinterval <= 30):
-                return False    
-            self.sensor.sleep(sleep=False)
-            self._log.debug("Sensor warming up... 15s until reading")
-            self.sensor_waking=True
-            return False
-
+                self._log.debug("Sensor warming up... 15s until reading")
+                self.sensor_waking=True
+                return False
+        except:
+            self._log.debug("An exceptional SDS011 exception has occurred!")
 
         # nothing to return
         return False
