@@ -32,22 +32,22 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         # Initialize settings
         self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': 'test'})
         
-        self._settings_map = {'g':'group','i':'baseid','b':'frequency','d':'period','k0':'vcal','k1':'ical1','k2':'ical2','k3':'ical3','k4':'ical4','f':'acfreq','m1':'m1','t0':'t0'}
-        self._settings_map_inv = dict(map(reversed, self._settings_map.items()))
+        self._config_map = {'g':'group','i':'baseid','b':'frequency','d':'period','k0':'vcal','k1':'ical1','k2':'ical2','k3':'ical3','k4':'ical4','f':'acfreq','m1':'m1','t0':'t0','a':'Vrms'}
+        self._config_map_inv = dict(map(reversed, self._config_map.items()))
         
-        self._last_settings = {}
+        self._last_config = {}
+        self._config = {}
+        
+        self._config_format = "new"
 
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
         self._settings.update(self._defaults)
         
-        self._log.debug("Settings request")
-        self._ser.write(b"l")
-
-    def send_cal(self,cmd):
-        self._ser.write((cmd+"\n").encode());
-
+        self._first_data_packet_received = False
+        
+              
     def add(self, cargo):
         """Append data to buffer.
 
@@ -59,12 +59,103 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         txc = self._process_tx(cargo)
         self.send(txc)
 
+
+    def pre_process_data_format(self, f):
+        """Pre process data
+        
+        checks for valid data format, returns pre-processed data
+
+        """
+
+        c = Cargo.new_cargo(rawdata=f)
+        c.names = []
+        c.realdata = []        
+
+        # Fetch default nodename from settings
+        if self._settings["nodename"] != "":
+            c.nodename = self._settings["nodename"]
+            c.nodeid = self._settings["nodename"]
+        
+        # -------------------------------------------------------------------
+        # JSON FORMAT e.g {"power1":100,"power2":200}
+        # -------------------------------------------------------------------
+        # Start with a quick check for the expected starting character
+        if f[0]=="{" or f[0]=="[":
+            try:                                        # Attempt to decode json
+                json_data = json.loads(f)
+                for name in json_data:
+                    if re.match(r'^[\w-]+$', name):     # only alpha-numeric input names
+                        c.realdata.append(float(json_data[name])) # check that value is numeric
+                        c.names.append(name)
+                    # else:
+                    #     self._log.debug("invalid input name: %s" % kv[0])
+            except ValueError as e:
+                # self._log.debug("Invalid JSON: "+f)
+                return False
+            self._settings['datacode'] = False          # Disable further attempt at data decode
+        # -------------------------------------------------------------------
+        # KEY:VALUE FORMAT e.g power1:100,power2:200
+        # -------------------------------------------------------------------
+        elif ":" in f:
+            for kv_str in f.split(','):
+                kv = kv_str.split(':')
+                if len(kv) == 2:
+                    if re.match(r'^[\w-]+$', kv[0]):
+                        if len(kv[1])>0:
+                            try:
+                                c.realdata.append(float(kv[1]))
+                                c.names.append(kv[0])
+                            except Exception:
+                                # self._log.debug("input value is not numeric: %s" % kv[1])   
+                                return False   
+                    else:
+                        # self._log.debug("invalid input name: %s" % kv[0])
+                        return False
+            self._settings['datacode'] = False          # Disable further attempt at data decode               
+        # -------------------------------------------------------------------
+        # BINARY FORMAT e.g OK 5 0 0 0 0 (-0)'
+        # -------------------------------------------------------------------
+        elif " " in f:
+            # Split string by space
+            ssv = f.split(' ')
+            # Strip leading 'OK' from frame if needed
+            if ssv[0] == 'OK':
+                ssv = ssv[1:]
+            # Extract RSSI value if it's available
+            if ssv[-1].startswith('(') and ssv[-1].endswith(')'):
+                r = ssv[-1][1:-1]
+                try:
+                    c.rssi = int(r)
+                except ValueError:
+                    #self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
+                    return False
+                ssv = ssv[:-1]
+            # Extract node id from frame
+            try:
+                c.nodeid = int(ssv[0]) + int(self._settings['nodeoffset'])
+            except ValueError:
+                return False
+            # Store data as a list of integer values
+            try:
+                c.realdata = [int(i) for i in ssv[1:]]
+            except ValueError:
+                return False
+                
+        if len(c.realdata) == 0:
+            return False
+            
+        # If we are here the data is valid and processed
+        return c
+
     def read(self):
         """Read data from serial port and process if complete line received.
 
         Return data as a list: [NodeID, val1, val2]
 
         """
+        
+        if not self._ser:
+            return
 
         # Read serial RX
         try:
@@ -78,7 +169,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
 
         # Remove CR,LF.
         f = self._rx_buf[:-2].strip()
-
+        
         # Reset buffer
         self._rx_buf = ''
 
@@ -89,123 +180,94 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
             #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
             return
         
-        # Handle debug
-        if f[0] == '|':
-            f = f[1:]
-            self._log.debug(f)
-            return
+        # Check for valid data format (json, keyval, binary) and pre-process into cargo if valid
+        c = self.pre_process_data_format(f)
         
-        # Handle settings
+        # If valid data
+        if c:
+            # Discard first data packet and send configuration
+            if not self._first_data_packet_received:
+                self._first_data_packet_received = True
+                self.update_all()
+                return
+            else: 
+                return c
+        
+        self._log.debug(f)
+        
+        """
+        # Handle config
         fp = f.split(' ')
         if len(fp)==1:
             id = f[0]
         elif len(fp)>1:
             id = fp[0]
         
-        # If the received key resides in the settings map (e.g b for frequency) 
-        # check if the settings value matches the value sent from the hardware unit
+        # If the received key resides in the config map (e.g b for frequency) 
+        # check if the config value matches the value sent from the hardware unit
         # if they do not match then attempt to fix the calibration value
         # Sending the value will trigger a further confirmation reply which is checked here again
-        if id in self._settings_map:
-            key = self._settings_map[id]
-            if key in self._settings:
-                cmd = "%s%s" % (id,self._settings[key])
+        if id in self._config_map:
+            key = self._config_map[id]
+            if key in self._config:
+                cmd = "%s%s" % (id,self._config[key])
                 if f == cmd:
                     self._log.debug(key+" correct: "+cmd)
                 else:
-                    self.send_cal(cmd) 
+                    self.send_cal(key,cmd) 
                     self._log.debug(key+" updated: "+cmd)
             return
-            
-        # Save raw packet to new cargo object
-        c = Cargo.new_cargo(rawdata=f)
-        c.names = []
-        c.realdata = []
-
-        # Is the data in json format?
-        if f[0]=="{" or f[0]=="[":
-            try:
-                json_data = json.loads(f)
-                for key in json_data:
-                    value = float(json_data[key])
-                    c.names.append(key)
-                    c.realdata.append(value)
-                self._settings['datacode'] = False
-            except ValueError as e:
-               self._log.error("Invalid JSON: "+f)
-               return
-            if len(c.realdata) == 0:
-                return 
-            if self._settings["nodename"] != "":
-                c.nodename = self._settings["nodename"]
-                c.nodeid = self._settings["nodename"]
+        """
         
-        # Is the data in key:value format?
-        # power1:100,power2:200
-        elif ":" in f and "," in f:
-            for item in f.split(','):
-                parts = item.split(':')
-                if len(parts) == 2:
-                    # check for alphanumeric input name
-                    if re.match(r'^[\w-]+$', parts[0]):
-                        # check for numeric value
-                        try:
-                            value = float(parts[1])
-                            c.names.append(parts[0])
-                            c.realdata.append(value)
-                        except Exception:
-                            self._log.debug("input value is not numeric: %s", parts[1])      
-                    else:
-                        self._log.debug("invalid input name: %s", parts[0])
-            if len(c.realdata) == 0:
-                return 
-            if self._settings["nodename"] != "":
-                c.nodename = self._settings["nodename"]
-                c.nodeid = self._settings["nodename"]
-            # Do not try and decode
-            self._settings['datacode'] = False
-            
-        # Assume binary format
-        # OK 5 0 0 0 0 0 0 134 91 0 0 0 0 0 0 0 0 0 0 0 0 1 0 0 0 0 0 0 0 0 0 0 0 (-0)
+        return
+        
+    def send_cmd(self,cmd):
+        self._ser.write((cmd+"\n").encode());
+        # Wait for reply
+        rx_buf = ""
+        start = time.time()       
+        while (time.time()-start)<1.0:
+            rx_buf = rx_buf + self._ser.readline().decode()
+            if '\r\n' in rx_buf:
+                return rx_buf.strip()
+        return False
+
+    def check_config_format(self):
+        self._config_format = "new"
+        if self.send_cmd("4v"):
+            self._config_format = "old"
+        self._log.debug("Config format: "+self._config_format)
+        if self._config_format=="new": time.sleep(2.1)
+
+    def send_config(self,key,cmd):
+        reply = self.send_cmd(cmd)
+        if reply:
+            self._log.debug("CONFIG SET:"+key.ljust(12,' ')+" cmd:"+cmd.ljust(15,' ')+" reply:"+reply)
         else:
-            # Convert single string to list of string values
-            f = f.split(' ')
+            self._log.error("CONFIG FAIL: "+key+" cmd: "+cmd+" (no reply)")
+        
 
-            # Strip leading 'OK' from frame if needed
-            if f[0] == 'OK':
-                f = f[1:]
-
-            # Extract RSSI value if it's available
-            if f[-1].startswith('(') and f[-1].endswith(')'):
-                r = f[-1][1:-1]
-                try:
-                    c.rssi = int(r)
-                except ValueError:
-                    self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
-                    return
-                f = f[:-1]
-
-            try:
-                # Extract node id from frame
-                c.nodeid = int(f[0]) + int(self._settings['nodeoffset'])
-            except ValueError:
-                return
-
-            try:
-                # Store data as a list of integer values
-                c.realdata = [int(i) for i in f[1:]]
-            except ValueError:
-                return
-
-        return c
-
+    def update_all(self):
+        # Send all available configuration
+        self._log.debug("---------------------------------------------------------------------")
+        self.check_config_format()
+        for key in self._config:
+            if self._config_format=="new":
+                cmd = self._config_map_inv[key]+str(self._config[key])
+            else: 
+                cmd = str(self._config[key])+self._config_map_inv[key]
+            self.send_config(key,cmd)
+        self._log.debug("---------------------------------------------------------------------")
+            
     def update_if_changed(self,key):
         # has the setting updated
-        if key in self._last_settings:
-            if self._last_settings[key] != self._settings[key]:
-                cmd = self._settings_map_inv[key]+str(self._settings[key])
-                self._log.debug(key+" updated "+cmd)
-                self.send_cal(cmd)
+        if key in self._last_config:
+            if self._last_config[key] != self._config[key]:
+                if self._config_format=="new":
+                    cmd = self._config_map_inv[key]+str(self._config[key])
+                else: 
+                    cmd = str(self._config[key])+self._config_map_inv[key]
+                self.send_config(key,cmd)
 
     def set(self, **kwargs):
         
@@ -215,41 +277,41 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
                 self._settings[key] = kwargs[key]
                 
         if "group" in kwargs:
-            self._settings["group"] = int(kwargs["group"])
+            self._config["group"] = int(kwargs["group"])
             self.update_if_changed("group")
                 
         if "frequency" in kwargs:
-            self._settings["frequency"] = int(kwargs["frequency"])
+            self._config["frequency"] = int(kwargs["frequency"])
             self.update_if_changed("frequency")
                     
         if "baseid" in kwargs:
-            self._settings["baseid"] = int(kwargs["baseid"])
+            self._config["baseid"] = int(kwargs["baseid"])
             self.update_if_changed("baseid")
             
         if "period" in kwargs:
-            self._settings["period"] = float(kwargs["period"])
+            self._config["period"] = float(kwargs["period"])
             self.update_if_changed("period")
                     
         if "vcal" in kwargs:
-            self._settings["vcal"] = " %.2f 0.00" % float(kwargs["vcal"])
+            self._config["vcal"] = " %.2f 0.00" % float(kwargs["vcal"])
             self.update_if_changed("vcal")
             
         # up to 4 ical channels    
-        for ch in range(1,4):
+        for ch in range(1,5):
             key = "ical"+str(ch)
             if key in kwargs:
                 if isinstance(kwargs[key],list):
                     if len(kwargs[key])==2:
-                        self._settings[key] = " %.2f %.2f" % (float(kwargs[key][0]),float(kwargs[key][1]))
+                        self._config[key] = " %.2f %.2f" % (float(kwargs[key][0]),float(kwargs[key][1]))
                 else:
-                    self._settings[key] = " %.2f 0.00" % float(kwargs[key])
+                    self._config[key] = " %.2f 0.00" % float(kwargs[key])
                 self.update_if_changed(key)
         
-        if "cmd" in kwargs:
-            self._log.debug(kwargs["cmd"])
+        #if "cmd" in kwargs:
+        #    self._log.debug(kwargs["cmd"])
         
                     
-        self._last_settings = self._settings.copy()
+        self._last_config = self._config.copy()
 
     def action(self):
         """Actions that need to be done on a regular basis.
