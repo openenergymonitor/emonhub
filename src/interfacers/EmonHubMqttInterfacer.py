@@ -181,7 +181,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 if 'rssi' in frame:
                     payload = payload + "," + str(frame['rssi'])
 
-                self._log.info("Publishing 'node' msg")
+                self._log.info("Publishing 'node' formatted msg")
                 self._log.debug("Publishing: %s %s", topic, payload)
                 result = self._mqttc.publish(topic, payload=payload, qos=2, retain=False)
 

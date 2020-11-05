@@ -70,7 +70,8 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
 
 
     def close(self):
-        self._log.error("no closing script")
+        """close interfacer"""
+        return
 
 
     def read(self):
@@ -155,6 +156,12 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 if int(setting) == 0:
                     self.readinterval = 5 # fastest interval is 5 seconds.
                 self._log.debug("SDS011 readinterval set to : " + str(self.readinterval))
+                self.previous_time = time.time()
+                self.first_reading_done = False
+                try:
+                    self.sensor.sleep(sleep=False)
+                except:
+                    self._log.debug("Failed waking sensor.")
                 continue
             elif key == 'nodename':
                 self._log.info("Setting " + self.name + " nodename: " + str(setting))
