@@ -178,6 +178,7 @@ class EmonHub:
                     self._log.info("Logging max file size set to %d bytes", handler.maxBytes)
 
         # Interfacers
+        interfacers_to_delete = []
         for name in self._interfacers:
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
             # (This also provides an ability to delete & rebuild by commenting 'Type' in conf)
@@ -197,6 +198,9 @@ class EmonHub:
             # Delete interfacers if setting changed or name is unlisted or Type is missing
             self._log.info("Deleting interfacer '%s'", name)
             self._interfacers[name].stop = True
+            interfacers_to_delete.append(name)
+       
+        for name in interfacers_to_delete:
             del self._interfacers[name]
 
         for name, I in settings['interfacers'].items():
