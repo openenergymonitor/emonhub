@@ -1,7 +1,6 @@
 # -*- coding: UTF-8 -*-
 
 import time, Cargo, serial, struct
-from sds011 import SDS011
 from emonhub_interfacer import EmonHubInterfacer
 
 """
@@ -32,6 +31,12 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         """Initialize Interfacer"""
         # Initialization
         super(EmonHubSDS011Interfacer, self).__init__(name)
+        
+        # Only load module if it is installed        
+        try: 
+            from sds011 import SDS011
+        except ModuleNotFoundError as err:
+            self._log.error(err)
 
         self._settings.update(self._defaults)
 
@@ -49,7 +54,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         
         ### INIT COM PORT ###
         try:
-            print("INFO: Opening sensor serial port...")
+            self._log.info("INFO: Opening sensor serial port...")
             self.sensor = SDS011(com_port, use_query_mode=True)
             self.sensor.set_work_period(read=False, work_time=0)
             # self.sensor.set_work_period
@@ -150,12 +155,12 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'readinterval':
-                self._log.info("Setting " + self.name + " readinterval: " + str(setting))
+                self._log.info("Setting " + self.name + " readinterval: " + str(setting) + " minutes")
                 self._settings[key] = int(setting)
                 self.readinterval = int(setting) * 60
                 if int(setting) == 0:
                     self.readinterval = 5 # fastest interval is 5 seconds.
-                self._log.debug("SDS011 readinterval set to : " + str(self.readinterval))
+                self._log.debug("SDS011 readinterval set to : " + str(self.readinterval) + "s")
                 self.previous_time = time.time()
                 self.first_reading_done = False
                 try:
