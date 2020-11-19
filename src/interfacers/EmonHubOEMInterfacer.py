@@ -179,7 +179,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         if f[0] == '\x01':
             #self._log.debug("Ignoring frame consisting of SOH character" + str(f))
             return
-        
+                    
         # Check for valid data format (json, keyval, binary) and pre-process into cargo if valid
         c = self.pre_process_data_format(f)
         
@@ -194,6 +194,15 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
                 return c
         
         self._log.debug(f)
+
+        # Enable online calibration for EmonTx
+        if f=="'+++' then [Enter] for config mode":
+            # special silent version that does not print helptext
+            self._ser.write("++s\r\n".encode())
+            time.sleep(0.1)
+            self._ser.write("k\r\n".encode())
+            time.sleep(0.1)
+            self._ser.write("x\r\n".encode())
         
         """
         # Handle config
