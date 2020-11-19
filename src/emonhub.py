@@ -169,12 +169,12 @@ class EmonHub:
         if 'log_backup_count' in settings['hub']:
             for handler in self._log.handlers:
                 if isinstance(handler, logging.handlers.RotatingFileHandler):
-                    handler.backupCount = settings['hub']['log_backup_count']
+                    handler.backupCount = int(settings['hub']['log_backup_count'])
                     self._log.info("Logging backup count set to %d", handler.backupCount)
         if 'log_max_bytes' in settings['hub']:
             for handler in self._log.handlers:
                 if isinstance(handler, logging.handlers.RotatingFileHandler):
-                    handler.maxBytes = settings['hub']['log_max_bytes']
+                    handler.maxBytes = int(settings['hub']['log_max_bytes'])
                     self._log.info("Logging max file size set to %d bytes", handler.maxBytes)
 
         # Interfacers
