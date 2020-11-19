@@ -3,103 +3,148 @@
 import time, Cargo, serial, struct
 from emonhub_interfacer import EmonHubInterfacer
 
-"""class EmonHubTemplateInterfacer
+"""
+class EmonHubSDS011Interfacer
 
-Template interfacer for use in development
+$ sudo pip3 install sds011
+https://pypi.org/project/sds011/
+
+[interfacers]
+### This interfacer sets up and manages the SDS011 dust sensor.
+[[SDS011]]
+     Type = EmonHubSDS011Interfacer
+      [[[init_settings]]]
+           # default com port if using USB to UART adapter
+           com_port = /dev/ttyUSB0
+      [[[runtimesettings]]]
+           # one measurment every few minutes offers decent granularity and at least a few years of lifetime to the sensor
+           # a value of 0 for a reading every second.
+           readinterval = 5
+           nodename = SDS011
+           pubchannels = ToEmonCMS,
 
 """
 
 class EmonHubSDS011Interfacer(EmonHubInterfacer):
 
-    def __init__(self, name, serial_port='/dev/ttyUSB0'):
-        """Initialize Interfacer
-        
-        """
+    def __init__(self, name, com_port="", readinterval=5):
+        """Initialize Interfacer"""
         # Initialization
         super(EmonHubSDS011Interfacer, self).__init__(name)
+        
+        # Only load module if it is installed        
+        try: 
+            from sds011 import SDS011
+        except ModuleNotFoundError as err:
+            self._log.error(err)
 
         self._settings.update(self._defaults)
 
-        self._template_settings = {'nodename':'SDS011','readinterval':10.0}
-
-        # Open serial port
-        self._ser = self._open_serial_port(serial_port, 9600)
-
-        self.byte, self.lastbyte = "\x00", "\x00"
-        self.pm_25_sum = 0
-        self.pm_10_sum = 0
+        self._template_settings = {'nodename':'SDS011','readinterval':5}
+        
+        ### GLOBALS ###
+        self.previous_time = time.time()
+        self.warmup_time = 15 # seconds to spin up the SDS011 before taking a reading
+        self.sensor_present = False
+        self.first_reading_done = False
+        self.sensor_waking = False
+        self.timenow = time.time()
         self.count = 0
-        self.lasttime = time.time()
+        self.readinterval = readinterval * 60 # convert to seconds.
+        
+        ### INIT COM PORT ###
+        try:
+            self._log.info("INFO: Opening sensor serial port...")
+            self.sensor = SDS011(com_port, use_query_mode=True)
+            self.sensor.set_work_period(read=False, work_time=0)
+            # self.sensor.set_work_period
+            self.sensor.sleep(sleep=False) # wake the sensor just in case.
+            time.sleep(2)
+            first_reading = self.sensor.query()
+            # sensor.set_report_mode
+            self.previous_time = time.time()
+            if first_reading is not None:
+                self._log.info("COM port open and SDS011 active")
+                self._log.info("testing reading PM2.5/PM10: " + str(first_reading))
+                self.sensor_present = True
+            else:
+                self._log.error("COM port opened but sensor readings unavailable.")
+                self._log.info("Check connections or the selected COM port in settings")
+        except:
+            self._log.error("Couldn't open COM port")
+
 
     def close(self):
-        """Close serial port"""
-        
-        # Close serial port
-        if self._ser is not None:
-            self._log.debug("Closing serial port")
-            self._ser.close()
+        """close interfacer"""
+        return
 
-    def _open_serial_port(self, serial_port, baudrate):
-        """Open serial port"""
-        
-        try:
-            s = serial.Serial(serial_port, baudrate, stopbits=1, parity="N", timeout=2)
-            s.flushInput()
-            self._log.debug("Opening serial port: " + str(serial_port) + " @ "+ str(baudrate) + " bits/s")
-        except serial.SerialException as e:
-            self._log.error(e)
-            s = False
-        return s
 
     def read(self):
-        """Read data and process
-        
-        """
-        if not self._ser: return False
-        
-        self.lastbyte = self.byte
-        self.byte = self._ser.read(size=1)
-        
-        # Valid packet header
-        if self.lastbyte == b"\xaa" and self.byte == b"\xc0":
-        
-            sentence = self._ser.read(size=8) # Read 8 more bytes
-            readings = struct.unpack('<hhxxcc',sentence) # Decode the packet - big endian, 2 shorts for pm2.5 and pm10, 2 reserved bytes, checksum, message tail
-            
-            pm_25 = readings[0]/10.0
-            pm_10 = readings[1]/10.0
-            
-            # self._log.debug("PM 2.5:"+str(pm_25)+"μg/m^3  PM 10:"+str(pm_10)+"μg/m^3")
+        '''Read data and process'''
 
-            self.pm_25_sum += pm_25
-            self.pm_10_sum += pm_10
-            self.count = self.count + 1
+        if not self.sensor_present: return False
+        
+        self.timenow = time.time()
+        
+        try:
+            if self.first_reading_done is False:
+                if self.timenow >= (self.previous_time + self.warmup_time): # 15 seconds warmup for first reading, just in case.
+                    self.first_reading_done = True
+                    self.previous_time = self.timenow
+                    readings = self.sensor.query()
+                    self._log.debug("First readings:" + str(readings))
+                    if readings is not None:
+                        readings = list(readings)
+                    else: return False
+                    self.count += 1
+                    if self.readinterval > 30:
+                        self.sensor.sleep()
+                        self._log.debug("Sensor put to sleep")
+                    # create a new cargo object, set data values
+                    c = Cargo.new_cargo()
+                    c.nodeid = self._settings['nodename']
+                    c.names = ["pm_25","pm_10","msg"]
+                    c.realdata = [readings[0],readings[1],self.count]
+                    self._log.info("SDS011 First Cargo : " + str(c.realdata))
+                    return c
 
-        # Average over 10 seconds
-        if (time.time()-self.lasttime)>=self._settings['readinterval']:
-            self.lasttime = time.time()
-            if self.count>0:
-                pm_25 = round(self.pm_25_sum/self.count,3)
-                pm_10 = round(self.pm_10_sum/self.count,3)
-                self.pm_25_sum = 0
-                self.pm_10_sum = 0
-                self.count = 0
-                self._log.debug("PM 2.5:"+str(pm_25)+"μg/m^3  PM 10:"+str(pm_10)+"μg/m^3")
-
+            if self.timenow >= (self.previous_time + self.readinterval):
+                if (self.previous_time + self.readinterval) >= self.timenow:
+                    self.sensor.sleep(sleep=False)
+                    time.sleep(1)
+                self.previous_time = self.timenow
+                readings = self.sensor.query()
+                if readings is not None: readings = list(readings)
+                else: return False
+                self._log.debug("READINGS:" + str(readings))
+                if self.readinterval >= 30:
+                    self.sensor.sleep()
+                    self._log.debug("Sensor returned to sleep")
+                self.sensor_waking=False
+                self.count += 1
                 # create a new cargo object, set data values
                 c = Cargo.new_cargo()
                 c.nodeid = self._settings['nodename']
-                c.names = ["pm_25","pm_10"]
-                c.realdata = [pm_25,pm_10]
-                return c
-            
+                c.names = ["pm_25","pm_10","msg"]
+                c.realdata = [readings[0],readings[1],self.count]
+                self._log.info("SDS011 Cargo : " + str(c.realdata))
+                return c 
+            elif self.timenow >= (self.previous_time + self.readinterval - self.warmup_time):
+                if (self.sensor_waking == True) or (self.readinterval <= 30):
+                    return False    
+                self.sensor.sleep(sleep=False)
+                self._log.debug("Sensor warming up... 15s until reading")
+                self.sensor_waking=True
+                return False
+        except:
+            self._log.debug("An exceptional SDS011 exception has occurred!")
+
         # nothing to return
         return False
+        
 
     def set(self, **kwargs):
-        """
-
-        """
+        """ Runtime Settings """
 
         for key, setting in self._template_settings.items():
             # Decide which setting value to use
@@ -110,8 +155,18 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'readinterval':
-                self._log.info("Setting " + self.name + " readinterval: " + str(setting))
-                self._settings[key] = float(setting)
+                self._log.info("Setting " + self.name + " readinterval: " + str(setting) + " minutes")
+                self._settings[key] = int(setting)
+                self.readinterval = int(setting) * 60
+                if int(setting) == 0:
+                    self.readinterval = 5 # fastest interval is 5 seconds.
+                self._log.debug("SDS011 readinterval set to : " + str(self.readinterval) + "s")
+                self.previous_time = time.time()
+                self.first_reading_done = False
+                try:
+                    self.sensor.sleep(sleep=False)
+                except:
+                    self._log.debug("Failed waking sensor.")
                 continue
             elif key == 'nodename':
                 self._log.info("Setting " + self.name + " nodename: " + str(setting))
