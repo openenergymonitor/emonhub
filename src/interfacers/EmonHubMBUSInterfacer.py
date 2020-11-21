@@ -182,6 +182,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 name = vif_name
                 if function!='': name += "_"+function
                 result[name] = value
+                
+        if 'FlowT' in result and 'ReturnT' in result and 'FlowRate' in result:
+            result['heat_calc'] = 4150 * (result['FlowT'] - result['ReturnT']) * (result['FlowRate'] * (1000 / 3600))
+            
         return result
 
     def request_data(self,address):
@@ -249,6 +253,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
                 for p in range(len(pages)):
                     result = self.request_data(self._settings['address'])
+                    if result==None:
+                        time.sleep(0.2)
+                        result = self.request_data(self._settings['address'])
+                    
                     if result!=None:
                         self._log.debug("Decoded MBUS data: "+json.dumps(result))
                         
