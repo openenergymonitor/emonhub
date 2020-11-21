@@ -49,13 +49,23 @@ class EmonHubRedisInterfacer(EmonHubInterfacer):
         if not self.r:
             return False
         
+        nodeid = cargo.nodeid
+        
         if len(cargo.names)<=len(cargo.realdata):
             for i in range(0,len(cargo.names)):
                 name = cargo.names[i]
                 value = cargo.realdata[i]
-                self._log.info("redis set "+self._settings['prefix']+str(name)+" "+str(value))
+                
+                name_parts = []
+                if self._settings['prefix']!='': name_parts.append(self._settings['prefix'])
+                name_parts.append(str(nodeid))
+                name_parts.append(str(name))
+                
+                name = ":".join(name_parts)
+                
+                self._log.info("redis set "+name+" "+str(value))
                 try:
-                    self.r.set(self._settings['prefix']+name,value)
+                    self.r.set(name,value)
                 except Exception as err:
                     self._log.error(err)
                     return False
