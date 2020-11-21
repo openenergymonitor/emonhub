@@ -100,36 +100,39 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         data_types =   ['null','int','int','int','int','float','int','int','null','bcd','bcd','bcd','bcd','var','bcd','null']
         data_lengths = [0,1,2,3,4,4,6,8,0,1,2,3,4,6,6,0]
         vif = {
-          0x03: "Energy_Wh",
-          0x06: "Energy_kWh",
-          0x13: "Volume 0.001m3",
-          0x14: "Volume 0.01m3",
-          0x15: "Volume 0.1m3",
-          0x16: "Volume 1.01m3",
-          #0x20: "Ontime Seconds",
-          #0x22: "Ontime Hours",
-          0x2b: "Power_W",
-          0x2e: "Power_kW",
-          #0x3b: "FlowRate", # mm3/h
-          0x3e: "FlowRate", # m3/h
-          #0x40: "FlowRate", # 1.0e-7 m3/min
-          0x5b: "FlowT",
-          0x5f: "ReturnT",
-          0x63: "DeltaT",
-          0x67: "ExternalT",
-          #0x6D: "TIME & DATE",
-          #0x70: "Average duration",
-          #0x74: "Duration seconds actual",       
-          #0x75: "Duration minutes actual",
-          #0x78: "Fab No",
-          #0x79: "Enhanced"
+          0x03: (0.001,"Energy","kWh"),
+          0x06: (1,"Energy","kWh"),
+          0x13: (0.001,"Volume","m3"),
+          0x14: (0.01,"Volume","m3"),
+          0x15: (0.1,"Volume","m3"),
+          0x16: (1,"Volume","m3"),
+          #0x20: (1,"Ontime Seconds","s"),
+          #0x22: (1,"Ontime Hours","h"),
+          0x2b: (1,"Power","W"),
+          0x2e: (1000,"Power","W"),
+          #0x3b: (1,"FlowRate",""), # mm3/h
+          0x3e: (1,"FlowRate","m3/h"), # m3/h
+          #0x40: (1,"FlowRate",""), # 1.0e-7 m3/min
+          0x5b: (1,"FlowT","C"),
+          0x5f: (1,"ReturnT","C"),
+          0x63: (1,"DeltaT","C"),
+          0x67: (1,"ExternalT","C"),
+          #0x6D: (1,"TIME & DATE",""),
+          #0x70: (1,"Average duration",""),
+          #0x74: (1,"Duration seconds actual",""),       
+          #0x75: (1,"Duration minutes actual",""),
+          #0x78: (1,"Fab No",""),
+          #0x79: (1,"Enhanced","")
         }
         function_types = ["","Max","Min","error","special","special","more_to_follow"]
 
         result = {}
         bid = 19
+        record = 0
         while bid<len(data)-1:
         
+            record += 1
+            
             DIF = data[bid]
             bid += 1
             DIFE = 0
@@ -154,37 +157,48 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             
             data_type = data_types[data_field]
             data_len = data_lengths[data_field]
-            bytes = data[bid:bid+data_len]
-            bid += data_len
             
-            vif_name = ""
-            if VIF in vif:
-                vif_name = vif[VIF]
-            
-                value = False
-
-                if data_type=="int":
-                    if data_len==1:
-                        value = bytes[0]
-                    if data_len==2:
-                        value = bytes[0] + (bytes[1]<<8)
-                    if data_len==3:
-                        value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)    
-                    if data_len==4:
-                        value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
-
-                if data_type=="float":
-                    if data_len==4:
-                        value = struct.unpack("f",bytearray(bytes))[0]
+            if data_len>0:
+                bytes = data[bid:bid+data_len]
+                bid += data_len
                 
-                # print (hex(DIF)+"\t"+hex(DIFE)+"\t"+hex(VIF)+"\t"+hex(VIFE)+"\t"+data_type+str(data_len)+"\t"+" ["+",".join(map(str, bytes))+"] "+vif_name+" "+function+" = "+str(value))
-                # print (vif_name+" "+function+" = "+str(value))
-                name = vif_name
-                if function!='': name += "_"+function
-                result[name] = value
+                vif_name = ""
+                if VIF in vif:
+                    scale = vif[VIF][0]
+                    name = vif[VIF][1]
+                    unit = vif[VIF][2]
+
+                    if function!='': name += "_"+function
+
+                    value = False
+
+                    if data_type=="int":
+                        if data_len==1:
+                            value = bytes[0]
+                        if data_len==2:
+                            value = bytes[0] + (bytes[1]<<8)
+                        if data_len==3:
+                            value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)    
+                        if data_len==4:
+                            value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
+
+                    if data_type=="float":
+                        if data_len==4:
+                            value = struct.unpack("f",bytearray(bytes))[0]
+                    
+                    value *= scale
+                    
+                    #self._log.debug(hex(DIF)+"\t"+hex(DIFE)+"\t"+hex(VIF)+"\t"+hex(VIFE)+"\t"+data_type+str(data_len)+"\t"+" ["+",".join(map(str, bytes))+"] "+name+" = "+str(value)+" "+str(unit))
+                    #self._log.debug(vif_name+" "+function+" = "+str(value)+" "+str(unit))
+                    
+                    if name in result:
+                        name += str(record)
+                        
+                    result[name] = [value,unit]
                 
         if 'FlowT' in result and 'ReturnT' in result and 'FlowRate' in result:
-            result['heat_calc'] = 4150 * (result['FlowT'] - result['ReturnT']) * (result['FlowRate'] * (1000 / 3600))
+            value = 4150 * (result['FlowT'][0] - result['ReturnT'][0]) * (result['FlowRate'][0] * (1000 / 3600))        
+            result['heat_calc'] = [value,"W"]
             
         return result
 
@@ -241,6 +255,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 c = Cargo.new_cargo()
                 c.names = []
                 c.realdata = []
+                c.units = []
                 c.nodeid = self._settings['nodename']
              
                 pages = self._settings['pages']
@@ -262,7 +277,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         
                         for key in result: 
                             c.names.append(key)
-                            c.realdata.append(result[key])
+                            c.realdata.append(result[key][0])
+                            c.units.append(result[key][1])
                     else:
                         self._log.debug("Decoded MBUS data: None")
                     
