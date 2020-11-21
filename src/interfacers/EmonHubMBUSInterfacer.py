@@ -2,6 +2,7 @@ import time
 import json
 import Cargo
 import serial
+import struct
 from emonhub_interfacer import EmonHubInterfacer
 
 """
