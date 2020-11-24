@@ -169,15 +169,16 @@ class EmonHub:
         if 'log_backup_count' in settings['hub']:
             for handler in self._log.handlers:
                 if isinstance(handler, logging.handlers.RotatingFileHandler):
-                    handler.backupCount = settings['hub']['log_backup_count']
+                    handler.backupCount = int(settings['hub']['log_backup_count'])
                     self._log.info("Logging backup count set to %d", handler.backupCount)
         if 'log_max_bytes' in settings['hub']:
             for handler in self._log.handlers:
                 if isinstance(handler, logging.handlers.RotatingFileHandler):
-                    handler.maxBytes = settings['hub']['log_max_bytes']
+                    handler.maxBytes = int(settings['hub']['log_max_bytes'])
                     self._log.info("Logging max file size set to %d bytes", handler.maxBytes)
 
         # Interfacers
+        interfacers_to_delete = []
         for name in self._interfacers:
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
             # (This also provides an ability to delete & rebuild by commenting 'Type' in conf)
@@ -197,6 +198,9 @@ class EmonHub:
             # Delete interfacers if setting changed or name is unlisted or Type is missing
             self._log.info("Deleting interfacer '%s'", name)
             self._interfacers[name].stop = True
+            interfacers_to_delete.append(name)
+       
+        for name in interfacers_to_delete:
             del self._interfacers[name]
 
         for name, I in settings['interfacers'].items():
