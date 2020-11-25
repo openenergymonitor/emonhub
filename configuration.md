@@ -234,95 +234,27 @@ You can create more than one of these sections to send data to multiple emoncms 
 
 This time, the API key will be the API key from your account at emoncms.example.com.
 
-### d.) [[Serial]] (EmonTX V3)
+### Interfacers Extended
 
-There are 2 different serial interfacers. The TX3e interfacer is for connecting an RPi directly to the serial output (UART) of the emonTX.  COM port speed on newer devices is 115200.
+In addition to the above core interfacers used as part of the core OpenEnergyMonitor configuration, EmonHub supports a wide variety of interfacers for reading data from different hardware sources, these interfacers have been documented separately, follow the links for more information:
 
-The default nodeID is `0` and the `nodeoffset` optional parameter will increase that nodeID by its value.
-
-```text
-    [[SerialTx]]
-        Type = EmonHubTx3eInterfacer
-        [[[init_settings]]]
-            com_port= /dev/ttyAMA0
-            com_baud = 115200
-        [[[runtimesettings]]]
-            pubchannels = ToEmonCMS,
-
-            nodeoffset = 1
-```
-
-The latest version of the emonTX CM Firmware, sends the data to the serial interface as a `key:value` pair.  There is no need for a `node` decoder to be defined so a nodeID with no decoder should be specified.
-
-### e.) Socket Interfacer
-
-The EmonHub socket interfacer is particularly useful for inputing data from a range of sources. e.g a script monitoring server status where you wish to post the result to both a local instance of emoncms and a remote instance of emoncms alongside other data from other sources such as rfm node data.
-
-As an example, the following python script will post a single line of data values on node 98 to an emonhub instance running locally and listening on port 8080:
-
-```python
-import socket, time
-s = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-s.connect(('localhost', 8080))
-s.sendall('98 3.8 1.6 5.2 80.3\r\n')
-```
-
-The following emonhub.conf interfacer definition will listen on the choosen socket and forward the data on the ToEmonCMS channel:
-
-```text
-    [[mysocketlistener]]
-            Type = EmonHubSocketInterfacer
-            [[[init_settings]]]
-                port_nb = 8080
-            [[[runtimesettings]]]
-                pubchannels = ToEmonCMS,
-```
-
-#### **Timestamped data**
-
-To set a timestamp for the posted data add the timestamped property to the emonhub.conf runtimesettings section:
-
-```text
-        [[[runtimesettings]]]
-            pubchannels = ToEmonCMS,
-            timestamped = True
-```
-
-The python client example needs to include the timestamp e.g:
-
-```python
-s.sendall(str(time.time())+' 98 3.8 1.6 5.2 80.3\r\n')
-```
-
-### f.) Tesla Power Wall Interfacer
-
-This interfacer fetches the state of charge of a Tesla Power Wall on the local network. Enter your PowerWall IP-address or hostname in the URL section of the following emonhub.conf configuration:
-
-```text
-    [[PowerWall]]
-        Type = EmonHubTeslaPowerWallInterfacer
-        [[[init_settings]]]
-        [[[runtimesettings]]]
-            pubchannels = ToEmonCMS,
-            name = powerwall
-            url = http://POWERWALL-IP/api/system_status/soe
-            readinterval = 10
-```
-
-### f.) SDS011 Air Quality Sensor
-
-Read data from the SDS011 sensor. Note that this implementation keeps the SDS011 sensor on all the time and may reduce the lifespan of the sensor significantly. Further work required!
-
-```text
-    [[SDS011]]
-        Type = EmonHubSDS011Interfacer
-        [[[init_settings]]]
-            serial_port = /dev/ttyUSB0
-        [[[runtimesettings]]]
-            pubchannels = ToEmonCMS,
-            nodename = SDS011
-            readinterval = 10
-```
+- [Socket Interfacer](conf/interfacer_examples/Socket)
+- [Space separated serial interfacer](conf/interfacer_examples/directserial)
+- [EmonTX V3 Interfacer (key:value pairs)](conf/interfacer_examples/directserial-serialtx3e)
+- [SDS011 Air Quality Sensor Interfacer](conf/interfacer_examples/SDS011)
+- [Tesla Power Wall Interfacer](conf/interfacer_examples/PowerWall)
+- [BMW Connected Drive Interface](conf/interfacer_examples/bmw)
+- [Graphite interfacer](conf/interfacer_examples/graphite)
+- [TCP Modbus interfacer (Fronius Inverters)](conf/interfacer_examples/modbus)
+- [Renogy Interfacer](conf/interfacer_examples/Renogy)
+- [SMA Solar Interfacer](conf/interfacer_examples/smasolar)
+- [Smilices Interfacer](conf/interfacer_examples/smilices)
+- [Victron VE.Direct Protocol Interfacer](conf/interfacer_examples/vedirect)
+- [Pulse counting interfacer](conf/interfacer_examples/Pulse)
+- [DS18B20 temperature sensing interfacer](conf/interfacer_examples/DS18B20)
+- [SDM120-Modbus Interfacer](conf/interfacer_examples/SDM120)
+- [MBUS Interfacer](conf/interfacer_examples/MBUS)
+- [Redis Interfacer](conf/interfacer_examples/Redis)
 
 ***
 
