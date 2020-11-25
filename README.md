@@ -28,14 +28,24 @@ This vesrion of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 *See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
-- Direct Serial: space seperated value format
-- Direct Serial (EmonHubTx3eInterfacer): current emonTx V3 CSV key:value format (added by @owenduffy)
-- Smilics energy monitors (added by @K0den)
-- Victron Products e.g  BMV 700 battery monitor (added by @jlark)
-- ModBus e.g. FRONIUS Solar inverter (added by @cjthuys)
-- Graphite timeseries DB (added by @hmm01i)
-- SMASolar (added by @stuartpittaway)
-- BMW EV API e.g state of charge, charging state etc. (added by @stuartpittaway)
+- [Socket Interfacer](conf/interfacer_examples/Socket)
+- [Space separated serial interfacer](conf/interfacer_examples/directserial)
+- [EmonTX V3 Interfacer (key:value pairs, added by @owenduffy)](conf/interfacer_examples/directserial-serialtx3e)
+- [SDS011 Air Quality Sensor Interfacer](conf/interfacer_examples/SDS011)
+- [Tesla Power Wall Interfacer](conf/interfacer_examples/PowerWall)
+- [BMW Connected Drive Interface (added by @stuartpittaway)](conf/interfacer_examples/bmw)
+- [Graphite interfacer (added by @hmm01i)](conf/interfacer_examples/graphite)
+- [TCP Modbus interfacer e.g Fronius Inverters (added by @cjthuys)](conf/interfacer_examples/modbus)
+- [Renogy Interfacer](conf/interfacer_examples/Renogy)
+- [SMA Solar Interfacer (added by @stuartpittaway)](conf/interfacer_examples/smasolar)
+- [Smilics energy monitors interfacer (added by @K0den)](conf/interfacer_examples/smilices)
+- [Victron VE.Direct Protocol Interfacer (added by @jlark)](conf/interfacer_examples/vedirect)
+- [Pulse counting interfacer](conf/interfacer_examples/Pulse)
+- [DS18B20 temperature sensing interfacer](conf/interfacer_examples/DS18B20)
+- [SDM120-Modbus Interfacer](conf/interfacer_examples/SDM120)
+- [MBUS Interfacer](conf/interfacer_examples/MBUS)
+- [Redis Interfacer](conf/interfacer_examples/Redis)
+
 
 ***
 ## Installing Emonhub
