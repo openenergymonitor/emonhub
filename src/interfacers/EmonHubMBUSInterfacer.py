@@ -100,29 +100,34 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         data_types =   ['null','int','int','int','int','float','int','int','null','bcd','bcd','bcd','bcd','var','bcd','null']
         data_lengths = [0,1,2,3,4,4,6,8,0,1,2,3,4,6,6,0]
         vif = {
-          0x03: (0.001,"Energy","kWh"),
-          0x06: (1,"Energy","kWh"),
-          0x13: (0.001,"Volume","m3"),
-          0x14: (0.01,"Volume","m3"),
-          0x15: (0.1,"Volume","m3"),
-          0x16: (1,"Volume","m3"),
-          #0x20: (1,"Ontime Seconds","s"),
-          #0x22: (1,"Ontime Hours","h"),
-          0x2b: (1,"Power","W"),
-          0x2e: (1000,"Power","W"),
-          #0x3b: (1,"FlowRate",""), # mm3/h
-          0x3e: (1,"FlowRate","m3/h"), # m3/h
-          #0x40: (1,"FlowRate",""), # 1.0e-7 m3/min
-          0x5b: (1,"FlowT","C"),
-          0x5f: (1,"ReturnT","C"),
-          0x63: (1,"DeltaT","C"),
-          0x67: (1,"ExternalT","C"),
-          #0x6D: (1,"TIME & DATE",""),
-          #0x70: (1,"Average duration",""),
-          #0x74: (1,"Duration seconds actual",""),       
-          #0x75: (1,"Duration minutes actual",""),
-          #0x78: (1,"Fab No",""),
-          #0x79: (1,"Enhanced","")
+            0x03: (0.001,"Energy","kWh"),
+            0x06: (1,"Energy","kWh"),
+            0x13: (0.001,"Volume","m3"),
+            0x14: (0.01,"Volume","m3"),
+            0x15: (0.1,"Volume","m3"),
+            0x16: (1,"Volume","m3"),
+            0x20: (1,"Ontime","s"),
+            #0x22: (1,"Ontime Hours","h"),
+            0x24: (1,"OperatingTime","s"),
+            0x2b: (1,"Power","W"),
+            0x2e: (1000,"Power","W"),
+            0x3b: (0.001,"FlowRate","m3/h"), # mm3/h
+            0x3e: (1,"FlowRate","m3/h"), # m3/h
+            #0x40: (1,"FlowRate",""), # 1.0e-7 m3/min
+            0x5b: (1,"FlowT","C"),
+            0x59: (0.01,"FlowT","C"),
+            0x5f: (1,"ReturnT","C"),
+            0x5d: (0.01,"ReturnT","C"),
+            0x63: (1,"DeltaT","C"),
+            0x61: (0.01,"DeltaT","C"),
+            0x67: (1,"ExternalT","C"),
+            #0x6D: (1,"TIME & DATE",""),
+            #0x70: (1,"Average duration",""),
+            #0x74: (1,"Duration seconds actual",""),       
+            #0x75: (1,"Duration minutes actual",""),
+            #0x78: (1,"Fab No",""),
+            #0x79: (1,"Enhanced","")
+            0x84: (10,"Energy","Wh")
         }
         function_types = ["","Max","Min","error","special","special","more_to_follow"]
 
