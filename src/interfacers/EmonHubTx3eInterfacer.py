@@ -55,7 +55,7 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
 
         #Check message string for data else publish startup messages from EmonTX
         if f.find("MSG:",0,4) == -1:
-            self._log.debug("START MESSAGE: %s", f)
+            self._log.info("START MESSAGE: %s", f)
             self._rx_buf = ''
             return False
 
