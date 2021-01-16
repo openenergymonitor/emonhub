@@ -47,10 +47,17 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
+            self._rx_buf = ''
             return
 
         # Remove CR,LF
         f = self._rx_buf[:-2].strip()
+
+        #Check message string for data else publish startup messages from EmonTX
+        if f.find("MSG:",0,4) == -1:
+            self._log.debug("START MESSAGE: %s", f)
+            self._rx_buf = ''
+            return False
 
         # Create a Payload object
         c = Cargo.new_cargo(rawdata=f)
