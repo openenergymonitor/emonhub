@@ -49,14 +49,14 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
         if '\r\n' not in self._rx_buf:
             # If string longer than 3 print message
             if len(self._rx_buf) > 3:
-                self._log.debug("START MESSAGE: %s", self._rx_buf.rstrip())
+                self._log.info("START MESSAGE: %s", self._rx_buf.rstrip())
 
             self._rx_buf = ''
             return False
 
         #Check for MSG data string. If not found...
         if self._rx_buf.find("MSG:",0,4) == -1:
-            self._log.debug("START MESSAGE: %s", self._rx_buf.rstrip())
+            self._log.info("START MESSAGE: %s", self._rx_buf.rstrip())
             self._rx_buf = ''
             return False
 
