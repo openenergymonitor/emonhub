@@ -44,7 +44,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
         try: 
             import sdm_modbus
             self._log.info("Connecting to SDM120 device="+str(device)+" baud="+str(baud))
-            self._sdm = sdm_modbus.SDM120(device, baud)
+            self._sdm = sdm_modbus.SDM120(device=device, baud=int(baud))
             self._sdm_registers = sdm_modbus.registerType.INPUT
         except ModuleNotFoundError as err:
             self._log.error(err)
