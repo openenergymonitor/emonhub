@@ -89,7 +89,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                         try:
                             for i in read_keys:
                                 if i in r:
-                                    c.names.append(self._SDM120_settings['prefix']+read_keys[i][0])
+                                    c.names.append(self._settings['prefix']+read_keys[i][0])
                                     c.realdata.append(round(r[i],read_keys[i][1]))
                             self._log.debug(c.realdata)
                         except Exception as e:
