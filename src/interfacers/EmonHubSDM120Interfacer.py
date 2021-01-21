@@ -44,7 +44,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
         try: 
             import sdm_modbus
             self._log.info("Connecting to SDM120 device="+str(device)+" baud="+str(baud))
-            self._sdm = sdm_modbus.SDM120(device="/dev/modbus", baud=2400)
+            self._sdm = sdm_modbus.SDM120(device, baud)
             self._sdm_registers = sdm_modbus.registerType.INPUT
         except ModuleNotFoundError as err:
             self._log.error(err)
@@ -68,27 +68,34 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 c.nodeid = self._settings['nodename']
              
                 if self._sdm and self._sdm.connected():
-                    r = self._sdm.read_all(self._sdm_registers)
+                    try:
+                        r = self._sdm.read_all(self._sdm_registers)
+                    except Exception as e:
+                        self._log.error("Could not read from SDM120: " + str(e))
                     
                     # for i in r:
                     #     self._log.debug(i+" "+str(r[i]))
+                    if r:
+                        try:
+                            self._log.debug("%.2f %.2f %.4f %.4f %.3f %.3f" % (r['voltage'],r['power_active'],r['power_factor'],r['frequency'],r['import_energy_active'],r['current']))
                     
-                    self._log.debug("%.2f %.2f %.4f %.4f %.3f %.3f" % (r['voltage'],r['power_active'],r['power_factor'],r['frequency'],r['import_energy_active'],r['current']))
-                    
-                    c.names = ['sdm_V','sdm_P','sdm_PF','sdm_FR','sdm_E','sdm_I']
-                    c.realdata = [
-                      round(r['voltage'],2),
-                      round(r['power_active'],2),
-                      round(r['power_factor'],4),
-                      round(r['frequency'],4),
-                      round(r['import_energy_active'],3),
-                      round(r['current'],3)
-                    ]
+                            c.names = ['sdm_V','sdm_P','sdm_PF','sdm_FR','sdm_E','sdm_I']
+                            c.realdata = [
+                                round(r['voltage'],2),
+                                round(r['power_active'],2),
+                                round(r['power_factor'],4),
+                                round(r['frequency'],4),
+                                round(r['import_energy_active'],3),
+                                round(r['current'],3)
+                                ]
+                        except Exception as e:
+                            self._log.error("Error parsing data: " + str(e))
+                            
                     
                     if len(c.realdata)>0:
                         return c
                 else:
-                     self._log.error("Could not read from SDM120")
+                     self._log.error("Not connected to SDM120")
                     
         else:
             self.next_interval = True
