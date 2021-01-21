@@ -14,4 +14,5 @@ The SDM120-Modbus single phase electricity meter provides MID certified electric
         pubchannels = ToEmonCMS,
         read_interval = 10
         nodename = SDM120
+        # prefix = sdm_
 ```
