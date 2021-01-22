@@ -15,6 +15,10 @@ from emonhub_interfacer import EmonHubInterfacer
         pubchannels = ToEmonCMS,
         read_interval = 10
         nodename = sdm120
+        # prefix = sdm_
+        datafields = voltage,power_active,power_factor,frequency,import_energy_active,current
+        names = V,P,PF,FR,E,I
+        precision = 2,2,4,4,3,3
 """
 
 """class EmonHubSDM120Interfacer
@@ -36,7 +40,14 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
         # self._settings.update(self._defaults)
 
         # Interfacer specific settings
-        self._SDM120_settings = {'read_interval': 10.0,'nodename':'sdm120','prefix':''}
+        self._SDM120_settings = {
+            'read_interval': 10.0,
+            'nodename':'sdm120',
+            'prefix':'',
+            'datafields': ['voltage','power_active','power_factor','frequency','import_energy_active','current'],
+            'names': ['V','P','PF','FR','E','I'],
+            'precision': [2,2,4,4,3,3]
+        }
         
         self.next_interval = True
         
@@ -58,16 +69,6 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
 
         """
         
-        # Read the following keys from the SDM120
-        read_keys = {
-            'voltage':('V',2),
-            'power_active':('P',2),
-            'power_factor':('PF',4),
-            'frequency':('FR',4),
-            'import_energy_active':('E',3),
-            'current':('I',3)
-        }
-        
         if int(time.time())%self._settings['read_interval']==0:
             if self.next_interval: 
                 self.next_interval = False
@@ -87,10 +88,22 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                     #     self._log.debug(i+" "+str(r[i]))
                     if r:
                         try:
-                            for i in read_keys:
-                                if i in r:
-                                    c.names.append(self._settings['prefix']+read_keys[i][0])
-                                    c.realdata.append(round(r[i],read_keys[i][1]))
+                            for i in range(len(self._settings['datafields'])):
+                                datafield = self._settings['datafields'][i]
+                                if datafield in r:
+                                    # default name is datafield name
+                                    name = datafield 
+                                    # datafield value
+                                    value = r[datafield]
+                                    # replace datafield name with custom name
+                                    if i<len(self._settings['names']):
+                                        name = self._settings['names'][i]
+                                    # apply rounding if set
+                                    if i<len(self._settings['precision']):
+                                        value = round(value,self._settings['precision'][i])
+                                    
+                                    c.names.append(self._settings['prefix']+name)
+                                    c.realdata.append(value)
                             self._log.debug(c.realdata)
                         except Exception as e:
                             self._log.error("Error parsing data: " + str(e))
@@ -128,6 +141,18 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
             elif key == 'prefix':
                 self._log.info("Setting %s prefix: %s", self.name, setting)
                 self._settings[key] = str(setting)
+                continue
+            elif key == 'datafields':
+                self._log.info("Setting %s prefix: %s", self.name, ",".join(setting))
+                self._settings[key] = setting
+                continue
+            elif key == 'names':
+                self._log.info("Setting %s prefix: %s", self.name, ",".join(setting))
+                self._settings[key] = setting
+                continue
+            elif key == 'precision':
+                self._log.info("Setting %s prefix: %s", self.name, ",".join(setting))
+                self._settings[key] = setting
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
