@@ -57,9 +57,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         # Construct post_url (without apikey)
         post_url = self._settings['url'] + '/input/bulk.json?'
-        post_body = "data=" + data_string + "&sentat=" + str(sentat)
         
-        self._log.info("sending: %s %s", post_url, post_body)
+        self._log.info("sending: %s data=%s&sentat=%s&apikey=E-M-O-N-C-M-S-A-P-I-K-E-Y", post_url, data_string, sentat)
         
         result = False
         try:
