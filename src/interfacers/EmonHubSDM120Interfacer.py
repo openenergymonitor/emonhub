@@ -143,15 +143,15 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 self._settings[key] = str(setting)
                 continue
             elif key == 'datafields':
-                self._log.info("Setting %s prefix: %s", self.name, ",".join(setting))
+                self._log.info("Setting %s datafields: %s", self.name, ",".join(setting))
                 self._settings[key] = setting
                 continue
             elif key == 'names':
-                self._log.info("Setting %s prefix: %s", self.name, ",".join(setting))
+                self._log.info("Setting %s names: %s", self.name, ",".join(setting))
                 self._settings[key] = setting
                 continue
             elif key == 'precision':
-                self._log.info("Setting %s prefix: %s", self.name, ",".join(setting))
+                self._log.info("Setting %s precision: %s", self.name, ",".join(map(str,setting)))
                 self._settings[key] = setting
                 continue
             else:
