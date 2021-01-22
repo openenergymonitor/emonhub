@@ -2,6 +2,7 @@
 """
 import time
 import json
+import requests
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -55,25 +56,24 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         sentat = int(time.time())
 
         # Construct post_url (without apikey)
-        post_url = self._settings['url'] + '/input/bulk.json?apikey='
+        post_url = self._settings['url'] + '/input/bulk.json?'
         post_body = "data=" + data_string + "&sentat=" + str(sentat)
+        
+        self._log.info("sending: %s %s", post_url, post_body)
+        
+        result = False
+        try:
+            reply = requests.post(post_url, {'apikey': self._settings['apikey'], 'data': data_string, 'sentat': str(sentat)}, timeout=60)
+            reply.raise_for_status()  # Raise an exception if status code isn't 200
+            result = reply.text
+        except requests.exceptions.RequestException as ex:
+            self._log.warning("%s couldn't send to server: %s", self.name, ex)
 
-        # logged before apikey added for security
-        self._log.info("sending: %sE-M-O-N-C-M-S-A-P-I-K-E-Y&%s", post_url, post_body)
-
-        # Add apikey to post_url
-        post_url = post_url + self._settings['apikey']
-
-        # The Develop branch of emoncms allows for the sending of the apikey in the post
-        # body, this should be moved from the url to the body as soon as this is widely
-        # adopted
-
-        reply = self._send_post(post_url, {'data': data_string, 'sentat': str(sentat)})
-        if reply == 'ok':
-            self._log.debug("acknowledged receipt with '%s' from %s", reply, self._settings['url'])
+        if result == 'ok':
+            self._log.debug("acknowledged receipt with '%s' from %s", result, self._settings['url'])
             return True
         else:
-            self._log.warning("send failure: wanted 'ok' but got '%s'", reply)
+            self._log.warning("send failure: wanted 'ok' but got '%s'", result)
             return False
 
     def sendstatus(self):
