@@ -162,7 +162,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             if DIF>=0x80:
                 DIFE = data[bid]
                 bid += 1
-                
+            
+            if bid>=len(data): break
             VIF = data[bid]
             bid += 1 
             VIFE = 0
