@@ -213,7 +213,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                                 value = struct.unpack("f",bytearray(bytes))[0]
                                 
                         if data_type=="bcd":
-                            value = decodeBCD(bytes)
+                            value = self.decodeBCD(bytes)
                                 
                         value *= scale
 
