@@ -15,7 +15,7 @@ This EmonHub interfacer can be used to read directly from DS18B20 temperature se
 3\. Exit and reboot the Pi
 
     sudo reboot
-    
+
 4\. SSH back in again and run the following to enable the required modules:
 
     sudo modprobe w1-gpio
@@ -25,8 +25,8 @@ This EmonHub interfacer can be used to read directly from DS18B20 temperature se
 
 Login to the local copy of Emoncms running on the emonPi/emonBase and navigate to Setup > EmonHub. Click on 'Edit Config' and add the following config in the interfacers section to enable reading from the temperature sensors.
 
-- **read_interval:** Interval between readings in seconds. 
-- **ids:** This can be used to link specific sensors addresses to input names listed under the names property. 
+- **read_interval:** Interval between readings in seconds.
+- **ids:** This can be used to link specific sensors addresses to input names listed under the names property.
 - **names:** Names associated with sensor id's, ordered by index.
 
 Example DS18B20 EmonHub configuration:

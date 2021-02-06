@@ -31,17 +31,18 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         """Initialize Interfacer"""
         # Initialization
         super(EmonHubSDS011Interfacer, self).__init__(name)
-        
-        # Only load module if it is installed        
-        try: 
+
+        # Only load module if it is installed
+        try:
             from sds011 import SDS011
         except ModuleNotFoundError as err:
             self._log.error(err)
+            # FIXME Continuing here will cause a NameError later. Should not catch this exception.
 
         self._settings.update(self._defaults)
 
-        self._template_settings = {'nodename':'SDS011','readinterval':5}
-        
+        self._template_settings = {'nodename': 'SDS011', 'readinterval': 5}
+
         ### GLOBALS ###
         self.previous_time = time.time()
         self.warmup_time = 15 # seconds to spin up the SDS011 before taking a reading
@@ -51,7 +52,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         self.timenow = time.time()
         self.count = 0
         self.readinterval = readinterval * 60 # convert to seconds.
-        
+
         ### INIT COM PORT ###
         try:
             self._log.info("INFO: Opening sensor serial port...")
@@ -82,13 +83,14 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
     def read(self):
         '''Read data and process'''
 
-        if not self.sensor_present: return False
-        
+        if not self.sensor_present:
+            return False
+
         self.timenow = time.time()
-        
+
         try:
             if self.first_reading_done is False:
-                if self.timenow >= (self.previous_time + self.warmup_time): # 15 seconds warmup for first reading, just in case.
+                if self.timenow >= self.previous_time + self.warmup_time: # 15 seconds warmup for first reading, just in case.
                     self.first_reading_done = True
                     self.previous_time = self.timenow
                     readings = self.sensor.query()
@@ -103,13 +105,13 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                     # create a new cargo object, set data values
                     c = Cargo.new_cargo()
                     c.nodeid = self._settings['nodename']
-                    c.names = ["pm_25","pm_10","msg"]
-                    c.realdata = [readings[0],readings[1],self.count]
+                    c.names = ["pm_25", "pm_10", "msg"]
+                    c.realdata = [readings[0], readings[1], self.count]
                     self._log.info("SDS011 First Cargo : " + str(c.realdata))
                     return c
 
-            if self.timenow >= (self.previous_time + self.readinterval):
-                if (self.previous_time + self.readinterval) >= self.timenow:
+            if self.timenow >= self.previous_time + self.readinterval:
+                if self.previous_time + self.readinterval >= self.timenow:
                     self.sensor.sleep(sleep=False)
                     time.sleep(1)
                 self.previous_time = self.timenow
@@ -120,28 +122,28 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
                 if self.readinterval >= 30:
                     self.sensor.sleep()
                     self._log.debug("Sensor returned to sleep")
-                self.sensor_waking=False
+                self.sensor_waking = False
                 self.count += 1
                 # create a new cargo object, set data values
                 c = Cargo.new_cargo()
                 c.nodeid = self._settings['nodename']
-                c.names = ["pm_25","pm_10","msg"]
-                c.realdata = [readings[0],readings[1],self.count]
+                c.names = ["pm_25", "pm_10", "msg"]
+                c.realdata = [readings[0], readings[1], self.count]
                 self._log.info("SDS011 Cargo : " + str(c.realdata))
-                return c 
-            elif self.timenow >= (self.previous_time + self.readinterval - self.warmup_time):
-                if (self.sensor_waking == True) or (self.readinterval <= 30):
-                    return False    
+                return c
+            elif self.timenow >= self.previous_time + self.readinterval - self.warmup_time:
+                if self.sensor_waking == True or self.readinterval <= 30:
+                    return False
                 self.sensor.sleep(sleep=False)
                 self._log.debug("Sensor warming up... 15s until reading")
-                self.sensor_waking=True
+                self.sensor_waking = True
                 return False
         except:
             self._log.debug("An exceptional SDS011 exception has occurred!")
 
         # nothing to return
         return False
-        
+
 
     def set(self, **kwargs):
         """ Runtime Settings """
@@ -177,4 +179,3 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super(EmonHubSDS011Interfacer, self).set(**kwargs)
-

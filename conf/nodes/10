@@ -8,5 +8,5 @@
        datacode = h
        scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 #Firmware V1.6
        units =W,W,W,W,V,C,C,C,C,C,C,p                   #FirmwareV1.6
-       #scales = 1,1,1,1,0.01,0.1                       #Firmware =<V1.4 (un-comment) 
+       #scales = 1,1,1,1,0.01,0.1                       #Firmware =<V1.4 (un-comment)
        #units =W,W,W,W,V,C                              #Firmware =<V1.4 (un-comment)

@@ -36,20 +36,22 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
         # self._settings.update(self._defaults)
 
         # Interfacer specific settings
-        self._SDM120_settings = {'read_interval': 10.0,'nodename':'sdm120','prefix':''}
-        
+        self._SDM120_settings = {'read_interval': 10.0,
+                                 'nodename':'sdm120',
+                                 'prefix':''}
+
         self.next_interval = True
-        
-        # Only load module if it is installed        
-        try: 
+
+        # Only load module if it is installed
+        try:
             import sdm_modbus
-            self._log.info("Connecting to SDM120 device="+str(device)+" baud="+str(baud))
+            self._log.info("Connecting to SDM120 device=" + str(device) + " baud=" + str(baud))
             self._sdm = sdm_modbus.SDM120(device=device, baud=int(baud))
             self._sdm_registers = sdm_modbus.registerType.INPUT
         except ModuleNotFoundError as err:
             self._log.error(err)
             self._sdm = False
-                    
+
 
     def read(self):
         """Read data and process
@@ -57,53 +59,50 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
 
         """
-        
         # Read the following keys from the SDM120
         read_keys = {
-            'voltage':('V',2),
-            'power_active':('P',2),
-            'power_factor':('PF',4),
-            'frequency':('FR',4),
-            'import_energy_active':('E',3),
-            'current':('I',3)
+            'voltage': ('V', 2),
+            'power_active': ('P', 2),
+            'power_factor': ('PF', 4),
+            'frequency': ('FR', 4),
+            'import_energy_active': ('E', 3),
+            'current': ('I', 3)
         }
-        
-        if int(time.time())%self._settings['read_interval']==0:
-            if self.next_interval: 
+
+        if int(time.time()) % self._settings['read_interval'] == 0:
+            if self.next_interval:
                 self.next_interval = False
 
                 c = Cargo.new_cargo()
                 c.names = []
                 c.realdata = []
                 c.nodeid = self._settings['nodename']
-             
+
                 if self._sdm and self._sdm.connected():
                     try:
                         r = self._sdm.read_all(self._sdm_registers)
                     except Exception as e:
                         self._log.error("Could not read from SDM120: " + str(e))
-                    
                     # for i in r:
                     #     self._log.debug(i+" "+str(r[i]))
                     if r:
                         try:
                             for i in read_keys:
                                 if i in r:
-                                    c.names.append(self._settings['prefix']+read_keys[i][0])
-                                    c.realdata.append(round(r[i],read_keys[i][1]))
+                                    c.names.append(self._settings['prefix'] + read_keys[i][0])
+                                    c.realdata.append(round(r[i], read_keys[i][1]))
                             self._log.debug(c.realdata)
                         except Exception as e:
                             self._log.error("Error parsing data: " + str(e))
-                            
-                    
-                    if len(c.realdata)>0:
+
+                    if len(c.realdata) > 0:
                         return c
                 else:
-                     self._log.error("Not connected to SDM120")
-                    
+                    self._log.error("Not connected to SDM120")
+
         else:
             self.next_interval = True
-            
+
         return False
 
 
@@ -114,7 +113,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 setting = kwargs[key]
             else:
                 setting = self._SDM120_settings[key]
-                
+
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'read_interval':

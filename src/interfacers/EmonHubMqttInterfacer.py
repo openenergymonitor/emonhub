@@ -58,7 +58,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # nodes/emontx/power1 format
             'nodevar_format_enable': 0,
             'nodevar_format_basetopic': "nodes/",
-            
+
             # JSON format
             'node_JSON_enable': 0,
             'node_JSON_basetopic': "emon/"
@@ -194,7 +194,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # ----------------------------------------------------------
             if int(self._settings["node_JSON_enable"]) == 1:
                 topic = self._settings["node_JSON_basetopic"] + nodename
-                payload = dict(zip(frame['names'],frame['data']))
+                payload = dict(zip(frame['names'], frame['data']))
                 payload['time'] = frame['timestamp']
                 if 'rssi' in frame:
                     payload['rssi'] = frame['rssi']
@@ -227,13 +227,14 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self.flush()
 
     def on_connect(self, client, userdata, flags, rc):
-        
-        connack_string = {  0: 'Connection successful',
-                            1: 'Connection refused - incorrect protocol version',
-                            2: 'Connection refused - invalid client identifier',
-                            3: 'Connection refused - server unavailable',
-                            4: 'Connection refused - bad username or password',
-                            5: 'Connection refused - not authorised'}
+
+        connack_string = {0: 'Connection successful',
+                          1: 'Connection refused - incorrect protocol version',
+                          2: 'Connection refused - invalid client identifier',
+                          3: 'Connection refused - server unavailable',
+                          4: 'Connection refused - bad username or password',
+                          5: 'Connection refused - not authorised',
+                         }
 
         if rc:
             self._log.warning(connack_string[rc])
