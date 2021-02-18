@@ -96,6 +96,19 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 time.sleep(0.2)
         return False
 
+    def decodeBCD(self,bcd_data):
+        val = 0
+        i = len(bcd_data)
+        while i > 0:
+            val = (val * 10)
+            if bcd_data[i-1]>>4 < 0xA:
+                val += ((bcd_data[i-1]>>4) & 0xF)
+            val = (val * 10) + ( bcd_data[i-1] & 0xF)
+            i -= 1
+        if(bcd_data[len(bcd_data)-1]>>4 == 0xF):
+            val *= -1
+        return val
+    
     def parse_frame(self,data):
         data_types =   ['null','int','int','int','int','float','int','int','null','bcd','bcd','bcd','bcd','var','bcd','null']
         data_lengths = [0,1,2,3,4,4,6,8,0,1,2,3,4,6,6,0]
@@ -112,14 +125,19 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x2b: (1,"Power","W"),
             0x2e: (1000,"Power","W"),
             0x3b: (0.001,"FlowRate","m3/h"), # mm3/h
+            0x3c: (0.01,"FlowRate","m3/h"), # mm3/h
+            0x3d: (0.1,"FlowRate","m3/h"), # mm3/h
             0x3e: (1,"FlowRate","m3/h"), # m3/h
-            #0x40: (1,"FlowRate",""), # 1.0e-7 m3/min
-            0x5b: (1,"FlowT","C"),
+            # 0x40: (0.06,"FlowRate","m3/h"), # 1.0e-7 m3/min
             0x59: (0.01,"FlowT","C"),
-            0x5f: (1,"ReturnT","C"),
+            0x5a: (0.1,"FlowT","C"),
+            0x5b: (1,"FlowT","C"),
             0x5d: (0.01,"ReturnT","C"),
-            0x63: (1,"DeltaT","C"),
+            0x5e: (0.1,"ReturnT","C"),
+            0x5f: (1,"ReturnT","C"),
             0x61: (0.01,"DeltaT","C"),
+            0x62: (0.1,"DeltaT","C"),
+            0x63: (1,"DeltaT","C"),
             0x67: (1,"ExternalT","C"),
             #0x6D: (1,"TIME & DATE",""),
             #0x70: (1,"Average duration",""),
@@ -144,7 +162,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             if DIF>=0x80:
                 DIFE = data[bid]
                 bid += 1
-                
+            
+            if bid>=len(data): break
             VIF = data[bid]
             bid += 1 
             VIFE = 0
@@ -165,41 +184,47 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             
             if data_len>0:
                 bytes = data[bid:bid+data_len]
-                bid += data_len
                 
-                vif_name = ""
-                if VIF in vif:
-                    scale = vif[VIF][0]
-                    name = vif[VIF][1]
-                    unit = vif[VIF][2]
+                if len(bytes)==data_len:
 
-                    if function!='': name += "_"+function
+                    bid += data_len
 
-                    value = False
+                    vif_name = ""
+                    if VIF in vif:
+                        scale = vif[VIF][0]
+                        name = vif[VIF][1]
+                        unit = vif[VIF][2]
 
-                    if data_type=="int":
-                        if data_len==1:
-                            value = bytes[0]
-                        if data_len==2:
-                            value = bytes[0] + (bytes[1]<<8)
-                        if data_len==3:
-                            value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)    
-                        if data_len==4:
-                            value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
+                        if function!='': name += "_"+function
 
-                    if data_type=="float":
-                        if data_len==4:
-                            value = struct.unpack("f",bytearray(bytes))[0]
-                    
-                    value *= scale
-                    
-                    #self._log.debug(hex(DIF)+"\t"+hex(DIFE)+"\t"+hex(VIF)+"\t"+hex(VIFE)+"\t"+data_type+str(data_len)+"\t"+" ["+",".join(map(str, bytes))+"] "+name+" = "+str(value)+" "+str(unit))
-                    #self._log.debug(vif_name+" "+function+" = "+str(value)+" "+str(unit))
-                    
-                    if name in result:
-                        name += str(record)
-                        
-                    result[name] = [value,unit]
+                        value = False
+
+                        if data_type=="int":
+                            if data_len==1:
+                                value = bytes[0]
+                            if data_len==2:
+                                value = bytes[0] + (bytes[1]<<8)
+                            if data_len==3:
+                                value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)    
+                            if data_len==4:
+                                value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
+
+                        if data_type=="float":
+                            if data_len==4:
+                                value = struct.unpack("f",bytearray(bytes))[0]
+                                
+                        if data_type=="bcd":
+                            value = self.decodeBCD(bytes)
+                                
+                        value *= scale
+
+                        #self._log.debug(hex(DIF)+"\t"+hex(DIFE)+"\t"+hex(VIF)+"\t"+hex(VIFE)+"\t"+data_type+str(data_len)+"\t"+" ["+",".join(map(str, bytes))+"] "+name+" = "+str(value)+" "+str(unit))
+                        #self._log.debug(vif_name+" "+function+" = "+str(value)+" "+str(unit))
+
+                        if name in result:
+                            name += str(record)
+
+                        result[name] = [value,unit]
                 
         if 'FlowT' in result and 'ReturnT' in result and 'FlowRate' in result:
             value = 4150 * (result['FlowT'][0] - result['ReturnT'][0]) * (result['FlowRate'][0] * (1000 / 3600))        
