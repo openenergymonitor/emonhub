@@ -19,7 +19,7 @@ if [ "$emonSD_pi_env" = "" ]; then
 fi
 
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev
-sudo pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus
+sudo pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 if [ "$emonSD_pi_env" = "1" ]; then
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
