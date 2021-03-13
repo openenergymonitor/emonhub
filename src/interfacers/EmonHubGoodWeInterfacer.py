@@ -11,7 +11,7 @@ import json
 import time
 
 from emonhub_interfacer import EmonHubInterfacer
-from goodwe import Goodwe_inverter as inverter
+from goodwe import Goodwe_inverter
 
 
 """class EmonHubGoodWeInterfacer
@@ -49,7 +49,7 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
             # If URL is set, fetch the SOC
             if self._settings['ip'] != None:
                 try:
-                    self._inverter = asyncio.run(inverter.discover(self._settings['ip'], self._settings['port'], self._settings['timeout'], self._settings['retries']))
+                    self._inverter = asyncio.run(Goodwe_inverter.discover(self._settings['ip'], self._settings['port'], self._settings['timeout'], self._settings['retries']))
                     data = asyncio.run(self._inverter.read_runtime_data())
                 except asyncio.CancelledError:
                     self._log.warning("The task %s is cancelled", self.name)
