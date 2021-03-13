@@ -11,7 +11,7 @@ import json
 import time
 
 from emonhub_interfacer import EmonHubInterfacer
-from goodwelibrary import Goodwe_inverter as inverter
+from goodwe import Goodwe_inverter as inverter
 
 
 """class EmonHubGoodWeInterfacer
@@ -29,7 +29,7 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
 
         # Interfacer specific settings
         self._template_settings = {'name': 'goodwe',
-                                   'ip': False,
+                                   'ip': None,
                                    'port': 8899,
                                    'timeout': 2,
                                    'retries': 3,
@@ -49,7 +49,7 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
             self._last_time = time.time()
 
             # If URL is set, fetch the SOC
-            if self._settings['ip']:
+            if self._settings['ip'] != None:
                 try:
                     self._inverter = asyncio.run(inverter.discover(self._settings['ip'], self._settings['port'], self._settings['timeout'], self._settings['retries']))
                     data = asyncio.run(self._inverter.read_runtime_data())
