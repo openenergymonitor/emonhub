@@ -25,8 +25,6 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
     def __init__(self, name):
         super().__init__(name)
 
-        self._settings.update(self._defaults)
-
         # Interfacer specific settings
         self._template_settings = {'name': 'goodwe',
                                    'ip': None,
