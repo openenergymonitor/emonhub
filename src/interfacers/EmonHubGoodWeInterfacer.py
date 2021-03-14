@@ -7,7 +7,6 @@ __author__ = 'Jo Vanvoorden'
 
 import asyncio
 import Cargo
-import json
 import time
 
 from emonhub_interfacer import EmonHubInterfacer
