@@ -59,31 +59,16 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
                 names = []
                 values = []
 
-                for key in [
-                    'vpv1', 'ipv1', 'vpv2', 'ipv2', 'ppv',
-                    'fgrid', 'vgrid', 'igrid', 'pgrid',
-                    'fgrid2', 'vgrid2', 'igrid2', 'pgrid2',
-                    'fgrid3', 'vgrid3', 'igrid3', 'pgrid3',
-                    'backup_f1','backup_v1', 'backup_i1', 'backup_p1',
-                    'backup_f2','backup_v2', 'backup_i2', 'backup_p2',
-                    'backup_f3','backup_v3', 'backup_i3', 'backup_p3',
-                    'load_p1', 'load_p2', 'load_p3',
-                    'backup_ptotal', 'load_ptotal', 'pload',
-                    'temperature', 'temperature2',
-                    'active_power','grid_in_out',
-                    'vbattery1', 'ibattery1', 'pbattery1', 'battery_mode',
-                    'work_mode',
-                    'battery_soc','battery_soh', 'battery_temperature',
-                    'battery_charge_limit', 'battery_discharge_limit',
-                    'battery_status', 'battery_warning',
-                    'e_total', 's_total', 
-                    ]:
-                # Check if battery percentage key is in data object
-                    if not key in data:
-                        self._log.warning("Key %s not found", key)
+                for key in self._inverter.sensors():
+                    self._log.debug("Key %s found", key.id)
+                    # Check if key.id is in data object readout
+                    if not key.id in data:
+                        self._log.warning("Key %s not found", key.id)
                         return
-                    names.append(key)
-                    values.append(data[key])
+                    # Check if we have a numerical response and return it
+                    if isinstance(data[key.id], (int, float)):
+                        names.append(key.id)
+                        values.append(data[key.id])
 
                 # Create cargo object
                 c = Cargo.new_cargo()
