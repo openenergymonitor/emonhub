@@ -23,6 +23,7 @@ from collections import defaultdict
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
+import emonhub_http_api as ehapi
 from interfacers import *
 
 # this namespace and path
@@ -73,6 +74,8 @@ class EmonHub:
 
         # Initialize Interfacers
         self._interfacers = {}
+        
+        self._http_api = False
 
         # Update settings
         self._update_settings(settings)
@@ -84,6 +87,12 @@ class EmonHub:
         Check settings on a regular basis.
 
         """
+        # Initialize http api
+        try:
+            self._http_api = ehapi.EmonHubHTTPApi(self._setup.settings)
+            self._http_api.start()
+        except Exception as e:
+            logger.critical(e)
 
         # Set signal handler to catch SIGINT or SIGTERM and shutdown gracefully
         signal.signal(signal.SIGINT, self._signal_handler)
@@ -148,6 +157,8 @@ class EmonHub:
             I.stop = True
             I.join()
 
+        self._http_api.stop();
+        
         self._log.info("Exit completed")
 
     def _signal_handler(self, signal, frame):
@@ -314,7 +325,7 @@ if __name__ == "__main__":
     except ehs.EmonHubSetupInitError as e:
         logger.critical(e)
         sys.exit("Unable to load configuration file: " + args.config_file)
-
+      
     if 'use_syslog' in setup.settings['hub']:
         if setup.settings['hub']['use_syslog'] == 'yes':
             syslogger = logging.handlers.SysLogHandler(address='/dev/log')
