@@ -2,6 +2,7 @@ import logging
 import threading
 import json
 from wsgiref.simple_server import make_server
+import emonhub_interfacer as ehi
 
 class EmonHubHTTPApi(threading.Thread):
     def __init__(self, settings):
@@ -51,6 +52,11 @@ class EmonHubHTTPApi(threading.Thread):
                  
                 reply_format = 'text/plain'
                 reply_string = 'ok'
+ 
+        if path=="/unconfigured":
+            if method=="GET":
+                reply_format = 'application/json'
+                reply_string = json.dumps(ehi.unconfigured_nodes)
  
         # Set headers
         start_response('200 OK', [('Content-type', reply_format+' charset=utf-8')])       

@@ -16,6 +16,8 @@ import requests
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
 
+unconfigured_nodes = {}
+
 """class EmonHubInterfacer
 
 Monitors a data source.
@@ -299,7 +301,11 @@ class EmonHubInterfacer(threading.Thread):
         #     self._log.warning("%d Discarded RX frame 'node id outside scope' : %s",
         #                       cargo.uri, rxc.realdata)
         #     return False
-
+        
+        if not node in ehc.nodelist:
+            unconfigured_nodes[node] = {"timestamp":rxc.timestamp, "data":rxc.realdata}
+            return False
+            
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
