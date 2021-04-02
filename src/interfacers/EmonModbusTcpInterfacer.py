@@ -151,7 +151,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                 # at this stage, we don't have any invalid datacode(s)
                 # so we can loop and read registers
                 for idx, rName in enumerate(rNames):
-                    register = int(registers[idx])
+                    register = int(registers[idx], 0)
                     if UnitIds is not None:
                         unitId = int(UnitIds[idx])
                     else:
