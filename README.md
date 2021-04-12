@@ -45,6 +45,7 @@ This vesrion of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - [SDM120-Modbus Interfacer](conf/interfacer_examples/SDM120)
 - [MBUS Interfacer](conf/interfacer_examples/MBUS)
 - [Redis Interfacer](conf/interfacer_examples/Redis)
+- [Influx Interfacer](conf/interfacer_examples/Influx)
 
 
 ***
