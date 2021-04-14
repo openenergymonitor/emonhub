@@ -18,6 +18,15 @@ class EmonHubHTTPApi(threading.Thread):
         
         self._log.debug("EmonHubHTTPApi Init")
 
+    def format_nodes(self, nodes):
+        for n in nodes:
+            if 'scales' in nodes[n]['rx']:
+                for i in range(0,len(nodes[n]['rx']['scales'])):
+                    nodes[n]['rx']['scales'][i] = float(nodes[n]['rx']['scales'][i])
+            if 'whitening' in nodes[n]['rx']:
+                nodes[n]['rx']['whitening'] = int(nodes[n]['rx']['whitening'])
+        return nodes
+
     def hello_world_app(self, environ, start_response):
         ip = environ['REMOTE_ADDR']
         method = environ['REQUEST_METHOD']
@@ -34,6 +43,10 @@ class EmonHubHTTPApi(threading.Thread):
         if path=="/config":
             # Fetch config object as json
             if method=="GET":
+            
+                if 'nodes' in self._settings:
+                    self._settings['nodes'] = self.format_nodes(self._settings['nodes'])
+                    
                 reply_format = 'application/json'
                 reply_string = json.dumps(self._settings)
             # Set and save config object
@@ -67,6 +80,8 @@ class EmonHubHTTPApi(threading.Thread):
         if path=="/available":
             if method=="GET":
                 available = ConfigObj("/opt/openenergymonitor/emonhub/conf/available.conf", file_error=True)
+                available = self.format_nodes(available['available'])
+                
                 reply_format = 'application/json'
                 reply_string = json.dumps(available)
                 

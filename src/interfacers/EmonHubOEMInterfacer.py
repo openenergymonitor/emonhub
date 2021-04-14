@@ -259,6 +259,10 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
     def update_all(self):
         # Send all available configuration
         self._log.debug("---------------------------------------------------------------------")
+        # Turn on verbose mode so that we get a reply when config is set
+        reply = self.send_cmd("V1")
+        self._log.debug(reply)
+        
         self.check_config_format()
         for key in self._config:
             if self._config_format=="new":
