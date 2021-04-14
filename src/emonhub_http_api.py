@@ -3,6 +3,8 @@ import threading
 import json
 from wsgiref.simple_server import make_server
 import emonhub_interfacer as ehi
+import emonhub_coder as ehc
+from configobj import ConfigObj
 
 class EmonHubHTTPApi(threading.Thread):
     def __init__(self, settings):
@@ -48,16 +50,26 @@ class EmonHubHTTPApi(threading.Thread):
                 # self._log.debug(settings)
                 self._settings.merge(settings)
                 self._settings.write()
+                
+                if 'nodes' in self._settings:
+                    ehc.nodelist = self._settings['nodes']
+                        
                 self._log.info("emonhub.conf updated via http api")
                  
                 reply_format = 'text/plain'
                 reply_string = 'ok'
  
-        if path=="/unconfigured":
+        if path=="/nodes":
             if method=="GET":
                 reply_format = 'application/json'
-                reply_string = json.dumps(ehi.unconfigured_nodes)
- 
+                reply_string = json.dumps(ehi.nodes)
+                
+        if path=="/available":
+            if method=="GET":
+                available = ConfigObj("/opt/openenergymonitor/emonhub/conf/available.conf", file_error=True)
+                reply_format = 'application/json'
+                reply_string = json.dumps(available)
+                
         # Set headers
         start_response('200 OK', [('Content-type', reply_format+' charset=utf-8')])       
         return [reply_string.encode('ascii')]

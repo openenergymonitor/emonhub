@@ -16,7 +16,7 @@ import requests
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
 
-unconfigured_nodes = {}
+nodes = {}
 
 """class EmonHubInterfacer
 
@@ -302,8 +302,9 @@ class EmonHubInterfacer(threading.Thread):
         #                       cargo.uri, rxc.realdata)
         #     return False
         
+        nodes[node] = {"timestamp":rxc.timestamp, "data":rxc.realdata}
+        
         if not node in ehc.nodelist:
-            unconfigured_nodes[node] = {"timestamp":rxc.timestamp, "data":rxc.realdata}
             return False
             
         # Data whitening uses for ensuring rfm sync
