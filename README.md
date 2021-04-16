@@ -8,7 +8,7 @@ Emonhub is included on the [emonsD pre-built SD card](https://github.com/openene
 
 ## Features
 
-This vesrion of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) original adding:
+This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) original adding:
 
 - Internal pub/sub message bus based on pydispatcher
 - Publish to MQTT
@@ -45,6 +45,7 @@ This vesrion of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - [SDM120-Modbus Interfacer](conf/interfacer_examples/SDM120)
 - [MBUS Interfacer](conf/interfacer_examples/MBUS)
 - [Redis Interfacer](conf/interfacer_examples/Redis)
+- [Influx Interfacer](conf/interfacer_examples/Influx)
 
 
 ***

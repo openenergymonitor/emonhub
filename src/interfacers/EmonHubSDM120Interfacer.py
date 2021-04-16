@@ -50,17 +50,17 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
         }
         
         self.next_interval = True
-        
-        # Only load module if it is installed        
-        try: 
+
+        # Only load module if it is installed
+        try:
             import sdm_modbus
-            self._log.info("Connecting to SDM120 device="+str(device)+" baud="+str(baud))
+            self._log.info("Connecting to SDM120 device=" + str(device) + " baud=" + str(baud))
             self._sdm = sdm_modbus.SDM120(device=device, baud=int(baud))
             self._sdm_registers = sdm_modbus.registerType.INPUT
         except ModuleNotFoundError as err:
             self._log.error(err)
             self._sdm = False
-                    
+
 
     def read(self):
         """Read data and process
@@ -77,13 +77,12 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 c.names = []
                 c.realdata = []
                 c.nodeid = self._settings['nodename']
-             
+
                 if self._sdm and self._sdm.connected():
                     try:
                         r = self._sdm.read_all(self._sdm_registers)
                     except Exception as e:
                         self._log.error("Could not read from SDM120: " + str(e))
-                    
                     # for i in r:
                     #     self._log.debug(i+" "+str(r[i]))
                     if r:
@@ -107,16 +106,15 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                             self._log.debug(c.realdata)
                         except Exception as e:
                             self._log.error("Error parsing data: " + str(e))
-                            
-                    
-                    if len(c.realdata)>0:
+
+                    if len(c.realdata) > 0:
                         return c
                 else:
-                     self._log.error("Not connected to SDM120")
-                    
+                    self._log.error("Not connected to SDM120")
+
         else:
             self.next_interval = True
-            
+
         return False
 
 
@@ -127,7 +125,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 setting = kwargs[key]
             else:
                 setting = self._SDM120_settings[key]
-                
+
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'read_interval':

@@ -11,11 +11,11 @@ The rType and datacodes must match. Use the table below to assist.
 
 ### Sample interfacer config within emonhub.conf
 
-Sample configuration for modbus TCP clients 
+Sample configuration for modbus TCP clients
 
 ```
-    [[ModbusTCP]]     
-        # this interfacer retrieves register information from modbusTCP clients 
+    [[ModbusTCP]]
+        # this interfacer retrieves register information from modbusTCP clients
         # retrieve register information from modbus TCP documentation for your inverter.
         Type = EmonModbusTcpInterfacer
         [[[init_settings]]]
@@ -30,7 +30,7 @@ Sample configuration for modbus TCP clients
             pubchannels = ToEmonCMS,
             # time in seconds between checks, This is in addition to emonhub_interfacer.run() sleep time of .01
             # use this value to set the frequency of data retrieval from modbus client
-            interval = 10 
+            interval = 10
 ```
 
 ### Sample Node declaration in emonhub.conf

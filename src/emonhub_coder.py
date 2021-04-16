@@ -6,8 +6,10 @@ nodelist = {}
 
 
 def check_datacode(datacode):
+    # Ensure little-endian & standard sizes used
+    e = '<'
     try:
-        return struct.calcsize(datacode)
+        return struct.calcsize(e + datacode)
     except struct.error:
         return False
 
