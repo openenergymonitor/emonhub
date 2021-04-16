@@ -30,7 +30,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         # self._ser.flushInput()
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': 'test'})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': name})
         
         self._config_map = {'g':'group','i':'baseid','b':'frequency','d':'period','k0':'vcal','k1':'ical1','k2':'ical2','k3':'ical3','k4':'ical4','f':'acfreq','m1':'m1','t0':'t0','a':'Vrms'}
         self._config_map_inv = dict(map(reversed, self._config_map.items()))
@@ -116,6 +116,8 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         # BINARY FORMAT e.g OK 5 0 0 0 0 (-0)'
         # -------------------------------------------------------------------
         elif " " in f:
+            # filter out any trailing null bytes
+            f = f.replace('\x00','')
             # Split string by space
             ssv = f.split(' ')
             # Strip leading 'OK' from frame if needed
@@ -127,18 +129,20 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
                 try:
                     c.rssi = int(r)
                 except ValueError:
-                    #self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
+                    self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
                     return False
                 ssv = ssv[:-1]
             # Extract node id from frame
             try:
                 c.nodeid = int(ssv[0]) + int(self._settings['nodeoffset'])
             except ValueError:
+                self._log.warning("Nodeid error")
                 return False
             # Store data as a list of integer values
             try:
                 c.realdata = [int(i) for i in ssv[1:]]
             except ValueError:
+                self._log.warning("realdata value error")
                 return False
                 
         if len(c.realdata) == 0:

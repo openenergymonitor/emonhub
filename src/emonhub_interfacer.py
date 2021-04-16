@@ -304,7 +304,7 @@ class EmonHubInterfacer(threading.Thread):
         
         nodes[node] = {"timestamp":rxc.timestamp, "data":rxc.realdata}
         
-        if not node in ehc.nodelist:
+        if len(rxc.names)==0 and not node in ehc.nodelist:
             return False
             
         # Data whitening uses for ensuring rfm sync
