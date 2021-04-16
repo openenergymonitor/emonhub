@@ -1,11 +1,12 @@
 __all__ = [
+    "EmonHubPulseCounterInterfacer",
     "EmonHubSocketInterfacer",
     "EmonHubSerialInterfacer",
     "EmonHubJeeInterfacer",
+    "EmonHubOEMInterfacer",
     "EmonHubPacketGenInterfacer",
     "EmonHubEmoncmsHTTPInterfacer",
     "EmonHubMqttInterfacer",
-
     "EmonHubTx3eInterfacer",
     "EmonHubVEDirectInterfacer",
     # "EmonHubSmilicsInterfacer",
@@ -14,6 +15,15 @@ __all__ = [
     "EmonHubBMWInterfacer",
     "EmonModbusTcpInterfacer",
     "EmonHubTeslaPowerWallInterfacer",
-    "EmonHubTemplateInterfacer"
+    "EmonHubSDS011Interfacer",
+    "EmonHubModbusRenogyInterfacer",
+    "EmonHubTemplateInterfacer",
+    "EmonHubDS18B20Interfacer",
+    "EmonHubRedisInterfacer",
+    "EmonHubSDM120Interfacer",
+    "EmonHubMBUSInterfacer",
+    "EmonHubBleInterfacer",
+    "EmonHubGoodWeInterfacer",
+    "EmonHubInfluxInterfacer"
     #"EmonFroniusModbusTcpInterfacer"
 ]

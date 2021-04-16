@@ -89,16 +89,16 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
 
         """
 
-        host = str(self._settings['graphite_host']).strip('[\'\']')
-        port = int(str(self._settings['graphite_port']).strip('[\'\']'))
-        self._log.debug("Graphite target: {}:{}".format(host, port))
+        host = self._settings['graphite_host'].strip("[']")
+        port = int(self._settings['graphite_port'].strip("[']"))
+        self._log.debug("Graphite target: %s:%s", host, port)
         message = '\n'.join(metrics) + '\n'
-        self._log.debug("Sending metrics:\n" + message)
+        self._log.debug("Sending metrics: %s", message)
 
         try:
             sock = socket.socket()
             sock.connect((host, port))
-            sock.sendall(message)
+            sock.sendall(message.encode())
             sock.close()
         except socket.error as e:
             self._log.error(e)
@@ -125,17 +125,17 @@ class EmonHubGraphiteInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'graphite_host':
-                self._log.info("Setting " + self.name + " graphite_host: " + setting)
+                self._log.info("Setting %s graphite_host: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'graphite_port':
-                self._log.info("Setting " + self.name + " graphite_port: " + setting)
+                self._log.info("Setting %s graphite_port: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'prefix':
-                self._log.info("Setting " + self.name + " prefix: " + setting)
+                self._log.info("Setting %s prefix: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
     """

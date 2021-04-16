@@ -47,7 +47,18 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
-            return
+            # If string longer than 3 print message
+            if len(self._rx_buf) > 3:
+                self._log.info("START MESSAGE: %s", self._rx_buf.rstrip())
+
+            self._rx_buf = ''
+            return False
+
+        #Check for MSG data string. If not found...
+        if self._rx_buf.find("MSG:",0,4) == -1:
+            self._log.info("START MESSAGE: %s", self._rx_buf.rstrip())
+            self._rx_buf = ''
+            return False
 
         # Remove CR,LF
         f = self._rx_buf[:-2].strip()
@@ -72,12 +83,12 @@ class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
                     try:
                         value = float(parts[1])
                     except Exception:
-                        self._log.debug("input value is not numeric: " + parts[1])
+                        self._log.debug("input value is not numeric: %s", parts[1])
 
                     names.append(parts[0])
                     values.append(value)
                 else:
-                    self._log.debug("invalid input name: " + parts[0])
+                    self._log.debug("invalid input name: %s", parts[0])
 
         if self._settings["nodename"] != "":
             c.nodename = self._settings["nodename"]

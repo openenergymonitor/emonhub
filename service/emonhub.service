@@ -1,21 +1,19 @@
 [Unit]
-Description=emonHub service description
-DefaultDependencies=no
-Before=shutdown.target
-Conflicts=shutdown.target
-Requires=local-fs.target
-After=sysinit.target syslog.target local-fs.target
+Description=emonHub data multiplexer
+# The config file lives in /etc/emonhub/emonhub.conf
+# The log file lives in /var/log/emonhub/emonhub.log
+Requires=var-log.mount
+After=var-log.mount network.target
 
 [Service]
 User=emonhub
-PIDFile=/var/run/emonhub.pid
 ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
 PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p /var/log/emonhub/
+ExecStartPre=/bin/mkdir -p -m 0775 /var/log/emonhub/
 ExecStartPre=/bin/chgrp -R emonhub /var/log/emonhub/
-ExecStartPre=/bin/chmod 775 /var/log/emonhub/
-Type=simple
+Type=exec
 Restart=always
+RestartSec=5
 
 [Install]
 WantedBy=multi-user.target

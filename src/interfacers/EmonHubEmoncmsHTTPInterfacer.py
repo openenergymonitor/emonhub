@@ -2,6 +2,7 @@
 """
 import time
 import json
+import requests
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -55,25 +56,23 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         sentat = int(time.time())
 
         # Construct post_url (without apikey)
-        post_url = self._settings['url'] + '/input/bulk.json?apikey='
-        post_body = "data=" + data_string + "&sentat=" + str(sentat)
+        post_url = self._settings['url'] + '/input/bulk.json?'
+        
+        self._log.info("sending: %s data=%s&sentat=%s&apikey=E-M-O-N-C-M-S-A-P-I-K-E-Y", post_url, data_string, sentat)
+        
+        result = False
+        try:
+            reply = requests.post(post_url, {'apikey': self._settings['apikey'], 'data': data_string, 'sentat': str(sentat)}, timeout=60)
+            reply.raise_for_status()  # Raise an exception if status code isn't 200
+            result = reply.text
+        except requests.exceptions.RequestException as ex:
+            self._log.warning("%s couldn't send to server: %s", self.name, ex)
 
-        # logged before apikey added for security
-        self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y&" + post_body)
-
-        # Add apikey to post_url
-        post_url = post_url + self._settings['apikey']
-
-        # The Develop branch of emoncms allows for the sending of the apikey in the post
-        # body, this should be moved from the url to the body as soon as this is widely
-        # adopted
-
-        reply = self._send_post(post_url, {'data': data_string, 'sentat': str(sentat)})
-        if reply == 'ok':
-            self._log.debug("acknowledged receipt with '%s' from %s", reply, self._settings['url'])
+        if result == 'ok':
+            self._log.debug("acknowledged receipt with '%s' from %s", result, self._settings['url'])
             return True
         else:
-            self._log.warning("send failure: wanted 'ok' but got '%s'", reply)
+            self._log.warning("send failure: wanted 'ok' but got '%s'", result)
             return False
 
     def sendstatus(self):
@@ -109,29 +108,29 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'apikey':
                 if setting.lower().startswith('xxxx'):  # FIXME compare whole string to 'x'*32?
-                    self._log.warning("Setting " + self.name + " apikey: obscured")
+                    self._log.warning("Setting %s apikey: obscured", self.name)
                 elif len(setting) == 32:
-                    self._log.info("Setting " + self.name + " apikey: set")
+                    self._log.info("Setting %s apikey: set", self.name)
                 elif setting == "":
-                    self._log.info("Setting " + self.name + " apikey: null")
+                    self._log.info("Setting %s apikey: null", self.name)
                 else:
-                    self._log.warning("Setting " + self.name + " apikey: invalid format")
+                    self._log.warning("Setting %s apikey: invalid format", self.name)
                     continue
                 self._settings[key] = setting
                 # Next line will log apikey if uncommented (privacy ?)
-                #self._log.debug(self.name + " apikey: " + str(setting))
+                #self._log.debug("%s apikey: %s", self.name, setting)
                 continue
             elif key == 'url' and setting.startswith("http"):
-                self._log.info("Setting " + self.name + " url: " + setting)
+                self._log.info("Setting %s url: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'senddata':
-                self._log.info("Setting " + self.name + " senddata: " + setting)
+                self._log.info("Setting %s senddata: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             elif key == 'sendstatus':
-                self._log.info("Setting " + self.name + " sendstatus: " + setting)
+                self._log.info("Setting %s sendstatus: %s", self.name, setting)
                 self._settings[key] = setting
                 continue
             else:
-                self._log.warning("'%s' is not valid for %s: %s" % (setting, self.name, key))
+                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)

@@ -86,7 +86,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
                 for word in parts[1:]:
                     values = word.split("=")
                     d[values[0]] = values[1]
-                    #self._log.debug("word=" + word)
+                    #self._log.debug("word=%s", word)
 
                 access_token = parts[0].split("#")
                 for word in access_token[1:]:
@@ -101,7 +101,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
                 self.saveCredentials()
 
             else:
-                self._log.error("locationHeader=" + location)
+                self._log.error("locationHeader=%s", location)
                 self._log.error("Location URL is different from expected")
 
         else:
@@ -122,7 +122,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         with open(self._TempCredentialFile, "w") as credentials_file:
             json.dump(credentials, credentials_file, indent=4)
 
-        self._log.info("Cached credentials to " + self._TempCredentialFile)
+        self._log.info("Cached credentials to %s", self._TempCredentialFile)
 
     def close(self):
         """Close"""
@@ -165,12 +165,12 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
         headers = {"Authorization": "Bearer " + self._AccessToken,
                    "User-Agent": self.USER_AGENT}
 
-        #self._log.debug("headers=" + str(headers))
+        #self._log.debug("headers=%s", headers)
 
         if post_data is None:
-            r = requests.get(self.ROOT_URL + path, headers=headers)
+            r = requests.get(self.ROOT_URL + path, headers=headers, timeout=60)
         else:
-            r = requests.post(self.ROOT_URL + path, headers=headers, data=post_data)
+            r = requests.post(self.ROOT_URL + path, headers=headers, data=post_data, timeout=60)
 
         #Raise exception if problem with request
         r.raise_for_status()
@@ -210,7 +210,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
             #  u'hasSunRoof': False, u'steering': u'RIGHT', u'licensePlate': u'AA11ABC',
             #  u'dcOnly': True, u'driveTrain': u'BEV_REX', u'doorCount': 4, u'maxFuel': u'8.5', u'hasRex': True}]
 
-            self._log.debug("modelName='" + myvehicle["modelName"] + "' VIN='" + myvehicle["vin"] + "'")
+            self._log.debug("modelName='%s' VIN='%s'", myvehicle["modelName"], myvehicle["vin"])
 
             vin = myvehicle["vin"]
 
@@ -218,7 +218,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
 
             #Report efficiency of driving (not currently used by this program)
             #efficiency = self.call('/api/vehicle/efficiency/v1/' + vin)
-            #self._log.debug("efficiency=" + str(efficiency))
+            #self._log.debug("efficiency=%s", efficiency)
 
             attributesMap = dynamic["attributesMap"]
 
@@ -241,7 +241,7 @@ class EmonHubBMWInterfacer(EmonHubInterfacer):
             else:
                 values.append(0)
 
-            self._log.debug("chargingSystemStatus=" + self._chargingSystemStatus)
+            self._log.debug("chargingSystemStatus=%s", self._chargingSystemStatus)
 
             #u'unitOfElectricConsumption = u'mls/kWh'
             #u'unitOfCombustionConsumption = u'mpg'
