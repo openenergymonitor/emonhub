@@ -23,6 +23,7 @@ __all__ = [
     "EmonHubSDM120Interfacer",
     "EmonHubMBUSInterfacer",
     "EmonHubBleInterfacer",
-    "EmonHubGoodWeInterfacer"
+    "EmonHubGoodWeInterfacer",
+    "EmonHubInfluxInterfacer"
     #"EmonFroniusModbusTcpInterfacer"
 ]
