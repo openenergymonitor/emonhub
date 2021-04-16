@@ -11,7 +11,7 @@ usrdir=${DIR/\/emonhub/}
 emonSD_pi_env=$1
 if [ "$emonSD_pi_env" = "" ]; then
     read -sp 'Apply raspberrypi serial configuration? 1=yes, 0=no: ' emonSD_pi_env
-    echo 
+    echo
     echo "You entered $emonSD_pi_env"
     echo
     # Avoid running apt update if install script is being called from the EmonScripts update script

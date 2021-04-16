@@ -199,7 +199,7 @@ class EmonHub:
             self._log.info("Deleting interfacer '%s'", name)
             self._interfacers[name].stop = True
             interfacers_to_delete.append(name)
-       
+
         for name in interfacers_to_delete:
             del self._interfacers[name]
 

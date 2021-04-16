@@ -33,11 +33,11 @@ class EmonHubRedisInterfacer(EmonHubInterfacer):
 
         # Interfacer specific settings
         self._redis_settings = {'prefix': ''}
-        
-        # Only load module if it is installed        
-        try: 
+
+        # Only load module if it is installed
+        try:
             import redis
-            self.r = redis.Redis(redis_host,redis_port,redis_db)
+            self.r = redis.Redis(redis_host, redis_port, redis_db)
         except ModuleNotFoundError as err:
             self._log.error(err)
             self.r = False
@@ -48,24 +48,25 @@ class EmonHubRedisInterfacer(EmonHubInterfacer):
         """
         if not self.r:
             return False
-        
+
         nodeid = cargo.nodeid
-        
-        if len(cargo.names)<=len(cargo.realdata):
-            for i in range(0,len(cargo.names)):
+
+        if len(cargo.names) <= len(cargo.realdata):
+            for i in range(0, len(cargo.names)):
                 name = cargo.names[i]
                 value = cargo.realdata[i]
-                
+
                 name_parts = []
-                if self._settings['prefix']!='': name_parts.append(self._settings['prefix'])
+                if self._settings['prefix'] != '':
+                    name_parts.append(self._settings['prefix'])
                 name_parts.append(str(nodeid))
                 name_parts.append(str(name))
-                
+
                 name = ":".join(name_parts)
-                
-                self._log.info("redis set "+name+" "+str(value))
+
+                self._log.info("redis set " + name + " " + str(value))
                 try:
-                    self.r.set(name,value)
+                    self.r.set(name, value)
                 except Exception as err:
                     self._log.error(err)
                     return False
