@@ -62,6 +62,8 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         self._bat_readings = []
         if btle_found:
             self._connect()
+        else:
+            self._log.error("EmonHubBleInterfacer bluepy module btle not found")
 
     def close(self):
         """Close serial port"""
@@ -113,7 +115,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
 
     def set(self, **kwargs):
 
-        for key, setting in self._private_settings.iteritems():
+        for key, setting in self._private_settings.items():
             # Decide which setting value to use
             if key in kwargs.keys():
                 setting = kwargs[key]
