@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 """
 
@@ -16,7 +16,9 @@ import logging.handlers
 import signal
 import argparse
 import pprint
-import glob, os
+import glob
+import os
+from collections import defaultdict
 
 import emonhub_setup as ehs
 import emonhub_coder as ehc
@@ -28,11 +30,12 @@ namespace = sys.modules[__name__]
 path = os.path.dirname(os.path.abspath(os.path.realpath(__file__)))
 
 # scan interfacers directory and import all interfacers
-for f in glob.glob(path+"/interfacers/*.py"):
-    name = f.replace(".py","").replace(path+"/interfacers/","")
-    if name!="__init__":
-        # print "Loading: "+name
-        setattr(ehi,name,getattr(getattr(namespace,name),name))
+for f in glob.glob(path + "/interfacers/*.py"):
+    name = f.replace(".py", "").replace(path + "/interfacers/", "")
+    if name != "__init__":
+        # print "Loading: " + name
+        setattr(ehi, name, getattr(getattr(namespace, name), name))
+del name
 
 """class EmonHub
 
@@ -44,9 +47,9 @@ Controlled by the user via EmonHubSetup
 
 """
 
-class EmonHub(object):
+class EmonHub:
 
-    __version__ = "emonHub emon-pi variant v2.1.2"
+    __version__ = "emonHub (emon-pi variant) v2.1.5"
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
@@ -65,7 +68,7 @@ class EmonHub(object):
         # Initialize logging
         self._log = logging.getLogger("EmonHub")
         self._set_logging_level('INFO', False)
-        self._log.info("EmonHub %s" % self.__version__)
+        self._log.info("EmonHub %s", self.__version__)
         self._log.info("Opening hub...")
 
         # Initialize Interfacers
@@ -82,13 +85,12 @@ class EmonHub(object):
 
         """
 
-        # Set signal handler to catch SIGINT and shutdown gracefully
-        signal.signal(signal.SIGINT, self._sigint_handler)
+        # Set signal handler to catch SIGINT or SIGTERM and shutdown gracefully
+        signal.signal(signal.SIGINT, self._signal_handler)
+        signal.signal(signal.SIGTERM, self._signal_handler)
 
         # Initialise thread restart counters
-        restart_count={}
-        for I in self._interfacers.itervalues():
-            restart_count[I.name]=0
+        restart_count = defaultdict(int)
 
         # Until asked to stop
         while not self._exit:
@@ -99,47 +101,41 @@ class EmonHub(object):
                 self._update_settings(self._setup.settings)
 
             # For all Interfacers
-            kill_list=[]
-            for I in self._interfacers.itervalues():
+            kill_list = []
+            for I in self._interfacers.values():
                 # Check threads are still running
-                if not I.isAlive():
+                if not I.is_alive():
                     kill_list.append(I.name) # <-avoid modification of iterable within loop
 
                 # Read each interfacers pub channels
                 for pub_channel in I._settings['pubchannels']:
-                
-                    if pub_channel in I._pub_channels:
-                        if len(I._pub_channels[pub_channel])>0:
-                        
-                            # POP cargo item (one at a time)
-                            cargo = I._pub_channels[pub_channel].pop(0)
-                            
-                            # Post to each subscriber interface
-                            for sub_interfacer in self._interfacers.itervalues():
-                                # For each subsciber channel
-                                for sub_channel in sub_interfacer._settings['subchannels']:
-                                    # If channel names match
-                                    if sub_channel==pub_channel:
-                                        # init if empty
-                                        if not sub_channel in sub_interfacer._sub_channels:
-                                            sub_interfacer._sub_channels[sub_channel] = []
-                                            
-                                        # APPEND cargo item
-                                        sub_interfacer._sub_channels[sub_channel].append(cargo)
+
+                    if pub_channel in I._pub_channels and len(I._pub_channels[pub_channel]) > 0:
+                        # POP cargo item (one at a time)
+                        cargo = I._pub_channels[pub_channel].pop(0)
+
+                        # Post to each subscriber interface
+                        for sub_interfacer in self._interfacers.values():
+                            # For each subscriber channel
+                            for sub_channel in sub_interfacer._settings['subchannels']:
+                                # If channel names match
+                                if sub_channel == pub_channel:
+                                    # APPEND cargo item
+                                    sub_interfacer._sub_channels.setdefault(sub_channel, []).append(cargo)
 
             # ->avoid modification of iterable within loop
             for name in kill_list:
-                self._log.warning(name + " thread is dead.")
+                self._log.warning("%s thread is dead.", name)
 
                 # The following should trigger a restart ... unless the
                 # interfacer is also removed from the settings table.
-                del(self._interfacers[name])
+                del self._interfacers[name]
 
                 # Trigger restart by calling update settings
-                self._log.warning("Attempting to restart thread "+name+" (thread has been restarted "+str(restart_count[name])+" times...")
-                restart_count[name]+=1
+                self._log.warning("Attempting to restart thread %s (thread has been restarted %d times...)", name, restart_count[name])
+                restart_count[name] += 1
                 self._update_settings(self._setup.settings)
-                
+
             # Sleep until next iteration
             time.sleep(0.2)
 
@@ -148,17 +144,16 @@ class EmonHub(object):
 
         self._log.info("Exiting hub...")
 
-        for I in self._interfacers.itervalues():
+        for I in self._interfacers.values():
             I.stop = True
             I.join()
 
         self._log.info("Exit completed")
-        logging.shutdown()
 
-    def _sigint_handler(self, signal, frame):
-        """Catch SIGINT (Ctrl+C)."""
+    def _signal_handler(self, signal, frame):
+        """Catch fatal signals like SIGINT (Ctrl+C) and SIGTERM (service stop)."""
 
-        self._log.debug("SIGINT received.")
+        self._log.debug("Signal %d received.", signal)
         # hub should exit at the end of current iteration.
         self._exit = True
 
@@ -171,53 +166,62 @@ class EmonHub(object):
         else:
             self._set_logging_level()
 
-
-        # Create a place to hold buffer contents whilst a deletion & rebuild occurs
-        self.temp_buffer = {}
+        if 'log_backup_count' in settings['hub']:
+            for handler in self._log.handlers:
+                if isinstance(handler, logging.handlers.RotatingFileHandler):
+                    handler.backupCount = int(settings['hub']['log_backup_count'])
+                    self._log.info("Logging backup count set to %d", handler.backupCount)
+        if 'log_max_bytes' in settings['hub']:
+            for handler in self._log.handlers:
+                if isinstance(handler, logging.handlers.RotatingFileHandler):
+                    handler.maxBytes = int(settings['hub']['log_max_bytes'])
+                    self._log.info("Logging max file size set to %d bytes", handler.maxBytes)
 
         # Interfacers
-        for name in self._interfacers.keys():
+        interfacers_to_delete = []
+        for name in self._interfacers:
             # Delete interfacers if not listed or have no 'Type' in the settings without further checks
             # (This also provides an ability to delete & rebuild by commenting 'Type' in conf)
-            if not name in settings['interfacers'] or not 'Type' in settings['interfacers'][name]:
-                pass
-            else:
+            if name in settings['interfacers'] and 'Type' in settings['interfacers'][name]:
                 try:
                     # test for 'init_settings' and 'runtime_setting' sections
                     settings['interfacers'][name]['init_settings']
                     settings['interfacers'][name]['runtimesettings']
                 except Exception as e:
                     # If interfacer's settings are incomplete, continue without updating
-                    self._log.error("Unable to update '" + name + "' configuration: " + str(e))
+                    self._log.error("Unable to update '%s' configuration: %s", name, e)
                     continue
                 else:
                     # check init_settings against the file copy, if they are the same move on to the next
                     if self._interfacers[name].init_settings == settings['interfacers'][name]['init_settings']:
                         continue
             # Delete interfacers if setting changed or name is unlisted or Type is missing
-            self._log.info("Deleting interfacer '%s' ", name)
+            self._log.info("Deleting interfacer '%s'", name)
             self._interfacers[name].stop = True
-            del(self._interfacers[name])
+            interfacers_to_delete.append(name)
 
-        for name, I in settings['interfacers'].iteritems():
+        for name in interfacers_to_delete:
+            del self._interfacers[name]
+
+        for name, I in settings['interfacers'].items():
             # If interfacer does not exist, create it
             if name not in self._interfacers:
                 try:
-                    if not 'Type' in I:
+                    if 'Type' not in I:
                         continue
-                    self._log.info("Creating " + I['Type'] + " '%s' ", name)
+                    self._log.info("Creating %s '%s'", I['Type'], name)
                     # This gets the class from the 'Type' string
-                    interfacer = getattr(ehi, I['Type'])(name,**I['init_settings'])
+                    interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
                     interfacer.start()
                 except ehi.EmonHubInterfacerInitError as e:
                     # If interfacer can't be created, log error and skip to next
-                    self._log.error("Failed to create '" + name + "' interfacer: " + str(e))
+                    self._log.error("Failed to create '%s' interfacer: %s", name, e)
                     continue
                 except Exception as e:
                     # If interfacer can't be created, log error and skip to next
-                    self._log.error("Unable to create '" + name + "' interfacer: " + str(e))
+                    self._log.error("Unable to create '%s' interfacer: %s", name, e)
                     continue
                 else:
                     self._interfacers[name] = interfacer
@@ -244,17 +248,18 @@ class EmonHub(object):
         try:
             loglevel = getattr(logging, level)
         except AttributeError:
-            self._log.error('Logging level %s invalid' % level)
+            self._log.error('Logging level %s invalid', level)
             return False
         except Exception as e:
-            self._log.error('Logging level %s ' % str(e))
+            self._log.error('Logging level %s', e)
             return False
 
         # Change level if different from current level
         if loglevel != self._log.getEffectiveLevel():
             self._log.setLevel(level)
             if log:
-                self._log.info('Logging level set to %s' % level)
+                self._log.info('Logging level set to %s', level)
+        return True
 
 
 if __name__ == "__main__":
@@ -264,7 +269,7 @@ if __name__ == "__main__":
 
     # Configuration file
     parser.add_argument("--config-file", action="store",
-                        help='Configuration file', default=sys.path[0]+'/../conf/emonhub.conf')
+                        help='Configuration file', default=sys.path[0] + '/../conf/emonhub.conf')
     # Log file
     parser.add_argument('--logfile', action='store', type=argparse.FileType('a'),
                         help='Log file (default: log to Standard error stream STDERR)')
@@ -279,25 +284,27 @@ if __name__ == "__main__":
 
     # Display version number and exit
     if args.version:
-        print('emonHub %s' % EmonHub.__version__)
+        print('emonHub', EmonHub.__version__)
         sys.exit()
 
     # Logging configuration
     logger = logging.getLogger("EmonHub")
-    if args.logfile is None:
-        # If no path was specified, everything goes to sys.stderr
-        loghandler = logging.StreamHandler()
-    else:
-        # Otherwise, rotating logging over two 5 MB files
+    if args.logfile:
+        # If path was given, rotating logging over two 5 MB files
         # If logfile is supplied, argparse opens the file in append mode,
         # this ensures it is writable
         # Close the file for now and get its path
         args.logfile.close()
+        # These maxBytes and backupCount defaults can be overridden in the config file.
         loghandler = logging.handlers.RotatingFileHandler(args.logfile.name,
-                                                       'a', 5000 * 1024, 1)
+                                                          maxBytes=5000 * 1024,
+                                                          backupCount=1)
+    else:
+        # Otherwise, if no path was specified, everything goes to sys.stderr
+        loghandler = logging.StreamHandler()
     # Format log strings
     loghandler.setFormatter(logging.Formatter(
-            '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
+        '%(asctime)s %(levelname)-8s %(threadName)-10s %(message)s'))
 
     logger.addHandler(loghandler)
 
@@ -312,7 +319,7 @@ if __name__ == "__main__":
         if setup.settings['hub']['use_syslog'] == 'yes':
             syslogger = logging.handlers.SysLogHandler(address='/dev/log')
             syslogger.setFormatter(logging.Formatter(
-                  'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
+                'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
             logger.addHandler(syslogger)
 
     # If in "Show settings" mode, print settings and exit

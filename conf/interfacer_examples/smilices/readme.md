@@ -31,6 +31,6 @@ Using the Wibeee mac-address, without colons, as node id.
            units = W, W, W, W, Wh, Wh, Wh, Wh
 
 
-With this config in place, you simply need to restart emonhub on our emonpi by ssh'ing into it and typing 
+With this config in place, you simply need to restart emonhub on our emonpi by ssh'ing into it and typing
 
       $>sudo service emonhub restart

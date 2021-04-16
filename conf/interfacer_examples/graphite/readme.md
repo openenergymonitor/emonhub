@@ -56,7 +56,7 @@ Ex: `<prefix>.emonPi.power1`
             prefix = emonpi
 ```
 
-With this config in place now you simply need to restart emonhub on your emonpi by ssh'ing into it and typing 
+With this config in place now you simply need to restart emonhub on your emonpi by ssh'ing into it and typing
 
       $> sudo service emonhub restart
 

@@ -2,15 +2,13 @@
 # See LICENCE and README file for details
 
 import array
-import math
-import string
 
 __author__ = 'Stuart Pittaway'
 
 class SMANET2PlusPacket:
     """Holds a second type of SMA protocol packet"""
 
-    def __init__(self, ctrl1=0, ctrl2=0, packetcount=0, InverterCodeArray=bytearray(), a=0, b=0, c=0,SusyID=0xFFFF,DestinationAddress=0xFFFFFFFF  ):
+    def __init__(self, ctrl1=0, ctrl2=0, packetcount=0, InverterCodeArray=bytearray(), a=0, b=0, c=0, SusyID=0xFFFF, DestinationAddress=0xFFFFFFFF):
 
         self.packet = bytearray()
         self.FCSChecksum = 0xffff
@@ -60,10 +58,10 @@ class SMANET2PlusPacket:
             0x58d5, 0x495c, 0x3de3, 0x2c6a, 0x1ef1, 0x0f78
         ])
 
-        if (ctrl1 != 0 or ctrl2 != 0):
+        if ctrl1 != 0 or ctrl2 != 0:
             self.pushLong(0x656003FF)
-            self.pushByte(ctrl1);
-            self.pushByte(ctrl2);
+            self.pushByte(ctrl1)
+            self.pushByte(ctrl2)
 
             #Who are we sending this packet to?
             #SusyID (FFFFF = any SusyID)
@@ -71,11 +69,11 @@ class SMANET2PlusPacket:
             #Serial (FFFFFFFF is any)
             self.pushLong(DestinationAddress)
 
-            self.pushByte(a);
-            self.pushByte(b);
-            self.pushByteArray(InverterCodeArray);
-            self.pushByte(0x00);
-            self.pushByte(c);
+            self.pushByte(a)
+            self.pushByte(b)
+            self.pushByteArray(InverterCodeArray)
+            self.pushByte(0x00)
+            self.pushByte(c)
             self.pushLong(0x00000000)
             self.pushShort(packetcount |  0x8000)
 
@@ -83,26 +81,26 @@ class SMANET2PlusPacket:
         return self.packet[offset]
 
     def getTwoByte(self, offset):
-        value = self.packet[offset] * math.pow(256, 0)
-        value += self.packet[offset + 1] * math.pow(256, 1)
-        return long(value);
+        value = self.packet[offset]
+        value += self.packet[offset + 1] << 8
+        return value
 
     def getFourByteLong(self, offset):
-        value = self.packet[offset] * math.pow(256, 0)
-        value += self.packet[offset + 1] * math.pow(256, 1)
-        value += self.packet[offset + 2] * math.pow(256, 2)
-        value += self.packet[offset + 3] * math.pow(256, 3)
-        return long(value);
+        value = self.packet[offset]
+        value += self.packet[offset + 1] << 0x08
+        value += self.packet[offset + 2] << 0x10
+        value += self.packet[offset + 3] << 0x18
+        return value
 
     def getEightByte(self, offset):
-        return self.packet[offset] * math.pow(256, 0) \
-                    + self.packet[offset + 1] * math.pow(256, 1) \
-                    + self.packet[offset + 2] * math.pow(256, 2) \
-                    + self.packet[offset + 3] * math.pow(256, 3) \
-                    + self.packet[offset + 4] * math.pow(256, 4) \
-                    + self.packet[offset + 5] * math.pow(256, 5) \
-                    + self.packet[offset + 6] * math.pow(256, 6) \
-                    + self.packet[offset + 7] * math.pow(256, 7)
+        return self.packet[offset] \
+                    + (self.packet[offset + 1] << 0x08) \
+                    + (self.packet[offset + 2] << 0x10) \
+                    + (self.packet[offset + 3] << 0x18) \
+                    + (self.packet[offset + 4] << 0x20) \
+                    + (self.packet[offset + 5] << 0x28) \
+                    + (self.packet[offset + 6] << 0x30) \
+                    + (self.packet[offset + 7] << 0x38)
 
     def getArray(self):
         return self.packet
@@ -136,21 +134,22 @@ class SMANET2PlusPacket:
         return self.packet[24]
 
     def getTwoByteuShort(self, offset):
-        value = self.packet[offset] * math.pow(256, 0) + self.packet[offset + 1] * math.pow(256, 1)
-        return value
+        return self.packet[offset] + (self.packet[offset + 1] << 8)
 
     def errorCode(self):
         return self.getTwoByteuShort(22)
 
     def calculateFCS(self):
         myfcs = 0xffff
-        for bte in packet:
+        for bte in self.packet:
             myfcs = (myfcs >> 8) ^ self.fcstab[(myfcs ^ bte) & 0xff]
 
         myfcs ^= 0xffff
+        return myfcs
 
     def pushByteArray(self, barray):
-        for bte in barray: self.pushByte(bte)
+        for bte in barray:
+            self.pushByte(bte)
 
     def pushByte(self, value):
         self.FCSChecksum = (self.FCSChecksum >> 8) ^ self.fcstab[(self.FCSChecksum ^ value) & 0xff]
@@ -161,7 +160,7 @@ class SMANET2PlusPacket:
         self.pushByte((value >> 0) & 0xFF)
         self.pushByte((value >> 8) & 0xFF)
 
-    def pushLongs(self, value1,value2,value3):
+    def pushLongs(self, value1, value2, value3):
         self.pushLong(value1)
         self.pushLong(value2)
         self.pushLong(value3)
@@ -177,13 +176,13 @@ class SMANET2PlusPacket:
         outputpacket = bytearray()
 
         realLength = 0
-        # //Header byte
+        # Header byte
         outputpacket.append(0x7e)
         realLength += 1
 
-        # //Copy packet to output escaping values along the way
+        # Copy packet to output escaping values along the way
         for value in self.packet:
-            if (value == 0x7d) or (value == 0x7e) or (value == 0x11) or (value == 0x12) or (value == 0x13):
+            if value == 0x7d or value == 0x7e or value == 0x11 or value == 0x12 or value == 0x13:
                 outputpacket.append(0x7d)  # byte to indicate escape character
                 outputpacket.append(value ^ 0x20)
                 realLength += 1
@@ -203,9 +202,9 @@ class SMANET2PlusPacket:
         outputpacket.append(0x7e)
         realLength += 1
 
-        # print "Packet length {0} vs {1}".format(realLength,self.totalCalculatedPacketLength())
+        # print "Packet length {0} vs {1}".format(realLength, self.totalCalculatedPacketLength())
 
-        if (self.totalCalculatedPacketLength() != realLength):
+        if self.totalCalculatedPacketLength() != realLength:
             raise Exception("Packet length is incorrect {0} vs {1}".format(realLength, self.totalCalculatedPacketLength()))
 
         return outputpacket
@@ -213,7 +212,7 @@ class SMANET2PlusPacket:
     def debugViewPacket(self):
         str_list = []
 
-        pos = 0;
+        pos = 0
 
         #str_list.append("L2  ARRAY LENGTH = {0}".format(len(self.packet)))
         str_list.append("L2 {0:04x}  START = {1:02x}".format(pos, 0x7e))
@@ -226,7 +225,7 @@ class SMANET2PlusPacket:
         pos += 1
         str_list.append("L2 {0:04x}       ?= {1:02x}".format(pos, self.packet[pos]))
         pos += 1
-        str_list.append("L2 {0:04x}  susyid= {1:02x} {2:02x}".format(pos, self.packet[pos + 0],self.packet[pos + 1]))
+        str_list.append("L2 {0:04x}  susyid= {1:02x} {2:02x}".format(pos, self.packet[pos + 0], self.packet[pos + 1]))
         pos += 2
         str_list.append("L2 {0:04x}    Add1= {1:02x} {2:02x} {3:02x} {4:02x}".format(pos, self.packet[pos + 0],
                                                                                            self.packet[pos + 1],
@@ -262,15 +261,15 @@ class SMANET2PlusPacket:
         pos += 4
 
         s = ""
-        for j in range(pos, len(self.packet)):
-            if (j % 16 == 0 or j == pos):
+        for j, b in enumerate(self.packet[pos:]):
+            if j % 16 == 0 or j == pos:
                 s += "\n    %08x: " % j
 
-            s += "%02x " % self.packet[j]
+            s += "%02x " % b
 
         str_list.append("L2 Payload= %s" % s)
         myfcs = self.FCSChecksum ^ 0xffff
         str_list.append("L2 Checksu= {0:02x} {1:02x}".format(myfcs & 0x00ff, (myfcs >> 8) & 0x00ff))
         str_list.append("L2    END = {0:02x}".format(0x7e))
 
-        return string.join(str_list, '\n')
+        return '\n'.join(str_list)
