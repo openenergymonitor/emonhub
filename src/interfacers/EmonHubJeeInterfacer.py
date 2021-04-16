@@ -85,7 +85,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             self._rx_buf = self._rx_buf + self._ser.readline().decode()
         except UnicodeDecodeError:
             return
-            
+
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
             return

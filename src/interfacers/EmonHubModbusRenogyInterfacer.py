@@ -16,7 +16,7 @@ Monitors Renogy Rover via USB RS232 Cable over modbus
 
 class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, com_port='/dev/ttyUSB0', com_baud=9600, toextract='' , poll_interval=30):
+    def __init__(self, name, com_port='/dev/ttyUSB0', com_baud=9600, toextract='', poll_interval=30):
         """Initialize Interfacer
         com_port (string): path to COM port
         """
@@ -31,13 +31,13 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
         # open connection
         if pymodbus_found:
             self._log.info("pymodbus installed")
-            self._log.debug("EmonHubModbusRenogyInterfacer args: " + com_port + " - " + str(com_baud) )
-            
-            self._con = self._open_modbus(com_port,com_baud)
-            if self._con :
-                 self._log.info("Modbus client Connected!")                 
+            self._log.debug("EmonHubModbusRenogyInterfacer args: " + com_port + " - " + str(com_baud))
+
+            self._con = self._open_modbus(com_port, com_baud)
+            if self._con:
+                self._log.info("Modbus client Connected!")
             else:
-                 self._log.info("Connection to Modbus client failed. Will try again later")
+                self._log.info("Connection to Modbus client failed. Will try again later")
 
     def close(self):
 
@@ -46,7 +46,7 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
             self._log.debug("Closing USB/Serial port")
         self._con.close()
 
-    def _open_modbus(self,com_port,com_baud):
+    def _open_modbus(self, com_port, com_baud):
         """ Open connection to modbus device """
         BATTERY_TYPE = {
             1: 'open',
@@ -55,16 +55,16 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
             4: 'lithium',
             5: 'self-customized'
         }
-        
+
         try:
             self._log.info("Starting Modbus client . . . ")
-            c = ModbusClient(method = 'rtu', port = com_port, baudrate = com_baud, stopbits = 1, bytesize = 8, parity = 'N')
+            c = ModbusClient(method='rtu', port=com_port, baudrate=com_baud, stopbits=1, bytesize=8, parity='N')
             if c.connect():
                 Model = c.read_holding_registers(12, 8, unit=1)
                 self._log.info("Connected to Renogy Model: " + str(Model.registers[0]))
                 BatteryType = c.read_holding_registers(57348, 1, unit=1).registers[0]
                 BatteryCapacity = c.read_holding_registers(57346, 1, unit=1).registers[0]
-                self._log.info("Battery Type: " + BATTERY_TYPE[BatteryType] + " " + str(BatteryCapacity) + "ah") 
+                self._log.info("Battery Type: " + BATTERY_TYPE[BatteryType] + " " + str(BatteryCapacity) + "ah")
                 self._modcon = True
             else:
                 self._log.debug("Connection failed")
@@ -72,14 +72,12 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
         except Exception as e:
             self._log.error("modbus connection failed" + str(e))
            #raise EmonHubInterfacerInitError('Could not open connection to host %s' %modbus_IP)
-            pass
         else:
             return c
 
     def read(self):
-
         now = time.time()
-        if not (now - self.last_read) > self.poll_interval:
+        if not now - self.last_read > self.poll_interval:
             # Wait to read based on poll_interval
             return
 
@@ -100,14 +98,14 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
             time.sleep(float(self._settings["interval"]))
             f = []
             c = Cargo.new_cargo(rawdata="")
-                       
-            if not self._modcon :
+
+            if not self._modcon:
                 self._con.close()
                 self._log.info("Not connected, retrying connect" + str(self.init_settings))
-                self._con = self._open_modbus(self.init_settings["modbus_IP"],self.init_settings["modbus_port"])
+                self._con = self._open_modbus(self.init_settings["modbus_IP"], self.init_settings["modbus_port"])
 
-            if self._modcon :
-                                         
+            if self._modcon:
+
                 # read battery registers
                 BatteryPercent = self._con.read_holding_registers(256, 1, unit=1).registers[0]
                 #Charging_Stage = CHARGING_STATE[self._con.read_holding_registers(288, 1, unit=1).registers[0]]
@@ -139,9 +137,6 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
                     c.realdata = [BatteryPercent, Charging_Stage, BatteryTemp_F, SolarVoltage, SolarCurrent, SolarPower]
                 else:
                     self._log.error("nodeoffset needed in emonhub configuration, make sure it exists and is a integer ")
-                    pass
 
                 self._log.debug("Return from read data: " + str(c.realdata))
                 return c
-
-

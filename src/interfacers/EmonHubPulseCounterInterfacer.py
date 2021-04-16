@@ -1,5 +1,4 @@
 from emonhub_interfacer import EmonHubInterfacer
-from collections import defaultdict
 import time
 import atexit
 
@@ -28,7 +27,7 @@ Example emonhub configuration
         pulse_pin = 15
         # bouncetime default to 1.
         # bouncetime = 2
-        # Rate_limit is the rate at which the interfacer will pass data 
+        # Rate_limit is the rate at which the interfacer will pass data
         # to emonhub for sending on. Too short and pulses will be missed.
         # rate_limit is minimum number of seconds between data output.
         # pulses are accumulated in this period.
@@ -52,18 +51,15 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         # Initialization
         super().__init__(name)
 
-        self._settings.update( {
+        self._settings.update({
             'pulse_pin'  : int(pulse_pin),
             'bouncetime' : int(bouncetime),
             'rate_limit' : int(rate_limit)
         })
 
         self._pulse_settings = {}
-
         self.pulse_count = 0
-
         self.last_pulse = 0
-
         self.last_time = (time.time()//10)*10
 
         if RPi_found:
@@ -87,7 +83,6 @@ class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
         self._log.debug('%s : pulse received -  count: %d', self.name, self.pulse_count)
 
     def read(self):
-
         time_now = time.time()
 
         if self.last_pulse == self.pulse_count:
