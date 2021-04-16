@@ -7,22 +7,13 @@
 
 """
 
-import serial
 import time
-import datetime
 import logging
-import socket
-import select
 import threading
-import urllib2
-import json
-import uuid
 import traceback
-
-import paho.mqtt.client as mqtt
+import requests
 
 import emonhub_coder as ehc
-
 import emonhub_buffer as ehb
 
 """class EmonHubInterfacer
@@ -33,38 +24,44 @@ This almost empty class is meant to be inherited by subclasses specific to
 their data source.
 
 """
-def log_exceptions_from_class_method(f):
+
+def log_exceptions_from_class_method(func):
     def wrapper(*args):
-        self=args[0]
+        self = args[0]
         try:
-            return f(*args)
-        except:
-            self._log.warning("Exception caught in "+self.name+" thread. "+traceback.format_exc())
-            return
+            return func(*args)
+        except Exception:
+            self._log.warning("Exception caught in " + self.name + " thread. " + traceback.format_exc())
     return wrapper
 
 class EmonHubInterfacer(threading.Thread):
-
     def __init__(self, name):
-
-        # Initialize logger
+        # Initialise logger
         self._log = logging.getLogger("EmonHub")
 
         # Initialise thread
-        threading.Thread.__init__(self)
+        super().__init__()
         self.setName(name)
 
         # Initialise settings
-        self._defaults = {'pause': 'off', 'interval': 0, 'datacode': '0',
-                          'scale':'1', 'timestamped': False, 'targeted': False, 'nodeoffset' : '0','pubchannels':[],'subchannels':[], 'batchsize': '1'}
-        
+        self._defaults = {'pause': 'off',
+                          'interval': 0,
+                          'datacode': '0',
+                          'scale': '1',
+                          'timestamped': False,
+                          'targeted': False,
+                          'nodeoffset': '0',
+                          'pubchannels': [],
+                          'subchannels': [],
+                          'batchsize': '1'}
+
         self.init_settings = {}
         self._settings = {}
 
-        # Initialize message queue
+        # Initialise message queue
         self._sub_channels = {}
         self._pub_channels = {}
-        
+
         # This line will stop the default values printing to logfile at start-up
         # unless they have been overwritten by emonhub.conf entries
         # comment out if diagnosing a startup value issue
@@ -72,7 +69,7 @@ class EmonHubInterfacer(threading.Thread):
 
         # Initialize interval timer's "started at" timestamp
         self._interval_timestamp = 0
-        
+
         buffer_type = "memory"
         buffer_size = 1000
 
@@ -83,7 +80,7 @@ class EmonHubInterfacer(threading.Thread):
         # number of items posted is the lower of this item limit, buffer_size, or the
         # batchsize, as set in reporter settings or by the default value.
         self._item_limit = buffer_size
-        
+
         # create a stop
         self.stop = False
 
@@ -104,29 +101,31 @@ class EmonHubInterfacer(threading.Thread):
                     rxc = self._process_rx(rxc)
                     if rxc:
                         for channel in self._settings["pubchannels"]:
-                            self._log.debug(str(rxc.uri) + " Sent to channel(start)' : " + str(channel))
-                           
-                            # Initialize channel if needed
-                            if not channel in self._pub_channels:
+                            self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
+
+                            # Initialise channel if needed
+                            if channel not in self._pub_channels:
                                 self._pub_channels[channel] = []
-                                
+
                             # Add cargo item to channel
                             self._pub_channels[channel].append(rxc)
-                            
-                            self._log.debug(str(rxc.uri) + " Sent to channel(end)' : " + str(channel))
+
+                            self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
 
             # Subscriber channels
             for channel in self._settings["subchannels"]:
                 if channel in self._sub_channels:
-                    for i in range(0,len(self._sub_channels[channel])):
+                    # FIXME should be: while self._sub_channels[channel]
+                    for _ in range(len(self._sub_channels[channel])):
+                        # FIXME pop(0) has O(n) complexity. Can we use pop's default of last?
                         frame = self._sub_channels[channel].pop(0)
                         self.add(frame)
-                    
-            # Don't loop to fast
+
+            # Don't loop too fast
             time.sleep(0.1)
             # Action reporter tasks
             self.action()
-            
+
     def add(self, cargo):
         """Append data to buffer.
 
@@ -139,16 +138,17 @@ class EmonHubInterfacer(threading.Thread):
         try:
             f.append(cargo.timestamp)
             f.append(cargo.nodeid)
+            # FIXME replace with f.extend(cargo.realdata)
             for i in cargo.realdata:
                 f.append(i)
             if cargo.rssi:
                 f.append(cargo.rssi)
-                
-            # self._log.debug(str(cargo.uri) + " adding frame to buffer => "+ str(f))
-            
+
+            # self._log.debug("%d adding frame to buffer => %s", rxc.uri, str)
+
         except:
-            self._log.warning("Failed to create emonCMS frame " + str(f))
-            
+            self._log.warning("Failed to create emonCMS frame %s", f)
+
         # self._log.debug(str(carg.ref) + " added to buffer =>"
         #                 + " time: " + str(carg.timestamp)
         #                 + ", node: " + str(carg.node)
@@ -157,9 +157,9 @@ class EmonHubInterfacer(threading.Thread):
         # databuffer is of format:
         # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
         # [[1399980731, 10, 150, 3450 ...]]
-        
-        # datauffer format can be overwritten by interfacer
-        
+
+        # databuffer format can be overwritten by interfacer
+
         self.buffer.storeItem(f)
 
     def read(self):
@@ -199,12 +199,12 @@ class EmonHubInterfacer(threading.Thread):
 
     def flush(self):
         """Send oldest data in buffer, if any."""
-        
+
         # Buffer management
         # If data buffer not empty, send a set of values
         if self.buffer.hasItems():
-            self._log.debug("Buffer size: "+str(self.buffer.size()))
-            
+            self._log.debug("Buffer size: %d", self.buffer.size())
+
             max_items = int(self._settings['batchsize'])
             if max_items > self._item_limit:
                 max_items = self._item_limit
@@ -216,13 +216,11 @@ class EmonHubInterfacer(threading.Thread):
             if self._process_post(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItems(retrievedlength)
-                # log the time of last succesful post
-                self._interval_timestamp = time.time()
-            else:
-                # slow down retry rate in the case where the last attempt failed
-                # stops continuous retry attempts filling up the log
-                self._interval_timestamp = time.time() 
-            
+            # log the time of last successful post
+            # slow down retry rate in the case where the last attempt failed
+            # stops continuous retry attempts filling up the log
+            self._interval_timestamp = time.time()
+
 
     def _process_post(self, data):
         """
@@ -248,27 +246,17 @@ class EmonHubInterfacer(threading.Thread):
 
         """
 
-        reply = ""
-        request = urllib2.Request(post_url, post_body)
         try:
-            response = urllib2.urlopen(request, timeout=60)
-        except urllib2.HTTPError as e:
-            self._log.warning(self.name + " couldn't send to server, HTTPError: " +
-                              str(e.code))
-        except urllib2.URLError as e:
-            self._log.warning(self.name + " couldn't send to server, URLError: " +
-                              str(e.reason))
-        except httplib.HTTPException:
-            self._log.warning(self.name + " couldn't send to server, HTTPException")
-        except Exception:
-            import traceback
-            self._log.warning(self.name + " couldn't send to server, Exception: " +
-                              traceback.format_exc())
-        else:
-            reply = response.read()
-        finally:
-            return reply
-            
+            if post_body:
+                reply = requests.post(post_url, post_body, timeout=60)
+            else:
+                reply = requests.get(post_url, timeout=60)
+            reply.raise_for_status()  # Raise an exception if status code isn't 200
+            return reply.text
+        except requests.exceptions.RequestException as ex:
+            self._log.warning("%s couldn't send to server: %s", self.name, ex)
+        return reply.text
+
     def _process_rx(self, cargo):
         """Process a frame of data
 
@@ -282,9 +270,9 @@ class EmonHubInterfacer(threading.Thread):
         Return data as a list: [NodeID, val1, val2]
 
         """
-            
+
         # Log data
-        self._log.debug(str(cargo.uri) + " NEW FRAME : " + str(cargo.rawdata))
+        self._log.debug("%d NEW FRAME : %s", cargo.uri, cargo.rawdata)
 
         rxc = cargo
         decoded = []
@@ -293,32 +281,33 @@ class EmonHubInterfacer(threading.Thread):
 
         # Discard if data is non-existent
         if len(rxc.realdata) < 1:
-            self._log.warning(str(cargo.uri) + " Discarded RX frame 'string too short' : " + str(rxc.realdata))
+            self._log.warning("%d Discarded RX frame 'string too short' : %s",
+                              cargo.uri, rxc.realdata)
             return False
 
         # Discard if anything non-numerical found
         try:
             [float(val) for val in rxc.realdata]
         except Exception:
-            self._log.warning(str(cargo.uri) + " Discarded RX frame 'non-numerical content' : " + str(rxc.realdata))
+            self._log.warning("%d Discarded RX frame 'non-numerical content' : %s",
+                              cargo.uri, rxc.realdata)
             return False
 
         # Discard if first value is not a valid node id
         # n = float(rxc.realdata[0])
         # if n % 1 != 0 or n < 0 or n > 31:
-        #     self._log.warning(str(cargo.uri) + " Discarded RX frame 'node id outside scope' : " + str(rxc.realdata))
+        #     self._log.warning("%d Discarded RX frame 'node id outside scope' : %s",
+        #                       cargo.uri, rxc.realdata)
         #     return False
 
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
-            if whitening==True or whitening=="1":
-                for i in range(0, len(rxc.realdata), 1):
-                    rxc.realdata[i] = rxc.realdata[i] ^ 0x55
+            if whitening is True or whitening == "1":
+                rxc.realdata = [x ^ 0x55 for x in rxc.realdata]
 
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacodes' in ehc.nodelist[node]['rx']:
-
             # fetch the string of datacodes
             datacodes = ehc.nodelist[node]['rx']['datacodes']
 
@@ -328,8 +317,8 @@ class EmonHubInterfacer(threading.Thread):
                 datasizes.append(ehc.check_datacode(str(code)))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(rxc.realdata) != sum(datasizes):
-                self._log.warning(str(rxc.uri) + " RX data length: " + str(len(rxc.realdata)) +
-                                  " is not valid for datacodes " + str(datacodes))
+                self._log.warning("%d RX data length: %d is not valid for datacodes %s",
+                                  rxc.uri, len(rxc.realdata), datacodes)
                 return False
             else:
                 # Determine the expected number of values to be decoded
@@ -341,8 +330,11 @@ class EmonHubInterfacer(threading.Thread):
             if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacode' in ehc.nodelist[node]['rx']:
                 datacode = ehc.nodelist[node]['rx']['datacode']
             else:
-            # when node not listed or has no datacode(s) use the interfacers default if specified
+                # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
+            if isinstance(datacode, list):
+                self._log.warning("%d datacode should be str, not list. Did you mean datacodes?")
+                return False
             # Ensure only int 0 is passed not str 0
             if datacode == '0':
                 datacode = 0
@@ -356,17 +348,17 @@ class EmonHubInterfacer(threading.Thread):
                     decoded.append(val)
             # Discard frame if total size is not an exact multiple of the specified datacode size.
             elif len(rxc.realdata) % ehc.check_datacode(datacode) != 0:
-                self._log.warning(str(rxc.uri) + " RX data length: " + str(len(rxc.realdata)) +
-                                  " is not valid for datacode " + str(datacode))
+                self._log.warning("%d RX data length: %d is not valid for datacode %s",
+                                  rxc.uri, len(rxc.realdata), datacode)
                 return False
             else:
             # Determine the number of values in the frame of the specified code & size
-                count = len(rxc.realdata) / ehc.check_datacode(datacode)
+                count = len(rxc.realdata) // ehc.check_datacode(datacode)
 
         # Decode the string of data one value at a time into "decoded"
         if not decoded:
-            bytepos = int(0)
-            for i in range(0, count, 1):
+            bytepos = 0
+            for i in range(count):
                 # Use single datacode unless datacode = False then use datacodes
                 dc = str(datacode)
                 if not datacode:
@@ -375,25 +367,25 @@ class EmonHubInterfacer(threading.Thread):
                 size = int(ehc.check_datacode(dc))
                 try:
                     value = ehc.decode(dc, [int(v) for v in rxc.realdata[bytepos:bytepos+size]])
-                except:
-                    self._log.warning(str(rxc.uri) + " Unable to decode as values incorrect for datacode(s)")
+                except Exception:
+                    self._log.warning("%d Unable to decode as values incorrect for datacode(s)", rxc.uri)
                     return False
                 bytepos += size
                 decoded.append(value)
-        
+
         # check if node is listed and has individual scales for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scales' in ehc.nodelist[node]['rx']:
             scales = ehc.nodelist[node]['rx']['scales']
             # === Removed check for scales length so that failure mode is more gracious ===
             # Discard the frame & return 'False' if it doesn't match the number of scales
             # if len(decoded) != len(scales):
-            #     self._log.warning(str(rxc.uri) + " Scales " + str(scales) + " for RX data : " + str(rxc.realdata) + " not suitable " )
+            #     self._log.warning("%d Scales %s for RX data : %s not suitable", rxc.uri, scales, rxc.realdata)
             #     return False
             # else:
                   # Determine the expected number of values to be decoded
                   # Set decoder to "Per value" scaling using scale 'False' as flag
             #     scale = False
-            if len(scales)>1:
+            if len(scales) > 1:
                 scale = False
             else:
                 scale = "1"
@@ -405,11 +397,12 @@ class EmonHubInterfacer(threading.Thread):
             # when node not listed or has no scale(s) use the interfacers default if specified
                 scale = self._settings['scale']
 
-        if not scale == "1":
-            for i in range(0, len(decoded), 1):
+        if scale != "1":
+            # FIXME replace with zip
+            for i in range(len(decoded)):
                 x = scale
                 if not scale:
-                    if i<len(scales):
+                    if i < len(scales):
                         x = scales[i]
                     else:
                         x = 1
@@ -422,7 +415,6 @@ class EmonHubInterfacer(threading.Thread):
                         decoded[i] = float(val)
 
         rxc.realdata = decoded
-
         names = rxc.names
 
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'names' in ehc.nodelist[node]['rx']:
@@ -436,13 +428,13 @@ class EmonHubInterfacer(threading.Thread):
 
         if not rxc:
             return False
-        self._log.debug(str(rxc.uri) + " Timestamp : " + str(rxc.timestamp))
-        self._log.debug(str(rxc.uri) + " From Node : " + str(rxc.nodeid))
+        self._log.debug("%d Timestamp : %f", rxc.uri, rxc.timestamp)
+        self._log.debug("%d From Node : %s", rxc.uri, str(rxc.nodeid))
         if rxc.target:
-            self._log.debug(str(rxc.uri) + " To Target : " + str(rxc.target))
-        self._log.debug(str(rxc.uri) + "    Values : " + str(rxc.realdata))
+            self._log.debug("%d To Target : %d", rxc.uri, rxc.target)
+        self._log.debug("%d    Values : %s", rxc.uri, rxc.realdata)
         if rxc.rssi:
-            self._log.debug(str(rxc.uri) + "      RSSI : " + str(rxc.rssi))
+            self._log.debug("%d      RSSI : %d", rxc.uri, rxc.rssi)
 
         return rxc
 
@@ -469,21 +461,21 @@ class EmonHubInterfacer(threading.Thread):
         # Normal operation is dest from txc.nodeid
         if txc.target:
             dest = str(txc.target)
-            # self._log.info("dest from txc.target: "+dest)
+            # self._log.info("dest from txc.target: " + dest)
         else:
             dest = str(txc.nodeid)
-            # self._log.info("dest from txc.nodeid: "+dest)
+            # self._log.info("dest from txc.nodeid: " + dest)
 
-        # self._log.info("Target: "+dest)
-        # self._log.info("Realdata: "+json.dumps(txc.realdata))
+        # self._log.info("Target: " + dest)
+        # self._log.info("Realdata: " + json.dumps(txc.realdata))
 
         # check if node is listed and has individual scales for each value
         if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'scales' in ehc.nodelist[dest]['tx']:
             scales = ehc.nodelist[dest]['tx']['scales']
             # Discard the frame & return 'False' if it doesn't match the number of scales
             if len(txc.realdata) != len(scales):
-                self._log.warning(str(txc.uri) + " Scales " + str(scales) + " for RX data : " + str(txc.realdata) +
-                                  " not suitable " )
+                self._log.warning("%d Scales %s for RX data : %s not suitable ",
+                                  txc.uri, scales, txc.realdata)
                 return False
             else:
                 # Determine the expected number of values to be decoded
@@ -504,7 +496,7 @@ class EmonHubInterfacer(threading.Thread):
         if scale == "1":
             scaled = txc.realdata
         else:
-            for i in range(0, len(txc.realdata), 1):
+            for i in range(len(txc.realdata)):
                 x = scale
                 if not scale:
                     x = scales[i]
@@ -516,11 +508,10 @@ class EmonHubInterfacer(threading.Thread):
                         val = int(val)
                 scaled.append(val)
 
-
-        # self._log.info("Scaled: "+json.dumps(scaled))
+        # self._log.info("Scaled: %s", json.dumps(scaled))
 
         # check if node is listed and has individual datacodes for each value
-        if (dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']):
+        if dest in ehc.nodelist and 'tx' in ehc.nodelist[dest] and 'datacodes' in ehc.nodelist[dest]['tx']:
 
             # fetch the string of datacodes
             datacodes = ehc.nodelist[dest]['tx']['datacodes']
@@ -531,8 +522,8 @@ class EmonHubInterfacer(threading.Thread):
                 datasizes.append(ehc.check_datacode(str(code)))
             # Discard the frame & return 'False' if it doesn't match the summed datasizes
             if len(scaled) != len(datasizes):
-                self._log.warning(str(txc.uri) + " TX datacodes: " + str(datacodes) +
-                                  " are not valid for values " + str(scaled))
+                self._log.warning("%d TX datacodes: %s are not valid for values %s",
+                                  txc.uri, datacodes, scaled)
                 return False
             else:
                 # Determine the expected number of values to be decoded
@@ -545,10 +536,7 @@ class EmonHubInterfacer(threading.Thread):
                 datacode = ehc.nodelist[dest]['tx']['datacode']
             else:
             # when node not listed or has no datacode(s) use the interfacers default if specified
-                if 'datacode' in self._settings:
-                    datacode = self._settings['datacode']
-                else:
-                    datacode = "h"
+                datacode = self._settings.get('datacode', 'h')
 
             # Ensure only int 0 is passed not str 0
             if datacode == '0':
@@ -565,8 +553,8 @@ class EmonHubInterfacer(threading.Thread):
                     encoded.append(val)
             # Discard frame if total size is not an exact multiple of the specified datacode size.
             # elif len(data) * ehc.check_datacode(datacode) != 0:
-            #     self._log.warning(str(uri) + " TX data length: " + str(len(data)) +
-            #                       " is not valid for datacode " + str(datacode))
+            #     self._log.warning("%d TX data length: %d is not valid for datacode %s",
+            #                       txc.uri, len(data), datacode)
             #     return False
             else:
             # Determine the number of values in the frame of the specified code & size
@@ -574,16 +562,16 @@ class EmonHubInterfacer(threading.Thread):
 
         if not encoded:
             encoded.append(dest)
-            for i in range(0, count, 1):
+            for i in range(count):
                 # Use single datacode unless datacode = False then use datacodes
                 dc = str(datacode)
                 if not datacode:
                     dc = str(datacodes[i])
 
-                for b in ehc.encode(dc,int(scaled[i])):
+                for b in ehc.encode(dc, int(scaled[i])):
                     encoded.append(b)
 
-        # self._log.info("Encoded: "+json.dumps(encoded))
+        # self._log.info("Encoded: %s", json.dumps(encoded))
 
         txc.encoded.update({self.getName():encoded})
         return txc
@@ -603,7 +591,7 @@ class EmonHubInterfacer(threading.Thread):
         """
     #def setall(self, **kwargs):
 
-        for key, setting in self._defaults.iteritems():
+        for key, setting in self._defaults.items():
             if key in kwargs.keys():
                 setting = kwargs[key]
             else:
@@ -618,25 +606,21 @@ class EmonHubInterfacer(threading.Thread):
                 pass
             elif key == 'datacode' and str(setting) in ['0', 'b', 'B', 'h', 'H', 'L', 'l', 'f']:
                 pass
-            elif key == 'scale' and (int(setting == 1) or not (int(setting % 10))):
+            elif key == 'scale' and (int(setting == 1) or not int(setting % 10)):
                 pass
             elif key == 'timestamped' and str(setting).lower() in ['true', 'false']:
-                if str(setting).lower()=="true": setting = True
-                else: setting = False
-                pass
+                setting = str(setting).lower() == "true"
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
-                if str(setting).lower()=="true": setting = True
-                else: setting = False
-                pass
+                setting = str(setting).lower() == "true"
             elif key == 'pubchannels':
                 pass
             elif key == 'subchannels':
                 pass
             else:
-                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s" % (str(setting), self.name, key))
+                self._log.warning("In interfacer set '%s' is not a valid setting for %s: %s", setting, self.name, key)
                 continue
             self._settings[key] = setting
-            self._log.debug("Setting " + self.name + " " + key + ": " + str(setting))
+            self._log.debug("Setting %s %s: %s", self.name, key, setting)
 
 
 """class EmonHubInterfacerInitError
@@ -646,8 +630,3 @@ Raise this when init fails.
 """
 class EmonHubInterfacerInitError(Exception):
     pass
-
-
-
-
-

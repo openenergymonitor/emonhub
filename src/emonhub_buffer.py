@@ -1,7 +1,7 @@
 """
 
   This code is released under the GNU Affero General Public License.
-  
+
   OpenEnergyMonitor project:
   http://openenergymonitor.org
 
@@ -15,7 +15,7 @@ Represents the actual buffer being used.
 """
 
 
-class AbstractBuffer():
+class AbstractBuffer:
 
     def storeItem(self, data):
         raise NotImplementedError
@@ -23,7 +23,7 @@ class AbstractBuffer():
     def retrieveItems(self, number):
         raise NotImplementedError
 
-    def retrieveItem(self): 
+    def retrieveItem(self):
         raise NotImplementedError
 
     def discardLastRetrievedItem(self):
@@ -32,7 +32,7 @@ class AbstractBuffer():
     def discardLastRetrievedItems(self, number):
         raise NotImplementedError
 
-    def hasItems(self): 
+    def hasItems(self):
         raise NotImplementedError
 
 """
@@ -42,7 +42,7 @@ It's basically identical to the previous (inline) buffer.
 
 
 class InMemoryBuffer(AbstractBuffer):
-  
+
     def __init__(self, bufferName, buffer_size):
         self._bufferName = str(bufferName)
         self._buffer_type = "memory"
@@ -66,8 +66,8 @@ class InMemoryBuffer(AbstractBuffer):
     def discardOldestItemsIfFull(self):
         if self.isFull():
             self._log.warning(
-                "In-memory buffer (%s) reached limit of %d items, deleting oldest"
-                % (self._bufferName, self._maximumEntriesInBuffer))
+                "In-memory buffer (%s) reached limit of %d items, deleting oldest",
+                self._bufferName, self._maximumEntriesInBuffer)
         self.discardOldestItems()
 
     def storeItem(self, data):
@@ -97,7 +97,7 @@ class InMemoryBuffer(AbstractBuffer):
 
 
 """
-The getBuffer function returns the buffer class corresponding to a 
+The getBuffer function returns the buffer class corresponding to a
 buffering method passed as argument.
 """
 bufferMethodMap = {
@@ -112,4 +112,3 @@ def getBuffer(method):
 
     """
     return bufferMethodMap[method]
-
