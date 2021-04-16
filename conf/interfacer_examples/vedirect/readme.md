@@ -2,7 +2,7 @@
 
 The VE.Direct protocol is as binary/ASCII [protocol](https://www.victronenergy.com/live/vedirect_protocol:faq) created and used by [Victron Energy](https://www.victronenergy.com/) for communication between and with their products.
 
-This interfacer provides support for reading data from any Victron product that can use the VE.Direct protocol for inter-device communication. Currently this includes the BMV600, BMV700, Blue Solar MPPT, and Phoenix ranges. 
+This interfacer provides support for reading data from any Victron product that can use the VE.Direct protocol for inter-device communication. Currently this includes the BMV600, BMV700, Blue Solar MPPT, and Phoenix ranges.
 
 Example configurations are provided for the BMV700 battery monitor and Blue Solar MPPT charge controller.
 
@@ -20,7 +20,7 @@ Each supported product has it's own set of data that can be read over VE.Direct 
         [[[init_settings]]]
             com_port = /dev/ttyUSB0 # Where to find our device
             com_baud = 19200      # Baud rate needed to decode
-            toextract = SOC,CE,TTG,V,I,Relay,Alarm 
+            toextract = SOC,CE,TTG,V,I,Relay,Alarm
             poll_interval = 10 # How often to get data in seconds
         [[[runtimesettings]]]
             nodeoffset = 9 #make sure this matches with nodename below
@@ -29,7 +29,7 @@ Each supported product has it's own set of data that can be read over VE.Direct 
             basetopic = emonhub/
 
 
-    # Followed by a  corresponding Node declaration 
+    # Followed by a  corresponding Node declaration
 
     [[9]] # This node name should be consistent with the nodeoffset parameter above
         nodename = VictronBMV700
@@ -37,10 +37,10 @@ Each supported product has it's own set of data that can be read over VE.Direct 
        names = SOC,CE,TTG,V,I,Relay,Alarm # Make sure this matches 'toextract' in interfacer definition above
        datacode = 0 #no need to decode values
        scales = 0.1,1,1,0.001,1,1,1 # Some scaling necassary
-       units = %,Ah,s,V,A,S,S 
+       units = %,Ah,s,V,A,S,S
 
 
-With this config in place you just need to restart emonhub on your emonPi by rebooting it or ssh'ing into it and typing 
+With this config in place you just need to restart emonhub on your emonPi by rebooting it or ssh'ing into it and typing
 
       $>sudo service emonhub restart
 

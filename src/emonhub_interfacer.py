@@ -339,6 +339,9 @@ class EmonHubInterfacer(threading.Thread):
             else:
                 # when node not listed or has no datacode(s) use the interfacers default if specified
                 datacode = self._settings['datacode']
+            if isinstance(datacode, list):
+                self._log.warning("%d datacode should be str, not list. Did you mean datacodes?")
+                return False
             # Ensure only int 0 is passed not str 0
             if datacode == '0':
                 datacode = 0

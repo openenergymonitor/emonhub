@@ -113,7 +113,7 @@ class EmonHub:
             kill_list = []
             for I in self._interfacers.values():
                 # Check threads are still running
-                if not I.isAlive():
+                if not I.is_alive():
                     kill_list.append(I.name) # <-avoid modification of iterable within loop
 
                 # Read each interfacers pub channels
@@ -210,7 +210,7 @@ class EmonHub:
             self._log.info("Deleting interfacer '%s'", name)
             self._interfacers[name].stop = True
             interfacers_to_delete.append(name)
-       
+
         for name in interfacers_to_delete:
             del self._interfacers[name]
 
