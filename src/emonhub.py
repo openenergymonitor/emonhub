@@ -104,7 +104,7 @@ class EmonHub:
             kill_list = []
             for I in self._interfacers.values():
                 # Check threads are still running
-                if not I.isAlive():
+                if not I.is_alive():
                     kill_list.append(I.name) # <-avoid modification of iterable within loop
 
                 # Read each interfacers pub channels
