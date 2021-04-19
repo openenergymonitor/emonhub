@@ -230,33 +230,6 @@ class EmonHubInterfacer(threading.Thread):
         """
         pass
 
-    def _send_post(self, post_url, post_body=None):
-        """
-
-        :param post_url:
-        :param post_body:
-        :return: the received reply if request is successful
-        """
-        """Send data to server.
-
-        data (list): node and values (eg: '[node,val1,val2,...]')
-        time (int): timestamp, time when sample was recorded
-
-        return True if data sent correctly
-
-        """
-
-        try:
-            if post_body:
-                reply = requests.post(post_url, post_body, timeout=60)
-            else:
-                reply = requests.get(post_url, timeout=60)
-            reply.raise_for_status()  # Raise an exception if status code isn't 200
-            return reply.text
-        except requests.exceptions.RequestException as ex:
-            self._log.warning("%s couldn't send to server: %s", self.name, ex)
-        return reply.text
-
     def _process_rx(self, cargo):
         """Process a frame of data
 

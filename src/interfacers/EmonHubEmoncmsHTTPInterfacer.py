@@ -86,8 +86,13 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
         # add apikey
         post_url = post_url + self._settings['apikey']
-        # send request
-        self._send_post(post_url)
+        
+        try:
+            reply = requests.get(post_url, timeout=60)
+            reply.raise_for_status()
+            result = reply.text
+        except requests.exceptions.RequestException as ex:
+            self._log.warning("%s couldn't send myip status update to server: %s", self.name, ex)
 
     def set(self, **kwargs):
         """
