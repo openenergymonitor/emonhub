@@ -85,8 +85,14 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                         self._log.error("Could not read from SDM120: " + str(e))
                     # for i in r:
                     #     self._log.debug(i+" "+str(r[i]))
+                    
+                    # Can r be False in any reasonable situation? Why not just return in the exception handler above? 
+                    # Unless read_all can return, e.g., [] or None then this is just overcomplicating things.
                     if r:
                         try:
+                            # todo:
+                            # Instead of for i in read_keys, this should use something like for i, (name, scale) in read_keys.items(), 
+                            # rather than using [0] and [1] to index the tuple which is pretty unreadable.
                             for i in read_keys:
                                 if i in r:
                                     c.names.append(self._settings['prefix'] + read_keys[i][0])
