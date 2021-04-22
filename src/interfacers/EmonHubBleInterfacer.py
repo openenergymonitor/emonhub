@@ -153,7 +153,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         self._bat_readings.insert(0, val)
         self._bat_readings = self._bat_readings[0:20]
 
-        val = sum(self._bat_readings)/float(len(self._bat_readings))
+        val = sum(self._bat_readings)//len(self._bat_readings)
         
         return round(val)
 
@@ -164,7 +164,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         try:
             self._ble = btle.Peripheral(self._addr)
         except btle.BTLEException as e:
-            self._log.error(e)
+            self._log.exception("Failed to read from BTLE device")
             return False
 
         self._temperature = self._ble.getCharacteristics(uuid=btle.AssignedNumbers.temperature)[0]
