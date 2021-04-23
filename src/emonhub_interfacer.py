@@ -11,7 +11,6 @@ import time
 import logging
 import threading
 import traceback
-import requests
 
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
