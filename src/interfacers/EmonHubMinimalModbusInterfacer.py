@@ -44,6 +44,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             'read_interval': 10.0,
             'nodename':'sdm120',
             'prefix':'',
+            'address':1,
             'registers': [0,6,12,18,30,70,72,74,76],
             'names': ['V','I','P','VA','PF','FR','EI','EE','RI'],
             'precision': [2,3,1,1,3,3,3,3,3]
@@ -64,8 +65,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             self._rs485.serial.stopbits = 1
             self._rs485.serial.timeout = 1
             self._rs485.debug = False
-            self._rs485.mode = minimalmodbus.MODE_RTU  
-            
+            self._rs485.mode = minimalmodbus.MODE_RTU
+                        
         except ModuleNotFoundError as err:
             self._log.error(err)
             self._rs485 = False
@@ -88,6 +89,9 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 c.nodeid = self._settings['nodename']
              
                 if self._rs485:
+                    # Set modbus address
+                    self._rs485.address = self._settings['address']
+                    
                     for i in range(0,len(self._settings['registers'])):
                         valid = True
                         try:
@@ -143,6 +147,10 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             elif key == 'prefix':
                 self._log.info("Setting %s prefix: %s", self.name, setting)
                 self._settings[key] = str(setting)
+                continue
+            elif key == 'address':
+                self._log.info("Setting %s address: %s", self.name, setting)
+                self._settings[key] = int(setting)
                 continue
             elif key == 'registers':
                 self._log.info("Setting %s datafields: %s", self.name, ",".join(setting))
