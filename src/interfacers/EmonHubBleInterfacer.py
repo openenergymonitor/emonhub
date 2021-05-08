@@ -43,7 +43,7 @@ Example config snippets:
 
 class EmonHubBleInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device_addr=''):
+    def __init__(self, name, device_addr):
         """Initialize interfacer
 
         device_addr (string): BLE MAC address to connect to
@@ -69,7 +69,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         """Close serial port"""
 
         # Close serial port
-        if self._ble is not None:
+        if self._ble:
             self._log.debug("Closing Bluetooth connection")
             self._ble.disconnect()
 
@@ -100,10 +100,8 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         rh = self._get_humidity()
         bat = self._get_bat_level()
 
-        data = '{}, {}, {}'.format(temp, rh, bat )
-
         # Create a Payload object
-        c = Cargo.new_cargo(rawdata=data)
+        c = Cargo.new_cargo()
         c.realdata = (temp, rh, bat)
 
         if int(self._settings['nodeoffset']):
@@ -117,7 +115,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
 
         for key, setting in self._private_settings.items():
             # Decide which setting value to use
-            if key in kwargs.keys():
+            if key in kwargs:
                 setting = kwargs[key]
             else:
                 setting = self._private_settings[key]
@@ -155,8 +153,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         self._bat_readings.insert(0, val)
         self._bat_readings = self._bat_readings[0:20]
 
-        val = sum(self._bat_readings)/float(len(self._bat_readings))
-        #self._log.debug('Batt: {} -> {}'.format(self._bat_readings, val))
+        val = sum(self._bat_readings)//len(self._bat_readings)
         
         return round(val)
 
@@ -167,7 +164,7 @@ class EmonHubBleInterfacer(EmonHubInterfacer):
         try:
             self._ble = btle.Peripheral(self._addr)
         except btle.BTLEException as e:
-            self._log.error(e)
+            self._log.exception("Failed to read from BTLE device")
             return False
 
         self._temperature = self._ble.getCharacteristics(uuid=btle.AssignedNumbers.temperature)[0]

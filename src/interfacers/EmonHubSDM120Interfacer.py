@@ -85,6 +85,9 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                         self._log.error("Could not read from SDM120: " + str(e))
                     # for i in r:
                     #     self._log.debug(i+" "+str(r[i]))
+                    
+                    # Can r be False in any reasonable situation? Why not just return in the exception handler above? 
+                    # Unless read_all can return, e.g., [] or None then this is just overcomplicating things.
                     if r:
                         try:
                             for i in range(len(self._settings['datafields'])):
@@ -103,6 +106,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                                     
                                     c.names.append(self._settings['prefix']+name)
                                     c.realdata.append(value)
+
                             self._log.debug(c.realdata)
                         except Exception as e:
                             self._log.error("Error parsing data: " + str(e))
