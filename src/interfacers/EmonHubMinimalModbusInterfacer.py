@@ -16,6 +16,7 @@ from emonhub_interfacer import EmonHubInterfacer
         read_interval = 10
         nodename = sdm120
         # prefix = sdm_
+        addresses = 1,
         registers = 0,6,12,18,30,70,72,74,76
         names = V,I,P,VA,PF,FR,EI,EE,RI
         precision = 2,3,1,1,3,3,3,3,3
@@ -44,7 +45,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             'read_interval': 10.0,
             'nodename':'sdm120',
             'prefix':'',
-            'address':1,
+            'addresses':[1],
             'registers': [0,6,12,18,30,70,72,74,76],
             'names': ['V','I','P','VA','PF','FR','EI','EE','RI'],
             'precision': [2,3,1,1,3,3,3,3,3]
@@ -89,30 +90,32 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 c.nodeid = self._settings['nodename']
              
                 if self._rs485:
-                    # Set modbus address
-                    self._rs485.address = self._settings['address']
                     
-                    for i in range(0,len(self._settings['registers'])):
-                        valid = True
-                        try:
-                            value = self._rs485.read_float(int(self._settings['registers'][i]), functioncode=4, number_of_registers=2)
-                        except Exception as e:
-                            valid = False
-                            self._log.error("Could not read register @ "+self._settings['registers'][i]+": " + str(e))  
+                    # Set modbus address
+                    for addr in self._settings['addresses']:
+                        self._rs485.address = addr
                         
-                        if valid:
-                            # replace datafield name with custom name
-                            if i<len(self._settings['names']):
-                                name = self._settings['names'][i]
-                            else:
-                                name = "r"+str(self._settings['registers'][i])
-                            # apply rounding if set
-                            if i<len(self._settings['precision']):
-                                value = round(value,int(self._settings['precision'][i]))
+                        for i in range(0,len(self._settings['registers'])):
+                            valid = True
+                            try:
+                                value = self._rs485.read_float(int(self._settings['registers'][i]), functioncode=4, number_of_registers=2)
+                            except Exception as e:
+                                valid = False
+                                self._log.error("Could not read register @ "+self._settings['registers'][i]+": " + str(e))  
                             
-                            c.names.append(self._settings['prefix']+name)
-                            c.realdata.append(value)
-                            # self._log.debug(str(name)+": "+str(value))
+                            if valid:
+                                # replace datafield name with custom name
+                                if i<len(self._settings['names']):
+                                    name = self._settings['names'][i]
+                                else:
+                                    name = "r"+str(self._settings['registers'][i])
+                                # apply rounding if set
+                                if i<len(self._settings['precision']):
+                                    value = round(value,int(self._settings['precision'][i]))
+                                
+                                c.names.append(self._settings['prefix']+name)
+                                c.realdata.append(value)
+                                # self._log.debug(str(name)+": "+str(value))
                             
                     if len(c.realdata)>0:
                         self._log.debug(c.realdata)
@@ -150,7 +153,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'address':
                 self._log.info("Setting %s address: %s", self.name, setting)
-                self._settings[key] = int(setting)
+                self._settings[key] = setting
                 continue
             elif key == 'registers':
                 self._log.info("Setting %s datafields: %s", self.name, ",".join(setting))
