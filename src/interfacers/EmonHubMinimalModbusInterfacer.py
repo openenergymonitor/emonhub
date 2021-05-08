@@ -7,7 +7,7 @@ from emonhub_interfacer import EmonHubInterfacer
 
 """
 [[SDM120]]
-    Type = EmonHubSDM120Interfacer
+    Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
         baud = 2400
@@ -16,9 +16,9 @@ from emonhub_interfacer import EmonHubInterfacer
         read_interval = 10
         nodename = sdm120
         # prefix = sdm_
-        datafields = voltage,power_active,power_factor,frequency,import_energy_active,current
-        names = V,P,PF,FR,E,I
-        precision = 2,2,4,4,3,3
+        registers = 0,6,12,18,30,70,72,74,76
+        names = V,I,P,VA,PF,FR,EI,EE,RI
+        precision = 2,3,1,1,3,3,3,3,3
 """
 
 """class EmonHubSDM120Interfacer
@@ -27,40 +27,49 @@ SDM120 interfacer for use in development
 
 """
 
-class EmonHubSDM120Interfacer(EmonHubInterfacer):
+class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
 
     def __init__(self, name, device="/dev/modbus", baud=2400):
         """Initialize Interfacer
 
         """
         # Initialization
-        super(EmonHubSDM120Interfacer, self).__init__(name)
+        super(EmonHubMinimalModbusInterfacer, self).__init__(name)
 
         # This line will stop the default values printing to logfile at start-up
         # self._settings.update(self._defaults)
 
         # Interfacer specific settings
-        self._SDM120_settings = {
+        self._modbus_settings = {
             'read_interval': 10.0,
             'nodename':'sdm120',
             'prefix':'',
-            'datafields': ['voltage','power_active','power_factor','frequency','import_energy_active','current'],
-            'names': ['V','P','PF','FR','E','I'],
-            'precision': [2,2,4,4,3,3]
+            'registers': [0,6,12,18,30,70,72,74,76],
+            'names': ['V','I','P','VA','PF','FR','EI','EE','RI'],
+            'precision': [2,3,1,1,3,3,3,3,3]
         }
         
         self.next_interval = True
-
-        # Only load module if it is installed
-        try:
-            import sdm_modbus
-            self._log.info("Connecting to SDM120 device=" + str(device) + " baud=" + str(baud))
-            self._sdm = sdm_modbus.SDM120(device=device, baud=int(baud))
-            self._sdm_registers = sdm_modbus.registerType.INPUT
+        
+        # Only load module if it is installed         
+        try: 
+            import minimalmodbus
+            # import serial
+            self._log.info("Connecting to Modbus device="+str(device)+" baud="+str(baud))
+            
+            self._rs485 = minimalmodbus.Instrument(device, 1)
+            self._rs485.serial.baudrate = baud
+            self._rs485.serial.bytesize = 8
+            self._rs485.serial.parity = minimalmodbus.serial.PARITY_NONE
+            self._rs485.serial.stopbits = 1
+            self._rs485.serial.timeout = 1
+            self._rs485.debug = False
+            self._rs485.mode = minimalmodbus.MODE_RTU  
+            
         except ModuleNotFoundError as err:
             self._log.error(err)
-            self._sdm = False
-
+            self._rs485 = False
+                    
 
     def read(self):
         """Read data and process
@@ -77,59 +86,50 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 c.names = []
                 c.realdata = []
                 c.nodeid = self._settings['nodename']
-
-                if self._sdm and self._sdm.connected():
-                    try:
-                        r = self._sdm.read_all(self._sdm_registers)
-                    except Exception as e:
-                        self._log.error("Could not read from SDM120: " + str(e))
-                    # for i in r:
-                    #     self._log.debug(i+" "+str(r[i]))
-                    
-                    # Can r be False in any reasonable situation? Why not just return in the exception handler above? 
-                    # Unless read_all can return, e.g., [] or None then this is just overcomplicating things.
-                    if r:
+             
+                if self._rs485:
+                    for i in range(0,len(self._settings['registers'])):
+                        valid = True
                         try:
-                            for i in range(len(self._settings['datafields'])):
-                                datafield = self._settings['datafields'][i]
-                                if datafield in r:
-                                    # default name is datafield name
-                                    name = datafield 
-                                    # datafield value
-                                    value = r[datafield]
-                                    # replace datafield name with custom name
-                                    if i<len(self._settings['names']):
-                                        name = self._settings['names'][i]
-                                    # apply rounding if set
-                                    if i<len(self._settings['precision']):
-                                        value = round(value,self._settings['precision'][i])
-                                    
-                                    c.names.append(self._settings['prefix']+name)
-                                    c.realdata.append(value)
-
-                            self._log.debug(c.realdata)
+                            value = self._rs485.read_float(int(self._settings['registers'][i]), functioncode=4, number_of_registers=2)
                         except Exception as e:
-                            self._log.error("Error parsing data: " + str(e))
-
-                    if len(c.realdata) > 0:
+                            valid = False
+                            self._log.error("Could not read register @ "+self._settings['registers'][i]+": " + str(e))  
+                        
+                        if valid:
+                            # replace datafield name with custom name
+                            if i<len(self._settings['names']):
+                                name = self._settings['names'][i]
+                            else:
+                                name = "r"+str(self._settings['registers'][i])
+                            # apply rounding if set
+                            if i<len(self._settings['precision']):
+                                value = round(value,int(self._settings['precision'][i]))
+                            
+                            c.names.append(self._settings['prefix']+name)
+                            c.realdata.append(value)
+                            # self._log.debug(str(name)+": "+str(value))
+                            
+                    if len(c.realdata)>0:
+                        self._log.debug(c.realdata)
                         return c
                 else:
-                    self._log.error("Not connected to SDM120")
-
+                     self._log.error("Not connected to modbus device")
+                    
         else:
             self.next_interval = True
-
+            
         return False
 
 
     def set(self, **kwargs):
-        for key, setting in self._SDM120_settings.items():
+        for key, setting in self._modbus_settings.items():
             # Decide which setting value to use
             if key in kwargs:
                 setting = kwargs[key]
             else:
-                setting = self._SDM120_settings[key]
-
+                setting = self._modbus_settings[key]
+                
             if key in self._settings and self._settings[key] == setting:
                 continue
             elif key == 'read_interval':
@@ -144,7 +144,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 self._log.info("Setting %s prefix: %s", self.name, setting)
                 self._settings[key] = str(setting)
                 continue
-            elif key == 'datafields':
+            elif key == 'registers':
                 self._log.info("Setting %s datafields: %s", self.name, ",".join(setting))
                 self._settings[key] = setting
                 continue

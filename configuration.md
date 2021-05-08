@@ -26,6 +26,8 @@ For data to be passed, the name of the 2 channels must match.
 
 Each interfacer can have multiple channels defined and multiple interfacers can listen to the same channel. e.g. data published by the Serial Interfacer can be listened (subscribed) for by the MQTT and the HTTP interfacer.
 
+**Note** The channel definition is a list so must end with a comma e.g. `pubchannels = ToEmonCMS,` or `pubchannels = ToEmonCMS,ToXYZ,`
+
 ## 3. `nodes`
 
 Nodes holds the decoder configuration for rfm12/69 node data which are sent as binary structures.
