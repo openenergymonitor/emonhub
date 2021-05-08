@@ -45,7 +45,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             'read_interval': 10.0,
             'nodename':'sdm120',
             'prefix':'',
-            'addresses':[1],
+            'addresses':['1'],
             'registers': [0,6,12,18,30,70,72,74,76],
             'names': ['V','I','P','VA','PF','FR','EI','EE','RI'],
             'precision': [2,3,1,1,3,3,3,3,3]
