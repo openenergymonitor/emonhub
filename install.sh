@@ -19,7 +19,7 @@ if [ "$emonSD_pi_env" = "" ]; then
 fi
 
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev
-sudo pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus
+sudo pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 if [ "$emonSD_pi_env" = "1" ]; then
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
@@ -29,8 +29,8 @@ if [ "$emonSD_pi_env" = "1" ]; then
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
-    # Review should this be: dtoverlay=pi3-miniuart-bt?
-    sudo sed -i -n '/dtoverlay=pi3-disable-bt/!p;$a dtoverlay=pi3-disable-bt' /boot/config.txt
+    # Review should this be: dtoverlay=miniuart-bt?
+    sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' /boot/config.txt
 
     # We also need to stop the Bluetooth modem trying to use UART
     sudo systemctl disable hciuart
