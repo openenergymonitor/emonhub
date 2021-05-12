@@ -89,7 +89,7 @@ class EmonHub:
         """
         # Initialize http api
         try:
-            self._http_api = ehapi.EmonHubHTTPApi(self._setup.settings)
+            self._http_api = ehapi.EmonHubHTTPApi(self._setup.settings,self._interfacers)
             self._http_api.start()
         except Exception as e:
             logger.critical(e)
