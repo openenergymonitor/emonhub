@@ -8,7 +8,14 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 usrdir=${DIR/\/emonhub/}
 
-emonSD_pi_env=$1
+openenergymonitor_dir=$1
+if [ ! -f $openenergymonitor_dir/EmonScripts/update/load_config.sh ]; then
+    emonSD_pi_env=""
+else 
+    cd $openenergymonitor_dir/EmonScripts/install
+    source load_config.sh
+fi
+
 if [ "$emonSD_pi_env" = "" ]; then
     read -sp 'Apply raspberrypi serial configuration? 1=yes, 0=no: ' emonSD_pi_env
     echo
