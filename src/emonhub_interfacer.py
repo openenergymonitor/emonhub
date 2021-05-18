@@ -15,8 +15,6 @@ import traceback
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
 
-nodes = {}
-
 """class EmonHubInterfacer
 
 Monitors a data source.
@@ -84,6 +82,10 @@ class EmonHubInterfacer(threading.Thread):
 
         # create a stop
         self.stop = False
+        
+        # Holds information received by the interfacer from connected hardware
+        # that can then be made available via the emonhub http api for configuration
+        self.runtimeinfo = {'nodes':{}}
 
     @log_exceptions_from_class_method
     def run(self):
@@ -274,7 +276,8 @@ class EmonHubInterfacer(threading.Thread):
         #                       cargo.uri, rxc.realdata)
         #     return False
         
-        nodes[node] = {"timestamp":rxc.timestamp, "data":rxc.realdata}
+        self.runtimeinfo['nodes'][node] = {"timestamp":rxc.timestamp, "data":rxc.realdata}
+        
         
         if len(rxc.names)==0 and not node in ehc.nodelist:
             return False

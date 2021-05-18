@@ -60,6 +60,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         self._settings.update(self._defaults)
 
         self._first_data_packet_received = False
+        
 
 
     def add(self, cargo):
@@ -259,6 +260,25 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
                 return rx_buf.strip()
         return False
 
+    # Auto detect hardware
+    def check_firmware_version(self):
+        # Retry 3 times if invalid response
+        for i in range(3):
+            reply = self.send_cmd("v")
+            
+            if reply[0]=="|":
+                fv = reply.split(' V')
+                if len(fv)==2:
+                    firmware = fv[0][1:]
+                    version = fv[1]
+                    self._log.debug("Detected firmware: "+str(firmware)+" version: "+str(version))
+                    self.runtimeinfo['firmware_name'] = firmware
+                    self.runtimeinfo['firmware_version'] = version
+                    break
+            else:
+                self._log.debug("Invalid firmware response: "+str(reply))
+                time.sleep(0.1)
+
     def check_config_format(self):
         self._config_format = "new"
         if self.send_cmd("4v"):
@@ -282,7 +302,9 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         reply = self.send_cmd("V1")
         self._log.debug(reply)
         
+        self.check_firmware_version()
         self.check_config_format()
+        
         for key in self._config:
             if self._config_format == "new":
                 cmd = self._config_map_inv[key]+str(self._config[key])
