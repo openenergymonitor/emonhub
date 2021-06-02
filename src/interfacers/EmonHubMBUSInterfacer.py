@@ -237,7 +237,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
     def request_data(self, address):
         self.mbus_short_frame(address, 0x5b)
-        time.sleep(0.5)
+        time.sleep(1.0)
 
         data = []
         bid = 0
