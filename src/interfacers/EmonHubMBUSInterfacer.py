@@ -237,7 +237,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
     def request_data(self, address):
         self.mbus_short_frame(address, 0x5b)
-        time.sleep(0.5)
+        time.sleep(1.0)
 
         data = []
         bid = 0
@@ -272,11 +272,13 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             if valid and bid == bid_checksum and val != checksum % 256:
                 valid = False  # Validate checksum
             if valid and bid == bid_end and val == 0x16:                                 # Parse frame if still valid
+                self._log.debug("MBUS data received "+str(bid)+" bytes")
                 return self.parse_frame(data)
                 bid = 0
                 break
 
             bid += 1
+        self._log.debug("MBUS data received "+str(bid)+" bytes")
 
     def read(self):
         """Read data and process
