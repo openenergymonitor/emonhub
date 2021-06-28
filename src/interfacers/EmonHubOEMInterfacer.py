@@ -144,20 +144,20 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
                 try:
                     c.rssi = int(r)
                 except ValueError:
-                    self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
+                    # self._log.warning("Packet discarded as the RSSI format is invalid: " + str(f))
                     return False
                 ssv = ssv[:-1]
             # Extract node id from frame
             try:
                 c.nodeid = int(ssv[0]) + int(self._settings['nodeoffset'])
             except ValueError:
-                self._log.warning("Nodeid error")
+                # self._log.warning("Nodeid error")
                 return False
             # Store data as a list of integer values
             try:
                 c.realdata = [int(i) for i in ssv[1:]]
             except ValueError:
-                self._log.warning("realdata value error")
+                # self._log.warning("realdata value error")
                 return False
 
         if len(c.realdata) == 0:
@@ -257,6 +257,11 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         while time.time() - start < 1.0:
             rx_buf = rx_buf + self._ser.readline().decode()
             if '\r\n' in rx_buf:
+                # discard further content for 1s
+                start = time.time()
+                while time.time() - start < 0.5:
+                    self._ser.readline().decode()
+                # return first line
                 return rx_buf.strip()
         return False
 
@@ -278,6 +283,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
             else:
                 self._log.debug("Invalid firmware response: "+str(reply))
                 time.sleep(0.1)
+                break
 
     def check_config_format(self):
         self._config_format = "new"
