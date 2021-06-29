@@ -60,6 +60,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         self._settings.update(self._defaults)
 
         self._first_data_packet_received = False
+        self._interfacer_init_time = time.time()
         
 
 
@@ -167,6 +168,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         return c
 
     def read(self):
+
         """Read data from serial port and process if complete line received.
 
         Return data as a list: [NodeID, val1, val2]
@@ -181,6 +183,12 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
             self._rx_buf = self._rx_buf + self._ser.readline().decode()
         except UnicodeDecodeError:
             return
+
+        if not self._first_data_packet_received:
+            if (time.time()-self._interfacer_init_time)>20:
+                self._first_data_packet_received = True
+                self.update_all()
+                return
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
@@ -201,7 +209,6 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
 
         # Check for valid data format (json, keyval, binary) and pre-process into cargo if valid
         c = self.pre_process_data_format(f)
-
         # If valid data
         if c:
             # Discard first data packet and send configuration
@@ -270,8 +277,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         # Retry 3 times if invalid response
         for i in range(3):
             reply = self.send_cmd("v")
-            
-            if reply[0]=="|":
+            if reply!=False and reply[0]=="|":
                 fv = reply.split(' V')
                 if len(fv)==2:
                     firmware = fv[0][1:]
