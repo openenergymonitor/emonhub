@@ -54,38 +54,50 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             self.ser = False
 
     def mbus_short_frame(self, address, C_field):
-        data = [0]*5
-        data[0] = 0x10
-        data[1] = C_field
-        data[2] = address
-        data[3] = data[1]+data[2]
-        data[4] = 0x16
+        data = [0x10,C_field,address,0x0,0x16]
+        data[3] = (data[1]+data[2]) % 256
         self.ser.write(data)
 
+    def mbus_set_address(self, old_address, new_address):
+        data = [0x68,0x06,0x06,0x68,0x53,old_address,0x51,0x01,0x7A,new_address,0x0,0x16]
+        data = self.checksum(data)
+        self.ser.write(data)
+        
+    def mbus_set_baudrate(self, address, baudrate):
+        baudrate_hex = 0xBB # default is 2400
+        if baudrate==300: baudrate_hex = 0xB8
+        if baudrate==600: baudrate_hex = 0xB9
+        if baudrate==1200: baudrate_hex = 0xBA
+        if baudrate==2400: baudrate_hex = 0xBB
+        if baudrate==4800: baudrate_hex = 0xBC
+        if baudrate==9600: baudrate_hex = 0xBD
+    
+        data = [0x68,0x03,0x03,0x68,0x53,address,baudrate_hex,0x0,0x16]
+        data = self.checksum(data)
+        self.ser.write(data)
+
+    # Does not seem to work yet on SDM120MB
+    def check_secondary_address(self, a2a,a2b,a2c,a2d):
+        data = [0x68,0x0B,0x0B,0x68,0x73,0xFD,0x52,a2d,a2c,a2b,a2a,0xFF,0xFF,0xFF,0xFF,0x0,0x16]
+        data = self.checksum(data)
+        self.ser.write(data)
+        
     def mbus_request(self, address, telegram):
-        data = [0]*13
-        data[0] = 0x68
-        data[1] = 0x07
-        data[2] = 0x07
-        data[3] = 0x68
-
-        data[4] = 0x53
-        data[5] = address
-        data[6] = 0x51
-
-        data[7] = 0x01
-        data[8] = 0xFF
-        data[9] = 0x08
-        data[10] = telegram
-
-        checksum = 0
-        for c in range(4, 11):
-            checksum += data[c]
-        data[11] = checksum % 256
-
-        data[12] = 0x16
-
+        data = [0x68,0x07,0x07,0x68,0x53,address,0x51,0x01,0xFF,0x08,telegram,0x0,0x16]
+        data = self.checksum(data)
         self.ser.write(data)
+
+    def mbus_request_sdm120(self, address):
+        data = [0x68,0x03,0x03,0x68,0x53,address,0xB1,0x0,0x16]
+        data = self.checksum(data)
+        self.ser.write(data)
+
+    def checksum(self,data):
+        checksum = 0
+        for c in range(4, len(data)-2):
+            checksum += data[c]
+        data[len(data)-2] = checksum % 256
+        return data
 
     def set_page(self, address, page):
         for retry in range(10):
@@ -117,6 +129,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         data_lengths = [0,1,2,3,4,4,6,8,0,1,2,3,4,6,6,0]
         vif = {
             0x03: (0.001, "Energy", "kWh"),
+            0x04: (0.01, "Energy", "kWh"),
+            0x05: (0.1, "Energy", "kWh"),
             0x06: (1, "Energy", "kWh"),
             0x13: (0.001, "Volume", "m3"),
             0x14: (0.01, "Volume", "m3"),
@@ -125,6 +139,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x20: (1, "Ontime", "s"),
             #0x22: (1, "Ontime Hours", "h"),
             0x24: (1, "OperatingTime", "s"),
+            0x2a: (0.1, "Power", "W"),
             0x2b: (1, "Power", "W"),
             0x2e: (1000, "Power", "W"),
             0x3b: (0.001, "FlowRate", "m3/h"), # mm3/h
@@ -148,13 +163,25 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             #0x75: (1, "Duration minutes actual", ""),
             #0x78: (1, "Fab No", ""),
             #0x79: (1, "Enhanced", "")
-            0x84: (10, "Energy", "Wh")
+            0x84: (10, "Energy", "Wh"),
+            0x78: (1,"FabNo",""),
+            # 0xfd: (1, "Extended", "")
         }
+        vife = {
+            0x47: (0.01, "Voltage", "V"),  # SDM120
+            0x59: (0.001, "Current", "A"), # SDM120
+            0x3b: (1, "Energy", "kWh"),    # Qalcosonic
+            0x3c: (1, "Cooling", "kWh"),   # Qalcosonic
+        }
+        
         function_types = ["","Max","Min","error","special","special","more_to_follow"]
 
         result = {}
         bid = 19
         record = 0
+        
+        name_count = {}
+        
         while bid < len(data) - 1:
             record += 1
 
@@ -192,42 +219,58 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     bid += data_len
 
                     vif_name = ""
+                    
                     if VIF in vif:
                         scale = vif[VIF][0]
                         name = vif[VIF][1]
                         unit = vif[VIF][2]
+                    elif VIFE in vife:
+                        scale = vife[VIFE][0]
+                        name = vife[VIFE][1]
+                        unit = vife[VIFE][2]
+                    else:
+                        scale = 1
+                        name = "Record"
+                        unit = ""
 
-                        if function != '':
-                            name += "_" + function
+                    if function != '':
+                        name += "_" + function
 
-                        value = False
+                    value = False
 
-                        if data_type == "int":
-                            if data_len == 1:
-                                value = bytes[0]
-                            if data_len == 2:
-                                value = bytes[0] + (bytes[1]<<8)
-                            if data_len == 3:
-                                value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)
-                            if data_len == 4:
-                                value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
+                    if data_type == "int":
+                        if data_len == 1:
+                            value = bytes[0]
+                        if data_len == 2:
+                            value = bytes[0] + (bytes[1]<<8)
+                        if data_len == 3:
+                            value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)
+                        if data_len == 4:
+                            value = bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
 
-                        if data_type == "float":
-                            if data_len == 4:
-                                value = struct.unpack("f", bytearray(bytes))[0]
+                    if data_type == "float":
+                        if data_len == 4:
+                            value = struct.unpack("f", bytearray(bytes))[0]
 
-                        if data_type == "bcd":
-                            value = self.decodeBCD(bytes)
+                    if data_type == "bcd":
+                        value = self.decodeBCD(bytes)
 
-                        value *= scale
+                    value *= scale
 
-                        #self._log.debug(hex(DIF)+"\t"+hex(DIFE)+"\t"+hex(VIF)+"\t"+hex(VIFE)+"\t"+data_type+str(data_len)+"\t"+" ["+",".join(map(str, bytes))+"] "+name+" = "+str(value)+" "+str(unit))
-                        #self._log.debug(vif_name+" "+function+" = "+str(value)+" "+str(unit))
+                    #self._log.debug(hex(DIF)+"\t"+hex(DIFE)+"\t"+hex(VIF)+"\t"+hex(VIFE)+"\t"+data_type+str(data_len)+"\t"+" ["+",".join(map(str, bytes))+"] "+name+" = "+str(value)+" "+str(unit))
+                    #self._log.debug(vif_name+" "+function+" = "+str(value)+" "+str(unit))
 
+                    if name not in name_count:
+                        name_count[name] = 0
+                    name_count[name] += 1
+
+                    if name != "Record":
                         if name in result:
-                            name += str(record)
+                            name += str(name_count[name])
+                    else: 
+                        name += str(record)
 
-                        result[name] = [value, unit]
+                    result[name] = [value, unit]
 
         if 'FlowT' in result and 'ReturnT' in result and 'FlowRate' in result:
             value = 4150 * (result['FlowT'][0] - result['ReturnT'][0]) * (result['FlowRate'][0] * (1000 / 3600))
@@ -238,7 +281,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
     def request_data(self, address):
         self.mbus_short_frame(address, 0x5b)
         time.sleep(1.0)
+        return self.read_data_frame()
 
+
+    def read_data_frame(self):
         data = []
         bid = 0
         bid_end = 255
