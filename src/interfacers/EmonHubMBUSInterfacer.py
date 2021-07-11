@@ -38,10 +38,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         # self._settings.update(self._defaults)
 
         # Interfacer specific settings
-        self._MBUS_settings = {'address': 100,
-                               'pages': [0],
-                               'read_interval': 10.0,
-                               'nodename':'MBUS'}
+        self._MBUS_settings = {'read_interval': 10.0,
+                               'nodename':'MBUS',
+                               'validate_checksum': True,
+                               'meters':[]}
 
         self.next_interval = True
 
@@ -124,7 +124,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             val *= -1
         return val
 
-    def parse_frame(self,data):
+    def parse_frame(self,data,records):
         data_types =   ['null','int','int','int','int','float','int','int','null','bcd','bcd','bcd','bcd','var','bcd','null']
         data_lengths = [0,1,2,3,4,4,6,8,0,1,2,3,4,6,6,0]
         vif = {
@@ -270,7 +270,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     else: 
                         name += str(record)
 
-                    result[name] = [value, unit]
+                    if record in records or len(records)==0:
+                        result[name] = [value, unit]
 
         if 'FlowT' in result and 'ReturnT' in result and 'FlowRate' in result:
             value = 4150 * (result['FlowT'][0] - result['ReturnT'][0]) * (result['FlowRate'][0] * (1000 / 3600))
@@ -281,10 +282,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
     def request_data(self, address):
         self.mbus_short_frame(address, 0x5b)
         time.sleep(1.0)
-        return self.read_data_frame()
+        return self.read_data_frame([])
 
 
-    def read_data_frame(self):
+    def read_data_frame(self,records):
         data = []
         bid = 0
         bid_end = 255
@@ -316,10 +317,11 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 checksum += val                 # Increment checksum during data portion of frame
 
             if valid and bid == bid_checksum and val != checksum % 256:
-                valid = False  # Validate checksum
+                if self._settings['validate_checksum']: 
+                    valid = False  # Validate checksum
             if valid and bid == bid_end and val == 0x16:                                 # Parse frame if still valid
                 self._log.debug("MBUS data received "+str(bid)+" bytes")
-                return self.parse_frame(data)
+                return self.parse_frame(data,records)
                 bid = 0
                 break
 
@@ -342,39 +344,57 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 c.realdata = []
                 c.units = []
                 c.nodeid = self._settings['nodename']
-
-                pages = self._settings['pages']
-                pindex = 0
-
-                if len(pages) > 1:
-                    page = pages[pindex]
-                    self._log.debug("Set page: " + str(page))
-                    self.set_page(self._settings['address'], page)
-
-                for p in range(len(pages)):
-                    result = self.request_data(self._settings['address'])
-                    if result == None:
-                        time.sleep(0.2)
-                        result = self.request_data(self._settings['address'])
-
-                    if result != None:
-                        self._log.debug("Decoded MBUS data: " + json.dumps(result))
-
-                        for key in result:
-                            c.names.append(key)
-                            c.realdata.append(result[key][0])
-                            c.units.append(result[key][1])
-                    else:
-                        self._log.debug("Decoded MBUS data: None")
+                
+                # Support for multiple MBUS meters on a single bus
+                for meter in self._settings['meters']:
+                    address = self._settings['meters'][meter]['address']
+                    pages = self._settings['meters'][meter]['pages']
+                    meter_type = self._settings['meters'][meter]['type']
+                    records = self._settings['meters'][meter]['records']
+                    pindex = 0
 
                     if len(pages) > 1:
-                        pindex += 1
-                        if pindex >= len(pages):
-                            pindex -= len(pages)
                         page = pages[pindex]
                         self._log.debug("Set page: " + str(page))
-                        self.set_page(self._settings['address'], page)
+                        self.set_page(address, page)
 
+                    for p in range(len(pages)):
+                    
+                        # Most mbus meters use standard request
+                        if meter_type=="standard":
+                            result = self.request_data(address)
+                            if result == None:
+                                time.sleep(0.2)
+                                result = self.request_data(address)
+                        # SDM120 special request command
+                        elif meter_type=="sdm": 
+                            self.mbus_request_sdm120(address)
+                            time.sleep(1.5)
+                            result = self.read_data_frame(records)
+                            if result==None:
+                                time.sleep(0.2)
+                                self.mbus_request_sdm120(address)
+                                time.sleep(1.5)
+                                result = self.read_data_frame(records)
+                                
+                        if result != None:
+                            self._log.debug("Decoded MBUS data: " + json.dumps(result))
+
+                            for key in result:
+                                c.names.append(meter+"_"+key)
+                                c.realdata.append(result[key][0])
+                                c.units.append(result[key][1])
+                        else:
+                            self._log.debug("Decoded MBUS data: None")
+
+                        if len(pages) > 1:
+                            pindex += 1
+                            if pindex >= len(pages):
+                                pindex -= len(pages)
+                            page = pages[pindex]
+                            self._log.debug("Set page: " + str(page))
+                            self.set_page(address, page)
+                            
                 if len(c.realdata) > 0:
                     return c
 
@@ -394,18 +414,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
             if key in self._settings and self._settings[key] == setting:
                 continue
-            elif key == 'address':
-                self._log.info("Setting %s address: %s", self.name, setting)
-                self._settings[key] = int(setting)
-                continue
-            elif key == 'pages':
-                if type(setting) == list:
-                    setting = list(map(int, setting))
-                else:
-                    setting = [int(setting)]
-                self._log.info("Setting %s pages: %s", self.name, json.dumps(setting))
-                self._settings[key] = setting
-                continue
             elif key == 'read_interval':
                 self._log.info("Setting %s read_interval: %s", self.name, setting)
                 self._settings[key] = float(setting)
@@ -413,6 +421,44 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             elif key == 'nodename':
                 self._log.info("Setting %s nodename: %s", self.name, setting)
                 self._settings[key] = str(setting)
+                continue
+            elif key == 'validate_checksum':
+                self._log.info("Setting %s validate_checksum: %s", self.name, setting)
+                self._settings[key] = bool(setting)
+                continue
+            elif key == 'meters':
+                self._log.info("Setting %s meters: %s", self.name, json.dumps(setting))            
+                self._settings['meters'] = {}
+                for meter in setting:
+                    # default
+                    address = 1
+                    pages = [0]
+                    meter_type = "standard"
+                    records = []
+                    
+                    # address
+                    if 'address' in setting[meter]:
+                        address = int(setting[meter]['address'])
+                    # pages
+                    if 'pages' in setting[meter]:
+                        if type(setting[meter]['pages']) == list:
+                            pages = list(map(int, setting[meter]['pages']))
+                        else:
+                            pages = [int(setting[meter]['pages'])]
+                    # type e.g sdm 
+                    if 'type' in setting[meter]:
+                        meter_type = str(setting[meter]['type'])
+                    # filter records
+                    if 'records' in setting[meter]:
+                        if type(setting[meter]['records']) == list:
+                            records = list(map(int, setting[meter]['records']))
+                    #assign
+                    self._settings['meters'][meter] = {
+                        'address':address,
+                        'pages':pages,
+                        'type':meter_type,
+                        'records':records
+                    }
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
