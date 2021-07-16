@@ -485,11 +485,11 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     if meter_type=="sontex531":
                         # p1
                         self.set_page(address, 1)
-                        result = self.request_data(address,[])
+                        result = self.request_data(address,[4,5])
                         self.add_result_to_cargo(meter,c,result)
                         # p3
                         self.set_page(address, 3)                     
-                        result = self.request_data(address,[])
+                        result = self.request_data(address,[1,2,3,4])
                         self.add_result_to_cargo(meter,c,result)                            
                             
                     # SDM120 special request command
