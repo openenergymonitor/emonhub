@@ -482,8 +482,15 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
                     # ------------------------------------------------------
                     # Sontex Multical 531
-                    # elif meter_type=="multical531":
-                    #     result = self.request_data(address,[])
+                    if meter_type=="sontex531":
+                        # p1
+                        self.set_page(address, 1)
+                        result = self.request_data(address,[])
+                        self.add_result_to_cargo(meter,c,result)
+                        # p3
+                        self.set_page(address, 3)                     
+                        result = self.request_data(address,[])
+                        self.add_result_to_cargo(meter,c,result)                            
                             
                     # SDM120 special request command
                     elif meter_type=="sdm120":
