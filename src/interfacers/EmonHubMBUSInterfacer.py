@@ -9,12 +9,20 @@ from emonhub_interfacer import EmonHubInterfacer
 [[MBUS]]
     Type = EmonHubMBUSInterfacer
     [[[init_settings]]]
-        device = /dev/ttyUSB0
+        device = /dev/ttyAMA0
         baud = 2400
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
+        validate_checksum = False
         nodename = MBUS
+        [[[[meters]]]]
+            [[[[[sdm120]]]]]
+                address = 1
+                type = sdm120
+            [[[[[qalcosonic]]]]]
+                address = 2
+                type = qalcosonic_e3
 """
 
 """class EmonHubMBUSInterfacer
