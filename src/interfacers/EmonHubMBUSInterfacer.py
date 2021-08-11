@@ -146,11 +146,11 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         if len(bytes) == 1:
             return bytes[0]
         if len(bytes) == 2:
-            return bytes[0] + (bytes[1]<<8)
+            return struct.unpack("h", bytearray(bytes))[0]
         if len(bytes) == 3:
             return bytes[0] + (bytes[1]<<8) + (bytes[2]<<16)
         if len(bytes) == 4:
-            return bytes[0] + (bytes[1]<<8) + (bytes[2]<<16) + (bytes[3]<<24)
+            return struct.unpack("i", bytearray(bytes))[0]
         return False
 
     def parse_frame(self,data,records):
