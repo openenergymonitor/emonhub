@@ -497,7 +497,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
                     # Qalcosonic E3
                     if meter_type=="qalcosonic_e3":
-                        result = self.request_data(address,[4,5,6,7,8,11,12,13,14,15])
+                        result = self.request_data(address,[4,5,6,7,8,9,10,11,12,13,14,15])
                         self.add_result_to_cargo(meter,c,result) 
 
                     # ------------------------------------------------------
