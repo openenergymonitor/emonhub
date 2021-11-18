@@ -12,6 +12,7 @@ import sys
 import time
 import traceback
 import Cargo
+from urllib.error import HTTPError
 from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonHubJaguarLandRoverInterfacer
@@ -40,8 +41,14 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
         self._first_time_loop = True
         self._chargingStatus = "UNKNOWN"
 
-# TODO: funnel log lines to emonlogging
-        self._jlrConnection = jlrpy.Connection(self._Username, self._Password)
+        try:
+            self._jlrConnection = jlrpy.Connection(self._Username, self._Password)
+        except HTTPError as err:
+            # Give a helpful message when username/password incorrect
+            if err.code == 403:
+                raise Exception('Incorrect username or password') from err
+            else:
+                raise
 
     def close(self):
         """Close"""
@@ -80,7 +87,7 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
     def read(self):
         """Read data from JLR API"""
 
-        #Wait until we are ready to read from inverter
+        # Wait until we are ready to fetch
         if not self._is_it_time() and not self._first_time_loop:
             return
 
@@ -91,7 +98,7 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
         try:
             # Select the first vehicle in the account
             vehicle = self._jlrConnection.vehicles[0]
-            self._log.debug("Fetching status of VIN %s", vehicle.vin)
+            self._log.info("Fetching status of VIN %s", vehicle.vin)
 
             statusResponse = vehicle.get_status()
 
@@ -103,10 +110,11 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
             names = []
             values = []
 
+            # TODO: add FUEL_LEVEL_PERC
             for key in ['ODOMETER_MILES','EV_STATE_OF_CHARGE','EV_RANGE_ON_BATTERY_MILES','EV_RANGE_ON_BATTERY_KM','EV_CHARGING_RATE_SOC_PER_HOUR']:
                 names.append(key)
                 if key in statusDict:
-                    self._log.debug("%s = %s", key, statusDict[key])
+                    self._log.info("%s = %s", key, statusDict[key])
                     values.append(float(statusDict[key]))
                 else:
                     values.append(-1)
@@ -114,14 +122,14 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
             # OpenEVSE expects charge remaining time in seconds
             names.append('EV_SECONDS_TO_FULLY_CHARGED')
             if 'EV_MINUTES_TO_FULLY_CHARGED' in statusDict:
-                self._log.debug("%s = %s", 'EV_MINUTES_TO_FULLY_CHARGED', statusDict['EV_MINUTES_TO_FULLY_CHARGED'])
+                self._log.info("%s = %s", 'EV_MINUTES_TO_FULLY_CHARGED', statusDict['EV_MINUTES_TO_FULLY_CHARGED'])
                 values.append(float(statusDict['EV_MINUTES_TO_FULLY_CHARGED']) * 60)
             else:
                 values.append(-1)
 
             # Store if the car is charging or not
             if 'EV_CHARGING_STATUS' in statusDict:
-                self._log.debug("%s = %s", 'EV_CHARGING_STATUS', statusDict['EV_CHARGING_STATUS'])
+                self._log.info("%s = %s", 'EV_CHARGING_STATUS', statusDict['EV_CHARGING_STATUS'])
                 self._chargingStatus = statusDict['EV_CHARGING_STATUS']
             names.append("EV_CHARGING_STATUS")
             if self._chargingStatus == "CHARGING":
