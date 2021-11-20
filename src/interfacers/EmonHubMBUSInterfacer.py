@@ -167,10 +167,12 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x16: (1, "Volume", "m3"),
             0x17: (10, "Volume", "m3"),
             0x20: (1, "Ontime", "s"),
-            #0x22: (1, "Ontime Hours", "h"),
+            0x22: (1, "Ontime Hours", "h"),
             0x24: (1, "OperatingTime", "s"),
             0x2a: (0.1, "Power", "W"),
             0x2b: (1, "Power", "W"),
+            0x2c: (10, "Power", "W"),
+            0x2d: (100, "Power", "W"),       
             0x2e: (1000, "Power", "W"),
             0x3b: (0.001, "FlowRate", "m3/h"), # mm3/h
             0x3c: (0.01, "FlowRate", "m3/h"), # mm3/h
