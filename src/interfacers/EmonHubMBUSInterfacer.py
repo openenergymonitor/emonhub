@@ -76,6 +76,11 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         data[3] = (data[1]+data[2]) % 256
         self.ser.write(data)
 
+    def mbus_application_reset(self, address, C_field):
+        data = [0x68,0x03,0x03,0x68,0x53,address,0x50,0x0,0x16]
+        data = self.checksum(data)
+        self.ser.write(data)
+
     def mbus_set_address(self, old_address, new_address):
         data = [0x68,0x06,0x06,0x68,0x53,old_address,0x51,0x01,0x7A,new_address,0x0,0x16]
         data = self.checksum(data)
