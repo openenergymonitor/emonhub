@@ -23,7 +23,6 @@ from collections import defaultdict
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
-from interfacers import *
 
 # this namespace and path
 namespace = sys.modules[__name__]
