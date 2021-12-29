@@ -147,11 +147,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'compress':
                 self._log.info("Setting " + self.name + " compress: " + setting)
-                if setting == "1":
-                    setting = True
-                else:
-                    setting = False
-                self._settings[key] = setting
+                self._settings[key] = bool(int(setting))
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
