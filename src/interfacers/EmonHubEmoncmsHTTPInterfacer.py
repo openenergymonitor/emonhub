@@ -36,6 +36,39 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # maximum buffer size
         self.buffer._maximumEntriesInBuffer = 100000
 
+    def add(self, cargo):
+        """Append data to buffer.
+
+        """
+        
+        f = []
+        try:
+            f.append(int(cargo.timestamp))
+            
+            if cargo.nodename:
+                f.append(cargo.nodename)
+            else:
+                f.append(cargo.nodeid)
+            
+            if len(cargo.names) == len(cargo.realdata):
+                keyvalues = {}
+                for name, value in zip(cargo.names, cargo.realdata):
+                    keyvalues[name] = value
+                f.append(keyvalues)
+            else:
+                for i in cargo.realdata:
+                    f.append(i)
+                if len(cargo.names) > 0:
+                    self._log.warning("cargo.names and cargo.realdata have different lengths - " + str(len(cargo.names)) + " vs " + str(len(cargo.realdata)))
+                    
+            if cargo.rssi:
+                f.append(cargo.rssi)
+
+        except:
+            self._log.warning("Failed to create emonCMS frame %s", f)
+
+        self.buffer.storeItem(f)
+
     def _process_post(self, databuffer):
         """Send data to server."""
 
@@ -61,17 +94,25 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             
             # Construct post_url (without apikey)
             post_url = self._settings['url'] + '/input/bulk.json?'
-            
-            self._log.info("sending: %s data=%s&sentat=%s&apikey=E-M-O-N-C-M-S-A-P-I-K-E-Y", post_url, data_string, sentat)
-            
+                        
             # Construct post body
             post_body_data = {'apikey': self._settings['apikey'], 'data': data_string, 'sentat': str(sentat)}
             
             if self._settings['compress']:
+                json_str_size = len(post_body_data["data"])
                 # Compress data and encode as hex string.
-                post_body_data["data"] = hexlify(zlib.compress(post_body_data["data"].encode()))
-                # Set flag.
-                post_body_data["c"] = 1
+                compressed = hexlify(zlib.compress(post_body_data["data"].encode()))
+                compression_ratio = len(compressed) / json_str_size
+                # Only use compression if it makes sense!
+                if compression_ratio<1.0:
+                    post_body_data["data"] = compressed
+                    # Set flag.
+                    post_body_data["c"] = 1
+                    self._log.info("compression ratio: %d%%",compression_ratio*100)
+                else: 
+                    self._log.info("compression ratio: %d%%, sent original",compression_ratio*100)  
+               
+            self._log.info("sending: %s data=%s&sentat=%s&apikey=E-M-O-N-C-M-S-A-P-I-K-E-Y", post_url, post_body_data["data"], sentat)
             
             result = False
             try:
