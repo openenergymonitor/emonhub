@@ -4,6 +4,7 @@ import time
 import json
 import requests
 import zlib
+from binascii import hexlify
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -68,7 +69,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             
             if self._settings['compress']:
                 # Compress data and encode as hex string.
-                post_body_data["data"] = zlib.compress(post_body_data["data"]).encode("hex")
+                post_body_data["data"] = hexlify(zlib.compress(post_body_data["data"].encode()))
                 # Set flag.
                 post_body_data["c"] = 1
             
@@ -146,7 +147,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 self._settings[key] = int(setting)
                 continue
             elif key == 'compress':
-                self._log.info("Setting " + self.name + " compress: " + setting)
+                self._log.info("Setting " + self.name + " compress: " + str(setting))
                 self._settings[key] = bool(int(setting))
                 continue
             else:
