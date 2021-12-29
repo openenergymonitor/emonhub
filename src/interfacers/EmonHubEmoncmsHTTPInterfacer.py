@@ -3,6 +3,7 @@
 import time
 import json
 import requests
+import zlib
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
@@ -24,7 +25,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0
+            'sendstatus': 0,
+            'compress': 1
         }
 
         # set an absolute upper limit for number of items to process per post
@@ -47,7 +49,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         if self._settings['senddata']:
             data_string = json.dumps(databuffer, separators=(',', ':'))
-
+            
             # Prepare URL string of the form
             # http://domain.tld/emoncms/input/bulk.json?apikey=12345
             # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
@@ -55,15 +57,24 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
             # time that the request was sent at
             sentat = int(time.time())
-
+            
             # Construct post_url (without apikey)
             post_url = self._settings['url'] + '/input/bulk.json?'
             
             self._log.info("sending: %s data=%s&sentat=%s&apikey=E-M-O-N-C-M-S-A-P-I-K-E-Y", post_url, data_string, sentat)
             
+            # Construct post body
+            post_body_data = {'apikey': self._settings['apikey'], 'data': data_string, 'sentat': str(sentat)}
+            
+            if self._settings['compress']:
+                # Compress data and encode as hex string.
+                post_body_data["data"] = zlib.compress(post_body_data["data"]).encode("hex")
+                # Set flag.
+                post_body_data["c"] = 1
+            
             result = False
             try:
-                reply = requests.post(post_url, {'apikey': self._settings['apikey'], 'data': data_string, 'sentat': str(sentat)}, timeout=60)
+                reply = requests.post(post_url, post_body_data, timeout=60)
                 reply.raise_for_status()  # Raise an exception if status code isn't 200
                 result = reply.text
             except requests.exceptions.RequestException as ex:
@@ -133,6 +144,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             elif key == 'sendstatus':
                 self._log.info("Setting %s sendstatus: %s", self.name, setting)
                 self._settings[key] = int(setting)
+                continue
+            elif key == 'compress':
+                self._log.info("Setting " + self.name + " compress: " + setting)
+                if setting == "1":
+                    setting = True
+                else:
+                    setting = False
+                self._settings[key] = setting
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
