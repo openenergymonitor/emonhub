@@ -93,30 +93,29 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             sentat = int(time.time())
             
             # Construct post_url (without apikey)
-            post_url = self._settings['url'] + '/input/bulk.json?'
-                        
-            # Construct post body
-            post_body_data = {'apikey': self._settings['apikey'], 'data': data_string, 'sentat': str(sentat)}
+            post_url = self._settings['url'] + '/input/bulk.json?sentat='+str(sentat)
             
+            # Compress if enabled
             if self._settings['compress']:
-                json_str_size = len(post_body_data["data"])
+                json_str_size = len(data_string)
                 # Compress data and encode as hex string.
-                compressed = hexlify(zlib.compress(post_body_data["data"].encode()))
+                compressed = zlib.compress(data_string.encode())
                 compression_ratio = len(compressed) / json_str_size
                 # Only use compression if it makes sense!
                 if compression_ratio<1.0:
-                    post_body_data["data"] = compressed
+                    post_body = compressed
                     # Set flag.
-                    post_body_data["c"] = 1
+                    post_url = post_url + "&cb=1"
+                    self._log.info("sending: %ssentat=%s (%d bytes of data)", post_url, sentat, len(post_body))
                     self._log.info("compression ratio: %d%%",compression_ratio*100)
                 else: 
-                    self._log.info("compression ratio: %d%%, sent original",compression_ratio*100)  
-               
-            self._log.info("sending: %s data=%s&sentat=%s&apikey=E-M-O-N-C-M-S-A-P-I-K-E-Y", post_url, post_body_data["data"], sentat)
+                    post_body = {'data': data_string}
+                    self._log.info("sending: %ssentat=%s (%d bytes of data)", post_url, sentat, len(data_string))
+                    self._log.info("compression ratio: %d%%, sent original",compression_ratio*100)
             
             result = False
             try:
-                reply = requests.post(post_url, post_body_data, timeout=60)
+                reply = requests.post(post_url, post_body, timeout=60, headers={'Authorization': 'Bearer '+self._settings['apikey']})
                 reply.raise_for_status()  # Raise an exception if status code isn't 200
                 result = reply.text
             except requests.exceptions.RequestException as ex:
