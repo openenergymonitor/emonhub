@@ -27,7 +27,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'url': "http://emoncms.org",
             'senddata': 1,
             'sendstatus': 0,
-            'compress': 1
+            'sendnames': 0,
+            'compress': 0
         }
 
         # set an absolute upper limit for number of items to process per post
@@ -45,25 +46,26 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         try:
             f.append(int(cargo.timestamp))
             
-            if cargo.nodename:
+            if cargo.nodename and self._settings['sendnames']:
                 f.append(cargo.nodename)
             else:
                 f.append(cargo.nodeid)
             
-            if len(cargo.names) == len(cargo.realdata):
+            if len(cargo.names) == len(cargo.realdata) and self._settings['sendnames']:
                 keyvalues = {}
                 for name, value in zip(cargo.names, cargo.realdata):
                     keyvalues[name] = value
+                if cargo.rssi:
+                    keyvalues['rssi'] = cargo.rssi
                 f.append(keyvalues)
             else:
                 for i in cargo.realdata:
                     f.append(i)
-                if len(cargo.names) > 0:
+                if cargo.rssi:
+                    f.append(cargo.rssi)
+                # Note if number of names and values do not match
+                if len(cargo.names) > 0 and self._settings['sendnames']:
                     self._log.warning("cargo.names and cargo.realdata have different lengths - " + str(len(cargo.names)) + " vs " + str(len(cargo.realdata)))
-                    
-            if cargo.rssi:
-                f.append(cargo.rssi)
-
         except:
             self._log.warning("Failed to create emonCMS frame %s", f)
 
@@ -82,6 +84,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return True
 
         if self._settings['senddata']:
+            number_of_frames = len(databuffer)
             data_string = json.dumps(databuffer, separators=(',', ':'))
             
             # Prepare URL string of the form
@@ -95,6 +98,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             # Construct post_url (without apikey)
             post_url = self._settings['url'] + '/input/bulk.json?sentat='+str(sentat)
             
+            # If sendnames enabled then always compress:
+            if self._settings['sendnames']:
+                self._settings['compress'] = True
+            
             # Compress if enabled
             if self._settings['compress']:
                 json_str_size = len(data_string)
@@ -104,14 +111,17 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 # Only use compression if it makes sense!
                 if compression_ratio<1.0:
                     post_body = compressed
-                    # Set flag.
+                    # Set compression flag (cb = compression binary).
                     post_url = post_url + "&cb=1"
-                    self._log.info("sending: %ssentat=%s (%d bytes of data)", post_url, sentat, len(post_body))
+                    self._log.info("sending: %s (%d bytes of data, %d frames, compressed)", post_url, len(post_body),number_of_frames)
                     self._log.info("compression ratio: %d%%",compression_ratio*100)
                 else: 
                     post_body = {'data': data_string}
-                    self._log.info("sending: %ssentat=%s (%d bytes of data)", post_url, sentat, len(data_string))
+                    self._log.info("sending: %s (%d bytes of data, %d frames, uncompressed)", post_url, len(data_string),number_of_frames)
                     self._log.info("compression ratio: %d%%, sent original",compression_ratio*100)
+            else: 
+                post_body = {'data': data_string}
+                self._log.info("sending: %s (%d bytes of data, %d frames, uncompressed)", post_url, len(data_string),number_of_frames)
             
             result = False
             try:
@@ -185,6 +195,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             elif key == 'sendstatus':
                 self._log.info("Setting %s sendstatus: %s", self.name, setting)
                 self._settings[key] = int(setting)
+                continue
+            elif key == 'sendnames':
+                self._log.info("Setting " + self.name + " sendnames: " + str(setting))
+                self._settings[key] = bool(int(setting))
                 continue
             elif key == 'compress':
                 self._log.info("Setting " + self.name + " compress: " + str(setting))
