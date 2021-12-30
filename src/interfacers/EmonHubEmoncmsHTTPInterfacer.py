@@ -125,7 +125,9 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             
             result = False
             try:
+                st = time.time()
                 reply = requests.post(post_url, post_body, timeout=60, headers={'Authorization': 'Bearer '+self._settings['apikey']})
+                dt = (time.time()-st)*1000
                 reply.raise_for_status()  # Raise an exception if status code isn't 200
                 result = reply.text
             except requests.exceptions.RequestException as ex:
@@ -133,7 +135,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 return False
 
             if result == 'ok':
-                self._log.debug("acknowledged receipt with '%s' from %s", result, self._settings['url'])
+                self._log.debug("acknowledged receipt with '%s' from %s (%d ms)", result, self._settings['url'], dt)
                 return True
             else:
                 self._log.warning("send failure: wanted 'ok' but got '%s'", result)
