@@ -45,7 +45,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             'read_interval': 10.0,
             'nodename':'sdm120',
             'prefix':'',
-            'addresses':[1],
+            'addresses':['1'],
             'registers': [0,6,12,18,30,70,72,74,76],
             'names': ['V','I','P','VA','PF','FR','EI','EE','RI'],
             'precision': [2,3,1,1,3,3,3,3,3]
@@ -93,7 +93,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     
                     # Set modbus address
                     for addr in self._settings['addresses']:
-                        self._rs485.address = addr
+                        self._rs485.address = int(addr)
                         
                         for i in range(0,len(self._settings['registers'])):
                             valid = True
@@ -151,8 +151,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 self._log.info("Setting %s prefix: %s", self.name, setting)
                 self._settings[key] = str(setting)
                 continue
-            elif key == 'address':
-                self._log.info("Setting %s address: %s", self.name, setting)
+            elif key == 'addresses':
+                self._log.info("Setting %s address: %s", self.name, ",".join(setting))
                 self._settings[key] = setting
                 continue
             elif key == 'registers':
