@@ -113,7 +113,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 if i<len(self._settings['precision']):
                                     value = round(value,int(self._settings['precision'][i]))
                                 
-                                c.names.append(self._settings['prefix']+name)
+                                c.names.append(self._settings['prefix']+str(addr)+"_"+name)
                                 c.realdata.append(value)
                                 # self._log.debug(str(name)+": "+str(value))
                             
