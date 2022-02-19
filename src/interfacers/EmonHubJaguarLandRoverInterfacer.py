@@ -3,7 +3,8 @@
 # GNU GENERAL PUBLIC LICENSE -  Version 2, June 1991
 # See LICENCE and README file for details
 
-# Inspiration taken from Stuart Pittaway's EmonHubBMWInterfacer
+# Inspiration taken from Stuart Pittaway's EmonHubBMWInterfacer. With thanks
+# to @ardevd for jlrpy python library for interacting with the JLR's API.
 
 __author__ = 'Dan Conlon'
 
