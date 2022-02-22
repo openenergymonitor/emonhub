@@ -16,10 +16,17 @@ from emonhub_interfacer import EmonHubInterfacer
         read_interval = 10
         nodename = sdm120
         # prefix = sdm_
-        addresses = 1,
-        registers = 0,6,12,18,30,70,72,74,76
-        names = V,I,P,VA,PF,FR,EI,EE,RI
-        precision = 2,3,1,1,3,3,3,3,3
+        [[[[meters]]]]
+            [[[[[sdm120a]]]]]
+                address = 1
+                registers = 0,6,12,18,30,70,72,74,76
+                names = V,I,P,VA,PF,FR,EI,EE,RI
+                precision = 2,3,1,1,3,3,3,3,3
+            [[[[[sdm120b]]]]]
+                address = 2
+                registers = 0,6,12,18,30,70,72,74,76
+                names = V,I,P,VA,PF,FR,EI,EE,RI
+                precision = 2,3,1,1,3,3,3,3,3
 """
 
 """class EmonHubSDM120Interfacer
@@ -45,10 +52,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             'read_interval': 10.0,
             'nodename':'sdm120',
             'prefix':'',
-            'addresses':['1'],
-            'registers': [0,6,12,18,30,70,72,74,76],
-            'names': ['V','I','P','VA','PF','FR','EI','EE','RI'],
-            'precision': [2,3,1,1,3,3,3,3,3]
+            'meters':[]
         }
         
         self.next_interval = True
@@ -91,29 +95,29 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
              
                 if self._rs485:
                     
-                    # Set modbus address
-                    for addr in self._settings['addresses']:
-                        self._rs485.address = int(addr)
+                    # Support for multiple MBUS meters on a single bus
+                    for meter in self._settings['meters']:
+                        self._rs485.address = self._settings['meters'][meter]['address']
                         
-                        for i in range(0,len(self._settings['registers'])):
+                        for i in range(0,len(self._settings['meters'][meter]['registers'])):
                             valid = True
                             try:
-                                value = self._rs485.read_float(int(self._settings['registers'][i]), functioncode=4, number_of_registers=2)
+                                value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                             except Exception as e:
                                 valid = False
-                                self._log.error("Could not read register @ "+self._settings['registers'][i]+": " + str(e))  
+                                self._log.error("Could not read register @ "+str(self._settings['meters'][meter]['registers'][i])+": " + str(e))  
                             
                             if valid:
                                 # replace datafield name with custom name
-                                if i<len(self._settings['names']):
-                                    name = self._settings['names'][i]
+                                if i<len(self._settings['meters'][meter]['names']):
+                                    name = self._settings['meters'][meter]['names'][i]
                                 else:
-                                    name = "r"+str(self._settings['registers'][i])
+                                    name = "r"+str(self._settings['meters'][meter]['registers'][i])
                                 # apply rounding if set
-                                if i<len(self._settings['precision']):
-                                    value = round(value,int(self._settings['precision'][i]))
+                                if i<len(self._settings['meters'][meter]['precision']):
+                                    value = round(value,int(self._settings['meters'][meter]['precision'][i]))
                                 
-                                c.names.append(self._settings['prefix']+str(addr)+"_"+name)
+                                c.names.append(self._settings['prefix']+str(meter)+"_"+name)
                                 c.realdata.append(value)
                                 # self._log.debug(str(name)+": "+str(value))
                             
@@ -151,22 +155,43 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 self._log.info("Setting %s prefix: %s", self.name, setting)
                 self._settings[key] = str(setting)
                 continue
-            elif key == 'addresses':
-                self._log.info("Setting %s address: %s", self.name, ",".join(setting))
-                self._settings[key] = setting
-                continue
-            elif key == 'registers':
-                self._log.info("Setting %s datafields: %s", self.name, ",".join(setting))
-                self._settings[key] = setting
-                continue
-            elif key == 'names':
-                self._log.info("Setting %s names: %s", self.name, ",".join(setting))
-                self._settings[key] = setting
-                continue
-            elif key == 'precision':
-                self._log.info("Setting %s precision: %s", self.name, ",".join(map(str,setting)))
-                self._settings[key] = setting
-                continue
+            elif key == 'meters':
+                self._settings['meters'] = {}
+                for meter in setting:
+                    # default
+                    address = 1
+                    registers = []
+                    names = []                   
+                    precision = []
+                    # address
+                    if 'address' in setting[meter]:
+                        address = int(setting[meter]['address'])
+                        self._log.info("Setting %s meters %s address %s", self.name, meter, address)     
+                        
+                    if 'registers' in setting[meter]:
+                        for reg in setting[meter]['registers']:
+                            registers.append(int(reg))
+                        self._log.info("Setting %s meters %s registers %s", self.name, meter, json.dumps(registers))     
+                                                   
+                    if 'names' in setting[meter]:
+                        for name in setting[meter]['names']:
+                            names.append(str(name))                                           
+                        self._log.info("Setting %s meters %s names %s", self.name, meter, json.dumps(names))     
+                        
+                    if 'precision' in setting[meter]:
+                        for dp in setting[meter]['precision']:
+                            precision.append(int(dp))
+                        self._log.info("Setting %s meters %s precision %s", self.name, meter, json.dumps(precision))     
+                                             
+                    #assign
+                    self._settings['meters'][meter] = {
+                        'address':address,
+                        'registers':registers,
+                        'names':names,
+                        'precision':precision
+                    }
+                    
+                continue     
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
 
