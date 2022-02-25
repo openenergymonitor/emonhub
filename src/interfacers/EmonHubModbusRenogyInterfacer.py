@@ -60,7 +60,7 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
             self._modcon = False
             self._log.info("Starting Modbus client on " + com_port + " at " + com_baud)
             # Connect to the controller and get values
-            client = ModbusClient(method = 'rtu', port = '/dev/ttyUSB0', baudrate = 9600, stopbits = 1, bytesize = 8, parity = 'N')
+            client = ModbusClient(method = 'rtu', port = com_port, baudrate = int(com_baud), stopbits = 1, bytesize = 8, parity = 'N')
             client.connect()
 
             Model = client.read_holding_registers(12, 8, unit=1)
