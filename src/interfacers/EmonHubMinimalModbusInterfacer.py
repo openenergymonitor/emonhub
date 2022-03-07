@@ -19,6 +19,20 @@ from emonhub_interfacer import EmonHubInterfacer
         registers = 0,6,12,18,30,70,72,74,76
         names = V,I,P,VA,PF,FR,EI,EE,RI
         precision = 2,3,1,1,3,3,3,3,3
+        
+[[SDM630]]
+    Type = EmonHubMinimalModbusInterfacer
+    [[[init_settings]]]
+        device = /dev/ttyUSB1
+        baud = 9600
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        nodename = sdm120
+        # prefix = sdm_
+        registers = 0,1,2,3,4,5,6,7,8,26,36,37
+        names =  V1,V2,V3,I1,I2,I3,P1,P2,P3,TotalPower,Import_kWh,Export_kWh
+        precision = 2,2,2,2,2,2,2,2,2,2,2,2
 """
 
 """class EmonHubSDM120Interfacer
