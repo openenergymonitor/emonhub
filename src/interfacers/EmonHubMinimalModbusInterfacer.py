@@ -28,7 +28,7 @@ from emonhub_interfacer import EmonHubInterfacer
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
-        nodename = sdm120
+        nodename = sdm630
         # prefix = sdm_
         registers = 0,1,2,3,4,5,6,7,8,26,36,37
         names =  V1,V2,V3,I1,I2,I3,P1,P2,P3,TotalPower,Import_kWh,Export_kWh
