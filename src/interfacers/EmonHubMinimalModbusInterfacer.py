@@ -120,7 +120,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 c.names.append(self._settings['prefix']+str(meter)+"_"+name)
                                 c.realdata.append(value)
                                 # self._log.debug(str(name)+": "+str(value))
-                            
+                        time.sleep(0.1)      
                     if len(c.realdata)>0:
                         self._log.debug(c.realdata)
                         return c
