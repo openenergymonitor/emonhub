@@ -132,6 +132,11 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         for retry in range(10):
             self.mbus_request(address, page)
             time.sleep(0.3)
+            
+            if not self.ser:
+                self._log.error("set_page serial has gone away")    
+                return False
+            
             if self.ser.in_waiting and ord(self.ser.read(1)) == 0xE5:
                 self._log.debug("ACK")
                 time.sleep(0.5)
@@ -419,52 +424,53 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         start_time = time.time()
         
         val = 0
-        
-        while (time.time()-start_time)<2.0:
-            while self.ser.in_waiting:
-                # Read in byte
-                val = ord(self.ser.read(1))
-                data.append(val)
-                # print(str(bid)+" "+str(val)+" "+str(hex(val)))
-                # Long frame start, reset checksum
-                if bid == 0 and val == 0x68:
-                    # print("MBUS start")
-                    valid = True
-                    checksum = 0
+        try:
+            while (time.time()-start_time)<2.0:
+                while self.ser.in_waiting:
+                    # Read in byte
+                    val = ord(self.ser.read(1))
+                    data.append(val)
+                    # print(str(bid)+" "+str(val)+" "+str(hex(val)))
+                    # Long frame start, reset checksum
+                    if bid == 0 and val == 0x68:
+                        # print("MBUS start")
+                        valid = True
+                        checksum = 0
 
-                # 2nd byte is the frame length
-                if valid and bid == 1:
-                    length = val
-                    bid_end = length + 4 + 2 - 1
-                    bid_checksum = bid_end - 1
-                    # print("MBUS length "+str(length))
-                    # print("MBUS bid_end "+str(bid_end))
-                    # print("MBUS bid_checksum "+str(bid_checksum))
+                    # 2nd byte is the frame length
+                    if valid and bid == 1:
+                        length = val
+                        bid_end = length + 4 + 2 - 1
+                        bid_checksum = bid_end - 1
+                        # print("MBUS length "+str(length))
+                        # print("MBUS bid_end "+str(bid_end))
+                        # print("MBUS bid_checksum "+str(bid_checksum))
 
-                if valid and bid == 2 and val != length:
-                    valid = False                       # 3rd byte is also length, check that its the same as 2nd byte
-                if valid and bid == 3 and val != 0x68:
-                    valid = False                         # 4th byte is the start byte again
-                if valid and bid > 3 and bid < bid_checksum:
-                    checksum += val                 # Increment checksum during data portion of frame
+                    if valid and bid == 2 and val != length:
+                        valid = False                       # 3rd byte is also length, check that its the same as 2nd byte
+                    if valid and bid == 3 and val != 0x68:
+                        valid = False                         # 4th byte is the start byte again
+                    if valid and bid > 3 and bid < bid_checksum:
+                        checksum += val                 # Increment checksum during data portion of frame
 
-                if valid and bid == bid_checksum and val != checksum % 256:
-                    if self._settings['validate_checksum']: 
-                        valid = False  # Validate checksum
-                        
-                if bid == bid_end and val == 0x16:
-                    time_elapsed = time.time()-start_time
-                    self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))
+                    if valid and bid == bid_checksum and val != checksum % 256:
+                        if self._settings['validate_checksum']: 
+                            valid = False  # Validate checksum
                             
-                    if valid: # Parse frame if still valid
-                        if self.use_meterbus_lib:
-                            return self.parse_frame_meterbus_lib(data,records)
-                        else:
-                            return self.parse_frame(data,records)
+                    if bid == bid_end and val == 0x16:
+                        time_elapsed = time.time()-start_time
+                        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))
+                                
+                        if valid: # Parse frame if still valid
+                            if self.use_meterbus_lib:
+                                return self.parse_frame_meterbus_lib(data,records)
+                            else:
+                                return self.parse_frame(data,records)
 
-                bid += 1
-            time.sleep(0.1)
-            
+                    bid += 1
+                time.sleep(0.1)
+        except Exception:
+            self._log.error("read_data_frame could not read from serial port")         
         # If we are here data response is corrupt
         time_elapsed = time.time()-start_time
         self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))       
