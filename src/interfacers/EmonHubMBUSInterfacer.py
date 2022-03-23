@@ -50,6 +50,9 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                                'meters':[]}
 
         self.next_interval = True
+        
+        self.device = device
+        self.baud = baud
 
         # Only load module if it is installed
         try:
@@ -75,6 +78,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         try:
             self.ser.write(data)
         except Exception:
+            self.ser = False
             self._log.error("Could not write to MBUS serial port")
 
     def mbus_short_frame(self, address, C_field):
@@ -141,6 +145,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 else:
                     time.sleep(0.2)
             except Exception:
+                self.ser = False
                 self._log.error("set_page could not read from serial port")
                    
         return False
@@ -470,6 +475,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     bid += 1
                 time.sleep(0.1)
         except Exception:
+            self.ser = False
             self._log.error("read_data_frame could not read from serial port")         
         # If we are here data response is corrupt
         time_elapsed = time.time()-start_time
@@ -500,7 +506,15 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         if int(time.time()) % self._settings['read_interval'] == 0:
             if self.next_interval:
                 self.next_interval = False
-
+                
+                if not self.ser:
+                    try:
+                        self._log.debug("Connecting to MBUS serial: " + self.device + " " + str(self.baud))
+                        self.ser = serial.Serial(self.device, self.baud, 8, 'E', 1, 0.5)
+                    except Exception:
+                        self._log.error("Could not connect to MBUS serial")
+                        self.ser = False
+                        
                 c = Cargo.new_cargo()
                 c.names = []
                 c.realdata = []
