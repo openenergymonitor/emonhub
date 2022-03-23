@@ -71,20 +71,26 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 self._log.error(err)
                 self.use_meterbus_lib = False
 
+    def mbus_serial_write(self,data):
+        try:
+            self.ser.write(data)
+        except Exception:
+            self._log.error("Could not write to MBUS serial port")
+
     def mbus_short_frame(self, address, C_field):
         data = [0x10,C_field,address,0x0,0x16]
         data[3] = (data[1]+data[2]) % 256
-        self.ser.write(data)
+        self.mbus_serial_write(data)
 
     def mbus_application_reset(self, address):
         data = [0x68,0x03,0x03,0x68,0x53,address,0x50,0x0,0x16]
         data = self.checksum(data)
-        self.ser.write(data)
+        self.mbus_serial_write(data)
 
     def mbus_set_address(self, old_address, new_address):
         data = [0x68,0x06,0x06,0x68,0x53,old_address,0x51,0x01,0x7A,new_address,0x0,0x16]
         data = self.checksum(data)
-        self.ser.write(data)
+        self.mbus_serial_write(data)
         
     def mbus_set_baudrate(self, address, baudrate):
         baudrate_hex = 0xBB # default is 2400
@@ -97,23 +103,23 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
     
         data = [0x68,0x03,0x03,0x68,0x53,address,baudrate_hex,0x0,0x16]
         data = self.checksum(data)
-        self.ser.write(data)
+        self.mbus_serial_write(data)
 
     # Does not seem to work yet on SDM120MB
     def check_secondary_address(self, a2a,a2b,a2c,a2d):
         data = [0x68,0x0B,0x0B,0x68,0x73,0xFD,0x52,a2d,a2c,a2b,a2a,0xFF,0xFF,0xFF,0xFF,0x0,0x16]
         data = self.checksum(data)
-        self.ser.write(data)
+        self.mbus_serial_write(data)
         
     def mbus_request(self, address, telegram):
         data = [0x68,0x07,0x07,0x68,0x53,address,0x51,0x01,0xFF,0x08,telegram,0x0,0x16]
         data = self.checksum(data)
-        self.ser.write(data)
+        self.mbus_serial_write(data)
 
     def mbus_request_sdm120(self, address):
         data = [0x68,0x03,0x03,0x68,0x53,address,0xB1,0x0,0x16]
         data = self.checksum(data)
-        self.ser.write(data)
+        self.mbus_serial_write(data)
 
     def checksum(self,data):
         checksum = 0
