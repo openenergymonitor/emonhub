@@ -133,16 +133,16 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             self.mbus_request(address, page)
             time.sleep(0.3)
             
-            if not self.ser:
-                self._log.error("set_page serial has gone away")    
-                return False
-            
-            if self.ser.in_waiting and ord(self.ser.read(1)) == 0xE5:
-                self._log.debug("ACK")
-                time.sleep(0.5)
-                return True
-            else:
-                time.sleep(0.2)
+            try:
+                if self.ser.in_waiting and ord(self.ser.read(1)) == 0xE5:
+                    self._log.debug("ACK")
+                    time.sleep(0.5)
+                    return True
+                else:
+                    time.sleep(0.2)
+            except Exception:
+                self._log.error("set_page could not read from serial port")
+                   
         return False
 
     def decodeBCD(self, bcd_data):
