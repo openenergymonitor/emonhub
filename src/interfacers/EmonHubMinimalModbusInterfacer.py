@@ -60,22 +60,31 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         # Only load module if it is installed         
         try: 
             import minimalmodbus
+            self.minimalmodbus = minimalmodbus
             # import serial
-            self._log.info("Connecting to Modbus device="+str(device)+" baud="+str(baud))
-            
-            self._rs485 = minimalmodbus.Instrument(device, 1)
-            self._rs485.serial.baudrate = baud
-            self._rs485.serial.bytesize = 8
-            self._rs485.serial.parity = minimalmodbus.serial.PARITY_NONE
-            self._rs485.serial.stopbits = 1
-            self._rs485.serial.timeout = 1
-            self._rs485.debug = False
-            self._rs485.mode = minimalmodbus.MODE_RTU
-                        
         except ModuleNotFoundError as err:
             self._log.error(err)
             self._rs485 = False
+        
+        self.device = device
+        self.baud = baud
+        self.rs485_connect()
                     
+    def rs485_connect(self):
+        try: 
+            self._log.info("Connecting to Modbus device="+str(self.device)+" baud="+str(self.baud))
+            
+            self._rs485 = self.minimalmodbus.Instrument(self.device, 1)
+            self._rs485.serial.baudrate = self.baud
+            self._rs485.serial.bytesize = 8
+            self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_NONE
+            self._rs485.serial.stopbits = 1
+            self._rs485.serial.timeout = 1
+            self._rs485.debug = False
+            self._rs485.mode = self.minimalmodbus.MODE_RTU
+        except Exception:
+            self._log.error("Could not connect to Modbus device")
+            self._rs485 = False
 
     def read(self):
         """Read data and process
@@ -94,17 +103,21 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 c.nodeid = self._settings['nodename']
              
                 if self._rs485:
+                    invalid_count = 0
+                    register_count = 0
                     
                     # Support for multiple MBUS meters on a single bus
                     for meter in self._settings['meters']:
                         self._rs485.address = self._settings['meters'][meter]['address']
                         
                         for i in range(0,len(self._settings['meters'][meter]['registers'])):
+                            register_count += 1
                             valid = True
                             try:
                                 value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                             except Exception as e:
                                 valid = False
+                                invalid_count += 1
                                 self._log.error("Could not read register @ "+str(self._settings['meters'][meter]['registers'][i])+": " + str(e))  
                             
                             if valid:
@@ -120,12 +133,19 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 c.names.append(self._settings['prefix']+str(meter)+"_"+name)
                                 c.realdata.append(value)
                                 # self._log.debug(str(name)+": "+str(value))
-                            
+                                
+                        time.sleep(0.1)  
+                        
+                    if invalid_count==register_count:
+                        self._log.error("Could not read all registers")
+                        self.rs485_connect()
+                           
                     if len(c.realdata)>0:
                         self._log.debug(c.realdata)
                         return c
                 else:
                      self._log.error("Not connected to modbus device")
+                     self.rs485_connect()
                     
         else:
             self.next_interval = True
