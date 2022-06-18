@@ -260,7 +260,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         if topic_parts[0] == self._settings["node_format_basetopic"][:-1] and topic_parts[1] == "tx" and topic_parts[3] == "values":
             nodeid = int(topic_parts[2])
 
-            payload = msg.payload
+            payload = msg.payload.decode()
             realdata = payload.split(",")
             self._log.debug("Nodeid: %s values: %s", nodeid, msg.payload)
 
