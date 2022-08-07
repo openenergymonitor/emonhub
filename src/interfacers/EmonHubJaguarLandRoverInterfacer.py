@@ -41,15 +41,7 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
         self._NodeName = name
         self._first_time_loop = True
         self._chargingStatus = "UNKNOWN"
-
-        try:
-            self._jlrConnection = jlrpy.Connection(self._Username, self._Password)
-        except HTTPError as err:
-            # Give a helpful message when username/password incorrect
-            if err.code == 403:
-                raise Exception('Incorrect username or password') from err
-            else:
-                raise
+        self._jlrConnection = None
 
     def close(self):
         """Close"""
@@ -77,6 +69,17 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
 
         return int(duration_of_delay) > waittime
 
+    def _create_jlr_connection(self):
+        """Creates a new jlrpy connection """
+        try:
+            self._jlrConnection = jlrpy.Connection(self._Username, self._Password)
+        except HTTPError as err:
+            # Give a helpful message when username/password incorrect
+            if err.code == 403:
+                raise Exception('Incorrect username or password') from err
+            else:
+                raise
+
     # Override base _process_rx code from emonhub_interfacer
     def _process_rx(self, rxc):
         if not rxc:
@@ -97,6 +100,10 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
         self._first_time_loop = False
 
         try:
+            # Create connection in the loop so network errors at startup don't prevent interfacer creation
+            if self._jlrConnection is None:
+                self._create_jlr_connection()
+            
             # Select the first vehicle in the account
             vehicle = self._jlrConnection.vehicles[0]
             self._log.info("Fetching status of VIN %s", vehicle.vin)
@@ -116,7 +123,10 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
                 names.append(key)
                 if key in statusDict:
                     self._log.info("%s = %s", key, statusDict[key])
-                    values.append(float(statusDict[key]))
+                    try:
+                        values.append(float(statusDict[key]))
+                    except ValueError:
+                        values.append(-1)
                 else:
                     values.append(-1)
 
