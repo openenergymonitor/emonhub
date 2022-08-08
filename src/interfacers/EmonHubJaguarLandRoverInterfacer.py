@@ -118,8 +118,7 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
             names = []
             values = []
 
-            # TODO: add FUEL_LEVEL_PERC
-            for key in ['ODOMETER_MILES','EV_STATE_OF_CHARGE','EV_RANGE_ON_BATTERY_MILES','EV_RANGE_ON_BATTERY_KM','EV_CHARGING_RATE_SOC_PER_HOUR']:
+            for key in ['ODOMETER_MILES','EV_STATE_OF_CHARGE','EV_RANGE_ON_BATTERY_MILES','EV_RANGE_ON_BATTERY_KM','EV_CHARGING_RATE_SOC_PER_HOUR','FUEL_LEVEL_PERC']:
                 names.append(key)
                 if key in statusDict:
                     self._log.info("%s = %s", key, statusDict[key])
