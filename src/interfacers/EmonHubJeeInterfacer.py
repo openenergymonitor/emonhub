@@ -247,8 +247,7 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
         return True
 
 
-    def send (self, cargo):
-
+    def send(self, cargo):
         f = cargo
         cmd = "s"
 
@@ -258,16 +257,16 @@ class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
             data = f.realdata
 
         payload = ""
-        for value in data:
-            if int(value) < 0 or int(value) > 255:
+        for value in range(0, len(data)):
+            if int(data[value]) < 0 or int(data[value]) > 255:
                 self._log.warning(self.name + " discarding Tx packet: values out of scope" )
                 return
-            payload += str(int(value))+","
+            payload += str(int(data[value]))+","
 
-        payload += cmd
+        payload += '0' + cmd
 
-        self._log.debug(str(f.uri) + " sent TX packet: " + payload)
-        self._ser.write(payload)
+        self._log.info(str(f.uri) + " sent TX packet: " + payload)
+        self._ser.write(payload.encode())
 
 
 
