@@ -375,8 +375,8 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
 
         payload = "T"
         for value in data:
-            if not 0 < int(value) < 255:
-                self._log.warning(self.name + " discarding Tx packet: values out of scope")
+            if not 0 <= int(value) <= 255:
+                self._log.warning(self.name + " discarding Tx packet: value  out of range (0..255) " + str(value))
                 return
             payload += str(int(value)) + ","
 
