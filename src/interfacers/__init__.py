@@ -23,7 +23,6 @@ __all__ = [
     "EmonHubSDM120Interfacer",
     "EmonHubMBUSInterfacer",
     "EmonHubMinimalModbusInterfacer",
-    "EmonHubSamsungASHPMinimalModbusInterfacer",
     "EmonHubBleInterfacer",
     "EmonHubGoodWeInterfacer",
     "EmonHubInfluxInterfacer"
