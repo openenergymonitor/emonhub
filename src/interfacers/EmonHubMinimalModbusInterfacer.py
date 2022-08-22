@@ -11,6 +11,8 @@ from emonhub_interfacer import EmonHubInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
         baud = 2400
+        parity = none
+        datatype = float
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
@@ -28,22 +30,24 @@ from emonhub_interfacer import EmonHubInterfacer
                 names = V,I,P,VA,PF,FR,EI,EE,RI
                 precision = 2,3,1,1,3,3,3,3,3
 
-[[SAMSUNGASHP]]
+[[SAMSUNG-ASHP-MIB19N]]
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
         baud = 9600
+        parity = even
+        datatype = int
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
-        nodename = samsung-mib19n
+        nodename = samsung-ashp
         # prefix = sdm_
         [[[[meters]]]]
             [[[[[ashp]]]]]
                 address = 1
                 registers = 75,74,72,65,66,68,52,59,58,2,79
                 names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status, away_status
-                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0,1,1,1
+                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1
                 
 """
 
@@ -55,7 +59,7 @@ SDM120 interfacer for use in development
 
 class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device="/dev/modbus", baud=2400):
+    def __init__(self, name, device="/dev/modbus", baud=2400, parity="none", datatype="float"):
         """Initialize Interfacer
 
         """
@@ -86,16 +90,27 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         
         self.device = device
         self.baud = baud
+        self.parity = parity
+        self.datatype = datatype
         self.rs485_connect()
                     
     def rs485_connect(self):
         try:
-            self._log.info("Connecting to Modbus device="+str(self.device)+" baud="+str(self.baud))
+            self._log.info("Connecting to Modbus device="+str(self.device)+" baud="+str(self.baud)+" parity="+str(self.parity)+" datatype="+str(self.datatype))
             
             self._rs485 = self.minimalmodbus.Instrument(self.device, 1)
             self._rs485.serial.baudrate = self.baud
             self._rs485.serial.bytesize = 8
-            self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_EVEN
+            if self.parity == 'even':
+                self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_EVEN
+            elif self.parity == 'odd':
+                self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_ODD
+            elif self.parity == 'mark':
+                self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_MARK
+            elif self.parity == 'space':
+                self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_SPACE
+            else:
+                self._rs485.serial.parity = self.minimalmodbus.serial.PARITY_NONE
             self._rs485.serial.stopbits = 1
             self._rs485.serial.timeout = 1
             self._rs485.debug = False
@@ -132,7 +147,14 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                             register_count += 1
                             valid = True
                             try:
-                                value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=4)
+                                if self.datatype == 'int':
+                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=4)
+                                elif self.datatype == 'float':
+                                    value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                else:
+                                    value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                            
+                                    
                             except Exception as e:
                                 valid = False
                                 invalid_count += 1
@@ -147,7 +169,9 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 # apply rounding if set
                                 if i<len(self._settings['meters'][meter]['precision']):
                                     value = round(value,int(self._settings['meters'][meter]['precision'][i]))
-                                
+                                # apply scales
+                                if i<len(self._settings['meters'][meter]['scales']) and self._settings['meters'][meter]['scales'][i] is not None:
+                                    value = value*self._settings['meters'][meter]['scales'][i]
                                 c.names.append(self._settings['prefix']+str(meter)+"_"+name)
                                 c.realdata.append(value)
                                 # self._log.debug(str(name)+": "+str(value))
@@ -201,6 +225,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     registers = []
                     names = []
                     precision = []
+                    scales = []
                     # address
                     if 'address' in setting[meter]:
                         address = int(setting[meter]['address'])
@@ -220,13 +245,19 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         for dp in setting[meter]['precision']:
                             precision.append(int(dp))
                         self._log.info("Setting %s meters %s precision %s", self.name, meter, json.dumps(precision))
+                        
+                    if 'scales' in setting[meter]:
+                        for scale in setting[meter]['scales']:
+                            scales.append(float(scale))
+                        self._log.info("Setting %s meters %s scales %s", self.name, meter, json.dumps(scales))
                                              
                     #assign
                     self._settings['meters'][meter] = {
                         'address':address,
                         'registers':registers,
                         'names':names,
-                        'precision':precision
+                        'precision':precision,
+                        'scales':scales
                     }
                     
                 continue
