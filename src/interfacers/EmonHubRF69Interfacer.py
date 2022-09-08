@@ -30,6 +30,8 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
         port_nb (string): port number on which to open the socket
 
         """
+        
+        # sudo adduser emonhub spi
 
         # Initialization
         super().__init__(name)
@@ -153,9 +155,9 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
         """
         msg_len = self.rfm69_receive()
         if msg_len > 1:
-            print (msg_len)
-            print (self.rxMsg[1:])
-            print (self.rssi)
+            # print (msg_len)
+            # print (self.rxMsg[1:])
+            # print (self.rssi)
             
             c = Cargo.new_cargo(rawdata='')
             c.nodeid = self.rxMsg[1]
