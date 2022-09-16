@@ -26,7 +26,7 @@ class EmonHubSocketInterfacer(EmonHubInterfacer):
         self._settings.update(self._skt_settings)
 
         # Open socket
-        self._socket = self._open_socket(port_nb)
+        self._socket = self._open_socket(int(port_nb))
 
         # Initialize RX buffer for socket
         self._sock_rx_buf = ''
