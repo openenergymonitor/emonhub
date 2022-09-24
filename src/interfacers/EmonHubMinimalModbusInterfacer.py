@@ -81,15 +81,15 @@ from emonhub_interfacer import EmonHubInterfacer
                 type = rid175
                 registers = 0,6,8,10,14,16,18
                 names = TotalkWh,V,A,Power,KVA,PF,FR
-                scales = 0.01,0.01,0.1,0.01,0.01,0.1,0.01
-                precision = 2,2,2,2,2,2,2
+                scales = 0.01,0.1,0.1,0.01,0.01,0.001,0.01
+                precision = 4,3,3,3,4,5,4
             [[[[[rid175b]]]]]
                 address = 2
                 type = rid175
                 registers = 0,6,8,10,14,16,18
                 names = TotalkWh,V,A,Power,KVA,PF,FR
-                scales = 0.01,0.01,0.1,0.01,0.01,0.1,0.01
-                precision = 2,2,2,2,2,2,2
+                scales = 0.01,0.1,0.1,0.01,0.01,0.001,0.01
+                precision = 4,3,3,3,4,5,4
 """
 
 """class EmonHubSDM120Interfacer
@@ -206,8 +206,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                             register_count += 1
                             valid = True
                             try:
-                                if self._rs485.meter_type == 'rid175':
-                                    value = bcd_decode(self._rs485.read_long(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, signed = False, byteorder = 0))
+                                if meter_type == 'rid175':
+                                    value = self.bcd_decode(self._rs485.read_long(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, signed = False, byteorder = 0))
                                 elif self.datatype == 'int':
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3)
                                 elif self.datatype == 'float':
@@ -282,6 +282,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 for meter in setting:
                     # default
                     address = 1
+                    meter_type = ""
                     registers = []
                     names = []
                     precision = []
