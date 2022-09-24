@@ -200,7 +200,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     # Support for multiple MBUS meters on a single bus
                     for meter in self._settings['meters']:
                         self._rs485.address = self._settings['meters'][meter]['address']
-                        self._rs485.meter_type = self._settings['meters'][meter]['type']
+                        meter_type = self._settings['meters'][meter]['type']
                         
                         for i in range(0,len(self._settings['meters'][meter]['registers'])):
                             register_count += 1
