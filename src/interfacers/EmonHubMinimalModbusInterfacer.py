@@ -206,7 +206,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                             register_count += 1
                             valid = True
                             try:
-                                if self._rs485.meter_type = rid175:
+                                if self._rs485.meter_type == 'rid175':
                                     value = bcd_decode(self._rs485.read_long(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, signed = False, byteorder = 0))
                                 elif self.datatype == 'int':
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3)
