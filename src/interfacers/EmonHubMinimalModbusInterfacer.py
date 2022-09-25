@@ -12,7 +12,6 @@ from emonhub_interfacer import EmonHubInterfacer
         device = /dev/ttyUSB0
         baud = 2400
         parity = none
-        datatype = float
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
@@ -21,11 +20,13 @@ from emonhub_interfacer import EmonHubInterfacer
         [[[[meters]]]]
             [[[[[sdm120a]]]]]
                 address = 1
+                type = sdm120
                 registers = 0,6,12,18,30,70,72,74,76
                 names = V,I,P,VA,PF,FR,EI,EE,RI
                 precision = 2,3,1,1,3,3,3,3,3
             [[[[[sdm120b]]]]]
                 address = 2
+                type = sdm120
                 registers = 0,6,12,18,30,70,72,74,76
                 names = V,I,P,VA,PF,FR,EI,EE,RI
                 precision = 2,3,1,1,3,3,3,3,3
@@ -36,7 +37,6 @@ from emonhub_interfacer import EmonHubInterfacer
         device = /dev/ttyUSB0
         baud = 9600
         parity = even
-        datatype = int
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
@@ -45,6 +45,7 @@ from emonhub_interfacer import EmonHubInterfacer
         [[[[meters]]]]
             [[[[[ashp]]]]]
                 address = 1
+                type = mib19n
                 registers = 75,74,72,65,66,68,52,59,58,2,79
                 names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status, away_status
                 scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1
@@ -82,14 +83,13 @@ from emonhub_interfacer import EmonHubInterfacer
                 registers = 0,6,8,10,14,16,18
                 names = TotalkWh,V,A,Power,KVA,PF,FR
                 scales = 0.01,0.1,0.1,0.01,0.01,0.001,0.01
-                precision = 4,3,3,3,4,5,4
             [[[[[rid175b]]]]]
                 address = 2
                 type = rid175
                 registers = 0,6,8,10,14,16,18
                 names = TotalkWh,V,A,Power,KVA,PF,FR
                 scales = 0.01,0.1,0.1,0.01,0.01,0.001,0.01
-                precision = 4,3,3,3,4,5,4
+         
 """
 
 """class EmonHubSDM120Interfacer
@@ -206,7 +206,13 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                             register_count += 1
                             valid = True
                             try:
-                                if meter_type == 'rid175':
+                                if meter_type == "sdm120":
+                                    value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                elif meter_type == "sdm630":
+                                    value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                elif meter_type == "mib19n":
+                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3)
+                                elif meter_type == 'rid175':
                                     value = self.bcd_decode(self._rs485.read_long(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, signed = False, byteorder = 0))
                                 elif self.datatype == 'int':
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3)
