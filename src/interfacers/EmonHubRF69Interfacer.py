@@ -2,8 +2,6 @@ import socket
 import select
 from emonhub_interfacer import EmonHubInterfacer
 import Cargo
-import spidev
-import RPi.GPIO as GPIO
 
 """class EmonHubRF69Interfacer
 
@@ -30,7 +28,17 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
         port_nb (string): port number on which to open the socket
 
         """
-        
+        try:
+            import spidev
+        except ModuleNotFoundError as err:
+            self._log.error(err)
+
+        try:            
+            import RPi.GPIO as GPIO
+            self.GPIO = GPIO
+        except ModuleNotFoundError as err:      
+            self._log.error(err)
+            
         # sudo adduser emonhub spi
 
         # Initialization
@@ -99,10 +107,10 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
         
 
     def select(self):
-        GPIO.output(7, GPIO.LOW)
+        self.GPIO.output(7, self.GPIO.LOW)
 
     def unselect(self):
-        GPIO.output(7, GPIO.HIGH)
+        self.GPIO.output(7, self.GPIO.HIGH)
 
     def readReg(self,addr):
         self.select()

@@ -85,7 +85,13 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         if self._settings['senddata']:
             number_of_frames = len(databuffer)
-            data_string = json.dumps(databuffer, separators=(',', ':'))
+            
+            # Set allow_nan=False as NaN would be rejected by emoncms.  NaN now
+            # causes ValueError exception which is unhandled, causing emonhub to
+            # exit and be restarted by supervisord which is preferable to a NaN
+            # from LeChacal RPICT7V1 blocking emonhub buffer and no data getting to
+            # EmonCMS.
+            data_string = json.dumps(databuffer, separators=(',', ':'), allow_nan=False)
             
             # Prepare URL string of the form
             # http://domain.tld/emoncms/input/bulk.json?apikey=12345
