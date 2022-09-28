@@ -8,7 +8,6 @@
 
 __author__ = 'Dan Conlon'
 
-import jlrpy
 import sys
 import time
 import traceback
@@ -42,6 +41,14 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
         self._first_time_loop = True
         self._chargingStatus = "UNKNOWN"
         self._jlrConnection = None
+        
+        # Only load module if it is installed
+        try:
+            import jlrpy
+            self.jlrpy = jlrpy
+        except ModuleNotFoundError as err:
+            self._log.error(err)
+            self.jlrpy = False
 
     def close(self):
         """Close"""
@@ -71,8 +78,12 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
 
     def _create_jlr_connection(self):
         """Creates a new jlrpy connection """
+        if not self.jlrpy:
+            self._jlrConnection = False
+            return
+           
         try:
-            self._jlrConnection = jlrpy.Connection(self._Username, self._Password)
+            self._jlrConnection = self.jlrpy.Connection(self._Username, self._Password)
         except HTTPError as err:
             # Give a helpful message when username/password incorrect
             if err.code == 403:
@@ -104,6 +115,9 @@ class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
             if self._jlrConnection is None:
                 self._create_jlr_connection()
             
+            if not self._jlrConnection:
+                return
+                
             # Select the first vehicle in the account
             vehicle = self._jlrConnection.vehicles[0]
             self._log.info("Fetching status of VIN %s", vehicle.vin)
