@@ -82,6 +82,12 @@ class EmonHubInterfacer(threading.Thread):
 
         # create a stop
         self.stop = False
+        
+        self.first_msg = {}
+        self.last_msg = {}
+        self.missed = {}
+        self.rx_msg = {}
+        
 
     @log_exceptions_from_class_method
     def run(self):
@@ -392,7 +398,34 @@ class EmonHubInterfacer(threading.Thread):
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'names' in ehc.nodelist[node]['rx']:
             names = ehc.nodelist[node]['rx']['names']
         rxc.names = names
+         
+        # Count missed packets
+        if names[0].upper()=="MSG":
+            msg = rxc.realdata[0]
+            if not node in self.last_msg: 
+                self.first_msg[node] = msg
+                self.last_msg[node] = msg-1
+                self.missed[node] = 0
+                
+            if self.last_msg[node]>msg:
+                self.first_msg[node] = msg
+                self.last_msg[node] = msg-1
+                self.missed[node] = 0
 
+            self.missed[node] += msg - self.last_msg[node] - 1
+            self.last_msg[node] = msg
+            
+            msgcount = msg - self.first_msg[node]
+            if msgcount:
+                missedprc = 100.0 * self.missed[node] / msgcount;
+            else: 
+                missedprc = 0
+            
+            rxc.realdata.append(self.missed[node])
+            rxc.names.append('missed')
+            rxc.realdata.append(missedprc)
+            rxc.names.append('missedprc')
+            
         nodename = False
         if node in ehc.nodelist and 'nodename' in ehc.nodelist[node]:
             nodename = ehc.nodelist[node]['nodename']
