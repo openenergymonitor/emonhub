@@ -54,11 +54,12 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
         self.spi.open(0,1)
         self.spi.max_speed_hz = 4000000
         self.spi.no_cs = True
+        self.sel_pin = 23
 
         GPIO.setwarnings(False)
         GPIO.setmode(GPIO.BCM)
-        GPIO.setup(7, GPIO.OUT)
-
+        GPIO.setup(self.sel_pin, GPIO.OUT)
+        
         while self.readReg(REG_SYNCVALUE1) != 0xAA:
             self.writeReg(REG_SYNCVALUE1, 0xAA)
             
@@ -104,13 +105,12 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
         
         self.rxMsg = []
         self.mode = False
-        
 
     def select(self):
-        self.GPIO.output(7, self.GPIO.LOW)
+        self.GPIO.output(self.sel_pin, self.GPIO.LOW)
 
     def unselect(self):
-        self.GPIO.output(7, self.GPIO.HIGH)
+        self.GPIO.output(self.sel_pin, self.GPIO.HIGH)
 
     def readReg(self,addr):
         self.select()
@@ -137,16 +137,17 @@ class EmonHubRF69Interfacer(EmonHubInterfacer):
                 # FIFO access
                 self.select()
                 count = self.spi.xfer([REG_FIFO & 0x7F,0])[1]
-                self.rxMsg = self.spi.xfer2([0 for i in range(0, count)])
-                self.unselect()
-                # only accept packets intended for us, or broadcasts
-                # ... or any packet if we're the special catch-all node
-                self.rssi = self.readReg(REG_RSSIVALUE)
-                dest = self.rxMsg[0]
-                if (dest & 0xC0) == self.parity:
-                    destId = dest & 0x3F;
-                    if destId == self.myId or destId == 0 or self.myId == 63:
-                        return count;
+                if count:
+                    self.rxMsg = self.spi.xfer2([0 for i in range(0, count)])
+                    self.unselect()
+                    # only accept packets intended for us, or broadcasts
+                    # ... or any packet if we're the special catch-all node
+                    self.rssi = self.readReg(REG_RSSIVALUE)
+                    dest = self.rxMsg[0]
+                    if (dest & 0xC0) == self.parity:
+                        destId = dest & 0x3F;
+                        if destId == self.myId or destId == 0 or self.myId == 63:
+                            return count;
 
         return -1
         

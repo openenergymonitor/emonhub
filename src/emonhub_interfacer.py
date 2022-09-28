@@ -400,7 +400,7 @@ class EmonHubInterfacer(threading.Thread):
         rxc.names = names
          
         # Count missed packets
-        if names[0].upper()=="MSG":
+        if len(names) and names[0].upper()=="MSG":
             msg = rxc.realdata[0]
             if not node in self.last_msg: 
                 self.first_msg[node] = msg
