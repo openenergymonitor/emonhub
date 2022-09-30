@@ -37,6 +37,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # maximum buffer size
         self.buffer._maximumEntriesInBuffer = 100000
 
+        self.session = requests.Session()
+
     def add(self, cargo):
         """Append data to buffer.
 
@@ -132,7 +134,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             result = False
             try:
                 st = time.time()
-                reply = requests.post(post_url, post_body, timeout=60, headers={'Authorization': 'Bearer '+self._settings['apikey']})
+                reply = self.session.post(post_url, post_body, timeout=60, headers={'Authorization': 'Bearer '+self._settings['apikey']})
                 dt = (time.time()-st)*1000
                 reply.raise_for_status()  # Raise an exception if status code isn't 200
                 result = reply.text
@@ -153,7 +155,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
             post_url = post_url + self._settings['apikey']
             try:
-                reply = requests.get(post_url, timeout=60)
+                reply = self.session.get(post_url, timeout=60)
                 reply.raise_for_status()
                 # self._log.debug(reply.text)
             except requests.exceptions.RequestException as ex:
