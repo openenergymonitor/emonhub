@@ -256,21 +256,33 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def on_message(self, client, userdata, msg):
         topic_parts = msg.topic.split("/")
+        
+        if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
+            if topic_parts[1] == "tx":
+                if topic_parts[3] == "values":
+                    nodeid = int(topic_parts[2])
+                    
+                    payload = msg.payload,decode()
+                    realdata = payload.split(",")
+                    self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
 
-        if topic_parts[0] == self._settings["node_format_basetopic"][:-1] and topic_parts[1] == "tx" and topic_parts[3] == "values":
-            nodeid = int(topic_parts[2])
+                    rxc = Cargo.new_cargo(realdata=realdata)
+                    rxc.nodeid = nodeid
 
-            payload = msg.payload.decode()
-            realdata = payload.split(",")
-            self._log.debug("Nodeid: %s values: %s", nodeid, msg.payload)
-
-            rxc = Cargo.new_cargo(realdata=realdata, nodeid=nodeid)
-
-            for channel in self._settings["pubchannels"]:
-                # Add cargo item to channel
-                self._pub_channels.setdefault(channel, []).append(rxc)
-
-                self._log.debug("%d Sent to channel' : %s", rxc.uri, channel)
+                    if rxc:
+                        # rxc = self._process_tx(rxc)
+                        if rxc:
+                            for channel in self._settings["pubchannels"]:
+                            
+                                # Initialize channel if needed
+                                if not channel in self._pub_channels:
+                                    self._pub_channels[channel] = []
+                                    
+                                # Add cargo item to channel
+                                self._pub_channels[channel].append(rxc)
+                                
+                                self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
+                                
 
     def set(self, **kwargs):
         super().set(**kwargs)
