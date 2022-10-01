@@ -4,6 +4,7 @@ __all__ = [
     "EmonHubSerialInterfacer",
     "EmonHubJeeInterfacer",
     "EmonHubOEMInterfacer",
+    "EmonHubRF69Interfacer",
     "EmonHubPacketGenInterfacer",
     "EmonHubEmoncmsHTTPInterfacer",
     "EmonHubMqttInterfacer",
@@ -13,6 +14,7 @@ __all__ = [
     "EmonHubSMASolarInterfacer",
     "EmonHubGraphiteInterfacer",
     "EmonHubBMWInterfacer",
+    "EmonHubJaguarLandRoverInterfacer",
     "EmonModbusTcpInterfacer",
     "EmonHubTeslaPowerWallInterfacer",
     "EmonHubSDS011Interfacer",
@@ -22,6 +24,7 @@ __all__ = [
     "EmonHubRedisInterfacer",
     "EmonHubSDM120Interfacer",
     "EmonHubMBUSInterfacer",
+    "EmonHubMinimalModbusInterfacer",
     "EmonHubBleInterfacer",
     "EmonHubGoodWeInterfacer",
     "EmonHubInfluxInterfacer"
