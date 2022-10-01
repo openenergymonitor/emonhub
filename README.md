@@ -28,6 +28,7 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 *See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
+- [OEM Interfacer](conf/interfacer_examples/OEM)
 - [Socket Interfacer](conf/interfacer_examples/Socket)
 - [Space separated serial interfacer](conf/interfacer_examples/directserial)
 - [EmonTX V3 Interfacer (key:value pairs, added by @owenduffy)](conf/interfacer_examples/directserial-serialtx3e)
@@ -47,6 +48,8 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - [Redis Interfacer](conf/interfacer_examples/Redis)
 - [Influx Interfacer](conf/interfacer_examples/Influx)
 - [Jaguar Land Rover Interfacer (added by @dconlon)](conf/interfacer_examples/JaguarLandRover)
+- [RFM69 Interfacer](conf/interfacer_examples/RF69)
+
 
 
 ***
