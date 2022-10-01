@@ -28,7 +28,7 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 *See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
-- [OEM Interfacer](conf/interfacer_examples/OEM)
+- [OEM Interfacer](conf/interfacer_examples/OEM) (A more flexible version of the Jee, EmonTx3 and space separated serial interfacer)
 - [Emoncms HTTP Interfacer](conf/interfacer_examples/Emoncms)
 - [Socket Interfacer](conf/interfacer_examples/Socket)
 - [Space separated serial interfacer](conf/interfacer_examples/directserial)
