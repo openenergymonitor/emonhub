@@ -4,15 +4,48 @@ The SDM120-Modbus single phase electricity meter provides MID certified electric
 
 **read_interval:** Interval between readings in seconds
 
-```text
+## Single SDM120 Meter 
+```
 [[SDM120]]
-    Type = EmonHubSDM120Interfacer
+    Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
         baud = 2400
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
-        nodename = SDM120
+        nodename = sdm120
         # prefix = sdm_
+        [[[[meters]]]]
+            [[[[[sdm120]]]]]
+                address = 1
+                registers = 0,6,12,18,30,70,72,74,76
+                names = V,I,P,VA,PF,FR,EI,EE,RI
+                precision = 2,3,1,1,3,3,3,3,3
+```
+
+## Multiple SDM120 Meters 
+
+```
+[[SDM120]]
+    Type = EmonHubMinimalModbusInterfacer
+    [[[init_settings]]]
+        device = /dev/ttyUSB0
+        baud = 2400
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        nodename = sdm120
+        # prefix = sdm_
+        [[[[meters]]]]
+            [[[[[sdm120a]]]]]
+                address = 1
+                registers = 0,6,12,18,30,70,72,74,76
+                names = V,I,P,VA,PF,FR,EI,EE,RI
+                precision = 2,3,1,1,3,3,3,3,3
+            [[[[[sdm120b]]]]]
+                address = 2
+                registers = 0,6,12,18,30,70,72,74,76
+                names = V,I,P,VA,PF,FR,EI,EE,RI
+                precision = 2,3,1,1,3,3,3,3,3
 ```

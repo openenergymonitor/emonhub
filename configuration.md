@@ -1,6 +1,6 @@
 # EmonHub Configuration
 
-emonHub is configured with `emonhub.conf` config file. On the emonPi / emonBase this file is located in the R/W data partition `/home/pi/data/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited direct from the EmonHub tab in local Emoncms, see [User Guide](https://guide.openenergymonitor.org)
+emonHub is configured with `emonhub.conf` config file. On the emonPi / emonBase this file is located in `/etc/emonhub/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited direct from the EmonHub tab in local Emoncms, see [User Guide](https://guide.openenergymonitor.org)
 
 Emonhub.conf has 3 sections:
 
@@ -257,6 +257,7 @@ In addition to the above core interfacers used as part of the core OpenEnergyMon
 - [SDM120-Modbus Interfacer](conf/interfacer_examples/SDM120)
 - [MBUS Interfacer](conf/interfacer_examples/MBUS)
 - [Redis Interfacer](conf/interfacer_examples/Redis)
+- [Jaguar Land Rover Interfacer](conf/interfacer_examples/JaguarLandRover)
 
 ***
 
