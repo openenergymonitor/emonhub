@@ -2,12 +2,13 @@ import logging
 import threading
 import json
 from wsgiref.simple_server import make_server
+from cgi import parse_qs, escape
 import emonhub_interfacer as ehi
 import emonhub_coder as ehc
 from configobj import ConfigObj
 
 class EmonHubHTTPApi(threading.Thread):
-    def __init__(self, settings):
+    def __init__(self, settings, interfacers):
         # Initialise logger
         self._log = logging.getLogger("EmonHub")
 
@@ -15,9 +16,10 @@ class EmonHubHTTPApi(threading.Thread):
         super().__init__()
         
         self._settings = settings
+        self._interfacers = interfacers
         
         self._log.debug("EmonHubHTTPApi Init")
-
+        
     def format_nodes(self, nodes):
         for n in nodes:
             if 'scales' in nodes[n]['rx']:
@@ -32,6 +34,7 @@ class EmonHubHTTPApi(threading.Thread):
         method = environ['REQUEST_METHOD']
         path = environ['PATH_INFO']
         query = environ['QUERY_STRING']
+        qs = parse_qs(query)
 
         self._log.debug("HTTP Request received %s %s %s?%s" % (ip,method,path,query))
         
@@ -71,12 +74,15 @@ class EmonHubHTTPApi(threading.Thread):
                  
                 reply_format = 'text/plain'
                 reply_string = 'ok'
- 
-        if path=="/nodes":
+        
+        if path=="/runtimeinfo":
             if method=="GET":
+                runtimeinfo = {}
+                for name in self._interfacers:
+                    runtimeinfo[name] = self._interfacers[name].runtimeinfo
                 reply_format = 'application/json'
-                reply_string = json.dumps(ehi.nodes)
-                
+                reply_string = json.dumps(runtimeinfo)
+                                   
         if path=="/available":
             if method=="GET":
                 available = ConfigObj("/opt/openenergymonitor/emonhub/conf/available.conf", file_error=True)
