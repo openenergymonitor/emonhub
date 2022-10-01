@@ -46,6 +46,7 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - [MBUS Interfacer](conf/interfacer_examples/MBUS)
 - [Redis Interfacer](conf/interfacer_examples/Redis)
 - [Influx Interfacer](conf/interfacer_examples/Influx)
+- [Jaguar Land Rover Interfacer (added by @dconlon)](conf/interfacer_examples/JaguarLandRover)
 
 
 ***

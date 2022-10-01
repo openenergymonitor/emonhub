@@ -11,7 +11,6 @@ import time
 import logging
 import threading
 import traceback
-import requests
 
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
@@ -83,6 +82,12 @@ class EmonHubInterfacer(threading.Thread):
 
         # create a stop
         self.stop = False
+        
+        self.first_msg = {}
+        self.last_msg = {}
+        self.missed = {}
+        self.rx_msg = {}
+        
 
     @log_exceptions_from_class_method
     def run(self):
@@ -229,33 +234,6 @@ class EmonHubInterfacer(threading.Thread):
         :return: True if data posted successfully and can be discarded
         """
         pass
-
-    def _send_post(self, post_url, post_body=None):
-        """
-
-        :param post_url:
-        :param post_body:
-        :return: the received reply if request is successful
-        """
-        """Send data to server.
-
-        data (list): node and values (eg: '[node,val1,val2,...]')
-        time (int): timestamp, time when sample was recorded
-
-        return True if data sent correctly
-
-        """
-
-        try:
-            if post_body:
-                reply = requests.post(post_url, post_body, timeout=60)
-            else:
-                reply = requests.get(post_url, timeout=60)
-            reply.raise_for_status()  # Raise an exception if status code isn't 200
-            return reply.text
-        except requests.exceptions.RequestException as ex:
-            self._log.warning("%s couldn't send to server: %s", self.name, ex)
-        return reply.text
 
     def _process_rx(self, cargo):
         """Process a frame of data
@@ -420,7 +398,34 @@ class EmonHubInterfacer(threading.Thread):
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'names' in ehc.nodelist[node]['rx']:
             names = ehc.nodelist[node]['rx']['names']
         rxc.names = names
+         
+        # Count missed packets
+        if len(names) and names[0].upper()=="MSG":
+            msg = rxc.realdata[0]
+            if not node in self.last_msg: 
+                self.first_msg[node] = msg
+                self.last_msg[node] = msg-1
+                self.missed[node] = 0
+                
+            if self.last_msg[node]>msg:
+                self.first_msg[node] = msg
+                self.last_msg[node] = msg-1
+                self.missed[node] = 0
 
+            self.missed[node] += msg - self.last_msg[node] - 1
+            self.last_msg[node] = msg
+            
+            msgcount = msg - self.first_msg[node]
+            if msgcount:
+                missedprc = 100.0 * self.missed[node] / msgcount;
+            else: 
+                missedprc = 0
+            
+            rxc.realdata.append(self.missed[node])
+            rxc.names.append('missed')
+            rxc.realdata.append(missedprc)
+            rxc.names.append('missedprc')
+            
         nodename = False
         if node in ehc.nodelist and 'nodename' in ehc.nodelist[node]:
             nodename = ehc.nodelist[node]['nodename']
