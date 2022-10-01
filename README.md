@@ -21,8 +21,10 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 ### Default Interfacers
 
-- `EmonHubJeeInterfacer`: Decode data received from RFM69Pi & emonPi in [JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc.
+- `EmonHubJeeInterfacer`: Decode data received from RFM69Pi & emonPi in [JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc. (In the process of being replaced with the new EmonHubOEMInterfacer).
 - `EmonHubMqttInterfacer`: Publish decoded data to MQTT in a format compatible with emonCMS.
+- `EmonHubEmoncmsHTTPInterfacer`: Publish decoded data to Emoncms via HTTP
+
 
 ### Other Interfacers
 
