@@ -1,6 +1,6 @@
 #!/bin/bash
 # -------------------------------------------------------------
-# emonHub install script
+# emonHub install and update script
 # -------------------------------------------------------------
 # Assumes emonhub repository installed via git:
 # git clone https://github.com/openenergymonitor/emonhub.git
@@ -8,22 +8,36 @@
 DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 usrdir=${DIR/\/emonhub/}
 
-emonSD_pi_env=$1
-if [ "$emonSD_pi_env" = "" ]; then
-    read -sp 'Apply raspberrypi serial configuration? 1=yes, 0=no: ' emonSD_pi_env
-    echo 
-    echo "You entered $emonSD_pi_env"
-    echo
+openenergymonitor_dir=$1
+if [ ! -f $openenergymonitor_dir/EmonScripts/update/load_config.sh ]; then
+    emonSD_pi_env=""
+else 
+    cd $openenergymonitor_dir/EmonScripts/install
+    source load_config.sh
 fi
 
-sudo apt-get install -y python-serial python-configobj
-sudo pip install paho-mqtt requests
+if [ "$emonSD_pi_env" = "" ]; then
+    read -sp 'Apply raspberrypi serial configuration? 1=yes, 0=no: ' emonSD_pi_env
+    echo
+    echo "You entered $emonSD_pi_env"
+    echo
+    # Avoid running apt update if install script is being called from the EmonScripts update script
+    sudo apt update
+fi
+
+sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev
+sudo pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 if [ "$emonSD_pi_env" = "1" ]; then
+    # Only install the GPIO library if on a Pi. Used by Pulse interfacer
+    pip3 install RPi.GPIO
+    # Need to add the emonhub user to the GPIO group
+    sudo adduser emonhub gpio
+
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
-    # Review should this be: dtoverlay=pi3-miniuart-bt?
-    sudo sed -i -n '/dtoverlay=pi3-disable-bt/!p;$a dtoverlay=pi3-disable-bt' /boot/config.txt
+    # Review should this be: dtoverlay=miniuart-bt?
+    sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' /boot/config.txt
 
     # We also need to stop the Bluetooth modem trying to use UART
     sudo systemctl disable hciuart

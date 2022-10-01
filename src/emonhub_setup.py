@@ -1,7 +1,7 @@
 """
 
   This code is released under the GNU Affero General Public License.
-  
+
   OpenEnergyMonitor project:
   http://openenergymonitor.org
 
@@ -25,7 +25,7 @@ dictionary with the following keys:
 
         The hub settings are:
         'loglevel': the logging level
-        
+
         interfacers are dictionaries with the following keys:
         'Type': class name
         'init_settings': dictionary with initialization settings
@@ -35,7 +35,7 @@ dictionary with the following keys:
 The run() method is supposed to be run regularly by the instantiater, to
 perform regular communication tasks.
 
-The check_settings() method is run regularly as well. It checks the settings 
+The check_settings() method is run regularly as well. It checks the settings
 and returns True is settings were changed.
 
 This almost empty class is meant to be inherited by subclasses specific to
@@ -43,20 +43,18 @@ each setup.
 
 """
 
-class EmonHubSetup(object):
-
+class EmonHubSetup:
     def __init__(self):
-        
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
-        
+
         # Initialize settings
         self.settings = None
         self.redis_found = False
 
     def run(self):
-        """Run in background. 
-        
+        """Run in background.
+
         To be implemented in child class.
 
         """
@@ -64,34 +62,26 @@ class EmonHubSetup(object):
 
     def check_settings(self):
         """Check settings
-        
+
         Update attribute settings and return True if modified.
-        
+
         To be implemented in child class.
-        
+
         """
-    
+
 
 class EmonHubFileSetup(EmonHubSetup):
-
     def __init__(self, filename):
-        
         # Initialization
-        super(EmonHubFileSetup, self).__init__()
+        super().__init__()
 
-        self._fileformat = "ConfigObj" # or "ConfigObj"
-        
         self._filename = filename
-        
+
         # Initialize update timestamp
         self._settings_update_timestamp = 0
         self._retry_time_interval = 5
 
-        # create a timeout message if time out is set (>0)
-        if self._retry_time_interval > 0:
-            self.retry_msg = " Retry in " + str(self._retry_time_interval) + " seconds"
-        else:
-            self.retry_msg = ""
+        self.retry_msg = " Retry in " + str(self._retry_time_interval) + " seconds"
 
         # Make emonhub.conf available over redis for local emoncms installation
         try:
@@ -106,6 +96,7 @@ class EmonHubFileSetup(EmonHubSetup):
 
         # Initialize attribute settings as a ConfigObj instance
         try:
+<<<<<<< HEAD
         
             if self._fileformat == "ConfigObj":
                 self.settings = ConfigObj(filename, file_error=True)
@@ -119,6 +110,10 @@ class EmonHubFileSetup(EmonHubSetup):
                 self.r.set("get:emonhubconf",jsonstr)
                 self._log.info("emonhub conf loaded to redis")
             
+=======
+            self.settings = ConfigObj(filename, file_error=True)
+
+>>>>>>> origin/master
             # Check the settings file sections
             self.settings['hub']
             self.settings['interfacers']
@@ -126,52 +121,57 @@ class EmonHubFileSetup(EmonHubSetup):
             raise EmonHubSetupInitError(e)
         except SyntaxError as e:
             raise EmonHubSetupInitError(
-                'Error parsing config file \"%s\": ' % filename + str(e))
+                'Error parsing config file "%s": ' % filename + str(e))
         except KeyError as e:
             raise EmonHubSetupInitError(
                 'Configuration file error - section: ' + str(e))
 
     def check_settings(self):
         """Check settings
-        
+
         Update attribute settings and return True if modified.
-        
+
         """
-        
+
         # Check settings only once per second (could be extended if processing power is scarce)
         now = time.time()
         if now - self._settings_update_timestamp < 1:
             return
         # Update timestamp
         self._settings_update_timestamp = now
-        
+
         # Backup settings
         settings = dict(self.settings)
-        
+
         # Get settings from file
         try:
+<<<<<<< HEAD
             if self._fileformat == "ConfigObj":
                 self.settings.reload()
             else:            
                 with open(self._filename) as f:
                     self.settings = json.loads(f.read())                
                 
+=======
+            self.settings.reload()
+>>>>>>> origin/master
         except IOError as e:
-            self._log.warning('Could not get settings: ' + str(e) + self.retry_msg)
+            self._log.warning('Could not get settings: %s %s', e, self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         except SyntaxError as e:
-            self._log.warning('Could not get settings: ' + 
-                              'Error parsing config file: ' + str(e) + self.retry_msg)
+            self._log.warning('Could not get settings: ' +
+                              'Error parsing config file: %s %s', e, self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
         except Exception:
             import traceback
-            self._log.warning("Couldn't get settings, Exception: " +
-                              traceback.format_exc() + self.retry_msg)
+            self._log.warning("Couldn't get settings, Exception: %s %s",
+                              traceback.format_exc(), self.retry_msg)
             self._settings_update_timestamp = now + self._retry_time_interval
             return
 
+<<<<<<< HEAD
         # Redis interface to emonhub.conf
         # Check for configuration in set topic & apply to settings if present:
         if self.redis_found:    
@@ -185,6 +185,8 @@ class EmonHubFileSetup(EmonHubSetup):
                 self.settings.write()
                 self._log.info("emonhub conf saved from redis")
         
+=======
+>>>>>>> origin/master
         if self.settings != settings:
             # Reload latest settings to redis get topic if change detected:
             if self.redis_found:
@@ -197,17 +199,18 @@ class EmonHubFileSetup(EmonHubSetup):
                 self.settings['hub']
                 self.settings['interfacers']
             except KeyError as e:
-                self._log.warning("Configuration file missing section: " + str(e))
+                self._log.warning("Configuration file missing section: %s", e)
             else:
                 return True
+<<<<<<< HEAD
             
+=======
+>>>>>>> origin/master
 
 """class EmonHubSetupInitError
 
 Raise this when init fails.
 
 """
-
-
 class EmonHubSetupInitError(Exception):
     pass

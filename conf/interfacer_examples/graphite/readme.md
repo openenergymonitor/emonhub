@@ -31,7 +31,7 @@ Ex: `<prefix>.emonPi.power1`
 
   Set to 0 to disable sending metrics. (Default: 1)
 
-* `sendinterval`
+* `interval`
 
   Frequency, in seconds, to send metrics. (Default: 30)
   (Should be set the same in your graphite storage scheme)
@@ -52,11 +52,11 @@ Ex: `<prefix>.emonPi.power1`
             graphite_host = graphite.example.com,
             graphite_port = 2003,
             senddata = 1,
-            sendinterval = 30,
+            interval = 30,
             prefix = emonpi
 ```
 
-With this config in place now you simply need to restart emonhub on your emonpi by ssh'ing into it and typing 
+With this config in place now you simply need to restart emonhub on your emonpi by ssh'ing into it and typing
 
       $> sudo service emonhub restart
 
