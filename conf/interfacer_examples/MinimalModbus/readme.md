@@ -21,6 +21,7 @@ The SDM630 meter comes in a number of different variants, be sure to order the v
 A low cost single phase unidirectional (Import only) electricity meter provides MID certified electricity monitoring up to 45A, ideal for monitoring the electricity supply of heat pumps
 EV chargers, Solar etc. 
 The RI-D175 meter comes in a number of different variants, be sure to order the version with a modbus output.
+https://www.rayleigh.com/media/uploads/RI_Data_Sheet_RI-D175_MID_01_12_20.pdf
 
 **SAMSUNG-ASHP-MIB19N**
 Direct connection to a Samsung ASHP MIB19N
