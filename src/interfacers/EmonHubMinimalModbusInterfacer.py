@@ -64,8 +64,9 @@ from emonhub_interfacer import EmonHubInterfacer
         registers = 0,1,2,3,4,5,6,7,8,26,36,37
         names =  V1,V2,V3,I1,I2,I3,P1,P2,P3,TotalPower,Import_kWh,Export_kWh
         precision = 2,2,2,2,2,2,2,2,2,2,2,2
-        
-[[RID175]]
+      
+# different meter types can share the same serial port provided the serial settings are the same
+[[modbusRTU]]
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
@@ -77,18 +78,19 @@ from emonhub_interfacer import EmonHubInterfacer
         nodename = rid175
         # prefix = rid_
         [[[[meters]]]]
-            [[[[[rid175a]]]]]
+            [[[[[rid175]]]]]
                 address = 1
                 type = rid175
                 registers = 0,6,8,10,14,16,18
                 names = TotalkWh,V,A,Power,KVA,PF,FR
                 scales = 0.01,0.1,0.1,0.01,0.01,0.001,0.01
-            [[[[[rid175b]]]]]
+            [[[[[sdm120]]]]]
                 address = 2
-                type = rid175
-                registers = 0,6,8,10,14,16,18
-                names = TotalkWh,V,A,Power,KVA,PF,FR
-                scales = 0.01,0.1,0.1,0.01,0.01,0.001,0.01
+                type = sdm120
+                registers = 0,6,12,18,30,70,72,74,76
+                names = V,I,P,VA,PF,FR,EI,EE,RI
+                precision = 2,3,1,1,3,3,3,3,3
+
          
 """
 
