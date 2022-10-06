@@ -257,6 +257,7 @@ In addition to the above core interfacers used as part of the core OpenEnergyMon
 - [SDM120-Modbus Interfacer](conf/interfacer_examples/SDM120)
 - [MBUS Interfacer](conf/interfacer_examples/MBUS)
 - [Redis Interfacer](conf/interfacer_examples/Redis)
+- [Jaguar Land Rover Interfacer](conf/interfacer_examples/JaguarLandRover)
 
 ***
 
