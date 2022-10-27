@@ -49,7 +49,11 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub:
 
-    __version__ = "emonHub (emon-pi variant) v2.2.6"
+    __version__ = "v? missing version file"
+    vpath = path.replace("/src","");
+    if os.path.exists(vpath+"/version.txt"):
+        f = open(vpath+"/version.txt", "r")
+        __version__ = "v"+f.read().strip()
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
