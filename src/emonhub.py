@@ -23,6 +23,7 @@ from collections import defaultdict
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
+import emonhub_auto_conf as eha
 from interfacers import *
 
 # this namespace and path
@@ -62,6 +63,14 @@ class EmonHub:
 
         """
 
+        # Load available
+        try:
+            self.autoconf = eha.EmonHubAutoConf()
+            eha.available = self.autoconf.available
+        except eha.EmonHubAutoConfError as e:
+            logger.error(e)
+            sys.exit("Unable to load available.conf")
+
         # Initialize exit request flag
         self._exit = False
 
@@ -80,6 +89,8 @@ class EmonHub:
 
         # Update settings
         self._update_settings(settings)
+        
+
 
     def run(self):
         """Launch the hub.
@@ -325,7 +336,7 @@ if __name__ == "__main__":
             syslogger.setFormatter(logging.Formatter(
                 'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
             logger.addHandler(syslogger)
-
+    
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
         setup.check_settings()

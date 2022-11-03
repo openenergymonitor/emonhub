@@ -14,7 +14,7 @@ import traceback
 
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
-
+import emonhub_auto_conf as eha
 """class EmonHubInterfacer
 
 Monitors a data source.
@@ -87,7 +87,6 @@ class EmonHubInterfacer(threading.Thread):
         self.last_msg = {}
         self.missed = {}
         self.rx_msg = {}
-        
 
     @log_exceptions_from_class_method
     def run(self):
@@ -277,6 +276,12 @@ class EmonHubInterfacer(threading.Thread):
         #     self._log.warning("%d Discarded RX frame 'node id outside scope' : %s",
         #                       cargo.uri, rxc.realdata)
         #     return False
+        
+        if not node in ehc.nodelist:
+            match = eha.match_from_available(rxc.nodeid,rxc.realdata)
+            self._log.debug("Match found: "+str(match));
+            # Assign node to nodelist
+            ehc.nodelist[node] = eha.available[match]
 
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
