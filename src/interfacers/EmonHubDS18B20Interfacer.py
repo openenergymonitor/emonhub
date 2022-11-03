@@ -39,12 +39,13 @@ class DS18B20:
     def tempC(self, sensor):
         lines = self._read_raw(sensor)
         # retry = 0
-        while lines[0].strip()[-3:] != 'YES':
-            # time.sleep(0.2)
-            # lines = self._read_raw(sensor)
-            # retry += 1
-            # if retry==3: return False
-            return False
+        if len(lines[0]):
+            while lines[0].strip()[-3:] != 'YES':
+                # time.sleep(0.2)
+                # lines = self._read_raw(sensor)
+                # retry += 1
+                # if retry==3: return False
+                return False
 
         equals_pos = lines[1].find('t=')
         if equals_pos != -1:
