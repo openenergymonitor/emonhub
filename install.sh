@@ -33,7 +33,7 @@ if [ -z "$2" ]; then
   sudo apt update
 fi
 
-sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev
+sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev python3-spidev
 pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 if [ "$emonSD_pi_env" = 1 ]; then
