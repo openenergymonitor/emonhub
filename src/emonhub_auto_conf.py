@@ -15,6 +15,8 @@ import emonhub_coder as ehc
 
 """
 
+auto_conf_enabled = False
+
 available = {}
 
 def match_from_available(nodeid,realdata):
@@ -40,12 +42,25 @@ def match_from_available(nodeid,realdata):
 
 class EmonHubAutoConf:
     
-    def __init__(self):
+    def __init__(self,settings):
         filename = "/opt/openenergymonitor/emonhub/conf/available.conf"
     
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
-
+        
+        self.enabled = False
+        
+        if 'autoconf' in settings['hub']:
+            if int(settings['hub']['autoconf'])==1:
+                self.enabled = True
+            else: 
+                self.enabled = False
+                
+        if self.enabled:
+            self._log.debug("Automatic configuration of nodes enabled")
+        else:
+            self._log.debug("Automatic configuration of nodes disabled")    
+                   
         # Initialize attribute settings as a ConfigObj instance
         try:
             result = ConfigObj(filename, file_error=True)

@@ -64,15 +64,6 @@ class EmonHub:
         Interface (EmonHubSetup): User interface to the hub.
 
         """
-
-        # Load available
-        try:
-            self.autoconf = eha.EmonHubAutoConf()
-            eha.available = self.autoconf.available
-        except eha.EmonHubAutoConfError as e:
-            logger.error(e)
-            sys.exit("Unable to load available.conf")
-
         # Initialize exit request flag
         self._exit = False
 
@@ -86,15 +77,22 @@ class EmonHub:
         self._log.info("EmonHub %s", self.__version__)
         self._log.info("Opening hub...")
         self._log.info("Running as user: "+str(getpass.getuser()))
-
+        
         # Initialize Interfacers
         self._interfacers = {}
 
         # Update settings
         self._update_settings(settings)
         
-
-
+        # Load available
+        try:
+            self.autoconf = eha.EmonHubAutoConf(settings)
+            eha.available = self.autoconf.available
+            eha.auto_conf_enabled = self.autoconf.enabled
+        except eha.EmonHubAutoConfError as e:
+            logger.error(e)
+            sys.exit("Unable to load available.conf")
+        
     def run(self):
         """Launch the hub.
 
@@ -119,7 +117,7 @@ class EmonHub:
                 self._update_settings(self._setup.settings)
 
             # Auto conf populate nodelist 
-            if ehc.nodelist != self._setup.settings['nodes']:
+            if eha.auto_conf_enabled and ehc.nodelist != self._setup.settings['nodes']:
                 self._log.info("Nodelist has been updated by an interfacer, updating config file");
                 self._setup.settings['nodes'] = ehc.nodelist
                 self._setup.settings.write()

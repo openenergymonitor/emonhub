@@ -277,7 +277,7 @@ class EmonHubInterfacer(threading.Thread):
         #                       cargo.uri, rxc.realdata)
         #     return False
         
-        if not node in ehc.nodelist:
+        if eha.auto_conf_enabled and not node in ehc.nodelist:
             match = eha.match_from_available(rxc.nodeid,rxc.realdata)
             if match:
                 self._log.debug("Match found: "+str(match));
