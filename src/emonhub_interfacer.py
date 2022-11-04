@@ -283,6 +283,7 @@ class EmonHubInterfacer(threading.Thread):
                 self._log.debug("Match found: "+str(match));
                 # Assign node to nodelist
                 ehc.nodelist[node] = eha.available[match]
+                ehc.nodelist[node]['nodename'] = match+"_"+str(node)
             
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
