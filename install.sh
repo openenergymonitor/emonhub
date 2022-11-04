@@ -5,34 +5,41 @@
 # Assumes emonhub repository installed via git:
 # git clone https://github.com/openenergymonitor/emonhub.git
 
-DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-usrdir=${DIR/\/emonhub/}
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
-openenergymonitor_dir=$1
-if [ ! -f $openenergymonitor_dir/EmonScripts/update/load_config.sh ]; then
-    emonSD_pi_env=""
-else 
-    cd $openenergymonitor_dir/EmonScripts/install
-    source load_config.sh
+echo "EmonHub directory: $script_dir"
+
+# User input: is this a raspberrypi environment that requires serial configuration
+emonSD_pi_env=0
+if [ -z "$1" ]; then
+  read -p 'Apply raspberrypi serial configuration? (y/n): ' input
+  if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
+    emonSD_pi_env=1
+  fi
+else
+  emonSD_pi_env=$1
 fi
 
-if [ "$emonSD_pi_env" = "" ]; then
-    read -sp 'Apply raspberrypi serial configuration? 1=yes, 0=no: ' emonSD_pi_env
-    echo
-    echo "You entered $emonSD_pi_env"
-    echo
-    # Avoid running apt update if install script is being called from the EmonScripts update script
-    sudo apt update
+# User input: check username to install emonhub with
+user=$USER
+if [ -z "$2" ]; then
+  read -p "Would you like to install emonhub under the $USER user? (y/n): " input
+  if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
+    echo "Please switch to the user that you wish emonhub to be installed under"
+    exit 0
+  fi
+  
+  echo "Running apt update"
+  sudo apt update
 fi
 
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev
-sudo pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
+pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
-if [ "$emonSD_pi_env" = "1" ]; then
+if [ "$emonSD_pi_env" = 1 ]; then
+
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
     pip3 install RPi.GPIO
-    # Need to add the emonhub user to the GPIO group
-    sudo adduser emonhub gpio
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
@@ -51,12 +58,8 @@ if [ "$emonSD_pi_env" = "1" ]; then
     sudo systemctl mask serial-getty@ttyAMA0.service
 fi
 
-cd $usrdir
-if [ ! -d $usrdir/data ]; then
-    mkdir data
-fi
-
-sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
+# this should not be needed on main user but could be re-enabled
+# sudo useradd -M -r -G dialout,tty -c "emonHub user" emonhub
 
 # ---------------------------------------------------------
 # EmonHub config file
@@ -66,7 +69,8 @@ if [ ! -d /etc/emonhub ]; then
 fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
-    sudo cp $usrdir/emonhub/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
+    sudo cp $script_dir/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
+    
     # requires write permission for configuration from emoncms:config module
     sudo chmod 666 /etc/emonhub/emonhub.conf
 
@@ -75,16 +79,33 @@ if [ ! -f /etc/emonhub/emonhub.conf ]; then
 fi
 
 # ---------------------------------------------------------
-# Symlink emonhub source to /usr/share/emonhub
+# Symlink emonhub source to /usr/local/bin/emonhub
 # ---------------------------------------------------------
-sudo ln -sf $usrdir/emonhub/src /usr/local/bin/emonhub
+sudo ln -sf $script_dir/src /usr/local/bin/emonhub
 
 # ---------------------------------------------------------
 # Install service
 # ---------------------------------------------------------
-echo "- installing emonhub.service"
-sudo ln -sf $usrdir/emonhub/service/emonhub.service /lib/systemd/system
-sudo systemctl enable emonhub.service
+if [ -d /lib/systemd/system ]; then
+  if [ ! -f /lib/systemd/system/emonhub.service ]; then
+    echo "Installing emonhub.service in /lib/systemd/system (creating symlink)"
+    sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
+    sudo systemctl enable emonhub.service
+    sudo systemctl restart emonhub.service
+  else 
+    echo "emonhub.service already installed"
+  fi
+fi
+
+if [ "$user" != "pi" ]; then
+    echo "installing emonhub drop-in User=$user"
+    if [ ! -d /lib/systemd/system/emonhub.service.d ]; then
+        sudo mkdir /lib/systemd/system/emonhub.service.d
+    fi
+    echo $'[Service]\nEnvironment="USER='$user'"' > emonhub.service.conf
+    sudo mv emonhub.service.conf /lib/systemd/system/emonhub.service.d/emonhub.conf
+fi
+sudo systemctl daemon-reload
 sudo systemctl restart emonhub.service
 
 state=$(systemctl show emonhub | grep ActiveState)

@@ -9,6 +9,7 @@
 
 """
 
+
 import sys
 import time
 import logging
@@ -18,6 +19,7 @@ import argparse
 import pprint
 import glob
 import os
+import getpass
 from collections import defaultdict
 
 import emonhub_setup as ehs
@@ -83,6 +85,7 @@ class EmonHub:
         self._set_logging_level('INFO', False)
         self._log.info("EmonHub %s", self.__version__)
         self._log.info("Opening hub...")
+        self._log.info("Running as user: "+str(getpass.getuser()))
 
         # Initialize Interfacers
         self._interfacers = {}
