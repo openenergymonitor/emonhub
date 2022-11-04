@@ -30,7 +30,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         # self._ser.flushInput()
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': 'test'})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': name})
 
         self._config_map = {'g': 'group',
                             'i': 'baseid',
