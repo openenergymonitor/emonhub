@@ -69,7 +69,7 @@ if [ ! -d /etc/emonhub ]; then
 fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
-    sudo cp $script_dir/conf/default.emonhub.conf /etc/emonhub/emonhub.conf
+    sudo cp $script_dir/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
     
     # requires write permission for configuration from emoncms:config module
     sudo chmod 666 /etc/emonhub/emonhub.conf
