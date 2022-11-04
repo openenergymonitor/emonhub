@@ -118,6 +118,12 @@ class EmonHub:
             if self._setup.check_settings():
                 self._update_settings(self._setup.settings)
 
+            # Auto conf populate nodelist 
+            if ehc.nodelist != self._setup.settings['nodes']:
+                self._log.info("Nodelist has been updated by an interfacer, updating config file");
+                self._setup.settings['nodes'] = ehc.nodelist
+                self._setup.settings.write()
+
             # For all Interfacers
             kill_list = []
             for I in self._interfacers.values():
