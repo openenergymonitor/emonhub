@@ -282,8 +282,12 @@ class EmonHubInterfacer(threading.Thread):
             if match:
                 self._log.debug("Match found: "+str(match));
                 # Assign node to nodelist
-                ehc.nodelist[node] = eha.available[match]
+                ehc.nodelist[node] = eha.available[match].copy()
                 ehc.nodelist[node]['nodename'] = match+"_"+str(node)
+                if 'nodeids' in ehc.nodelist[node]:
+                    del ehc.nodelist[node]['nodeids']
+                if 'datalength' in ehc.nodelist[node]:
+                    del ehc.nodelist[node]['datalength']                    
             
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
