@@ -8,14 +8,12 @@ After=var-log.mount network.target
 [Service]
 Type=exec
 ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
-
+User=pi
 Environment='USER=pi'
 Environment='LOG_PATH=/var/log/emonhub'
 PermissionsStartOnly=true
 ExecStartPre=/bin/mkdir -p ${LOG_PATH}
 ExecStartPre=/bin/chown ${USER} ${LOG_PATH}
-# ExecStartPre=/bin/touch ${LOG_PATH}/emonhub.log
-# ExecStartPre=/bin/chmod 666 ${LOG_PATH}/emonhub.log
 
 Restart=always
 RestartSec=5
