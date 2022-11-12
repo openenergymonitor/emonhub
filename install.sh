@@ -78,6 +78,17 @@ if [ ! -f /etc/emonhub/emonhub.conf ]; then
     sed -i "s/loglevel = DEBUG/loglevel = WARNING/" /etc/emonhub/emonhub.conf
 fi
 
+# Fix emonhub log file permissions
+if [ -d /var/log/emonhub ]; then
+    sudo chown $user /var/log/emonhub
+fi
+
+if [ -f /var/log/emonhub/emonhub.log ]; then
+    sudo chown $user:$user /var/log/emonhub/emonhub.log
+    sudo chmod 644 /var/log/emonhub/emonhub.log
+fi
+
+
 # ---------------------------------------------------------
 # Symlink emonhub source to /usr/local/bin/emonhub
 # ---------------------------------------------------------
