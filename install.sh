@@ -18,11 +18,12 @@ if [ -z "$1" ]; then
   fi
 else
   emonSD_pi_env=$1
+  echo "emonSD_pi_env provided in arg = $emonSD_pi_env"
 fi
 
 # User input: check username to install emonhub with
-user=$USER
 if [ -z "$2" ]; then
+  user=$USER
   read -p "Would you like to install emonhub under the $USER user? (y/n): " input
   if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
     echo "Please switch to the user that you wish emonhub to be installed under"
@@ -31,28 +32,38 @@ if [ -z "$2" ]; then
   
   echo "Running apt update"
   sudo apt update
+else
+  user=$2
+  echo "user provided as arg = $user"
 fi
 
+echo "installing or updating emonhub dependencies"
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev python3-spidev
 pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
+    echo "installing or updating raspberry pi related dependencies"
+    
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
     pip3 install RPi.GPIO
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=miniuart-bt?
+    echo "Disabling Bluetooth"
     sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' /boot/config.txt
 
     # We also need to stop the Bluetooth modem trying to use UART
+    echo "Stop Bluetooth modem"
     sudo systemctl disable hciuart
 
     # Remove console from /boot/cmdline.txt
+    echo "Remove console from /boot/cmdline.txt"
     sudo sed -i "s/console=serial0,115200 //" /boot/cmdline.txt
 
     # stop and disable serial service??
+    echo "Stop and disable serial service"
     sudo systemctl stop serial-getty@ttyAMA0.service
     sudo systemctl disable serial-getty@ttyAMA0.service
     sudo systemctl mask serial-getty@ttyAMA0.service
@@ -65,25 +76,33 @@ fi
 # EmonHub config file
 # ---------------------------------------------------------
 if [ ! -d /etc/emonhub ]; then
+    echo "Creating /etc/emonhub directory"
     sudo mkdir /etc/emonhub
+else
+    echo "/etc/emonhub directory already exists"
 fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
     sudo cp $script_dir/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
+    echo "No existing emonhub.conf configuration file found, installing default"
     
     # requires write permission for configuration from emoncms:config module
     sudo chmod 666 /etc/emonhub/emonhub.conf
+    echo "emonhub.conf permissions adjusted to 666"
 
     # Temporary: replace with update to default settings file
     sed -i "s/loglevel = DEBUG/loglevel = WARNING/" /etc/emonhub/emonhub.conf
+    echo "Default emonhub.conf log level set to WARNING"
 fi
 
 # Fix emonhub log file permissions
 if [ -d /var/log/emonhub ]; then
+    echo "Setting ownership of /var/log/emonhub to $user"
     sudo chown $user /var/log/emonhub
 fi
 
 if [ -f /var/log/emonhub/emonhub.log ]; then
+    echo "Setting ownership of /var/log/emonhub/emonhub.log to $user and permissions to 644"
     sudo chown $user:$user /var/log/emonhub/emonhub.log
     sudo chmod 644 /var/log/emonhub/emonhub.log
 fi
@@ -92,6 +111,7 @@ fi
 # ---------------------------------------------------------
 # Symlink emonhub source to /usr/local/bin/emonhub
 # ---------------------------------------------------------
+echo "Installing /usr/local/bin/emonhub symlink"
 sudo ln -sf $script_dir/src /usr/local/bin/emonhub
 
 # ---------------------------------------------------------
