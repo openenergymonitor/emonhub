@@ -172,10 +172,10 @@ class EmonHub:
 
         self._log.info("Exit completed")
 
-    def _signal_handler(self, signal, frame):
+    def _signal_handler(self, signum, frame):
         """Catch fatal signals like SIGINT (Ctrl+C) and SIGTERM (service stop)."""
 
-        self._log.debug("Signal %d received.", signal)
+        self._log.debug("Signal %d received.", signum)
         # hub should exit at the end of current iteration.
         self._exit = True
 
