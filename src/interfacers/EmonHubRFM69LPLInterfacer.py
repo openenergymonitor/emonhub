@@ -47,7 +47,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             
         self._log.info("Starting radio setup")
         
-        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
+        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'selPin':16, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
         self.radio = Radio(43, node_id, network_id, verbose=False, **board) 
 
         self._log.info("Radio setup complete")
