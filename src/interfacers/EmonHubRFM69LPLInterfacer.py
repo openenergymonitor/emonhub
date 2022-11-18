@@ -25,6 +25,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         try:            
             import RPi.GPIO as GPIO
             self.GPIO = GPIO
+            GPIO.setwarnings(False)
         except ModuleNotFoundError as err:      
             self._log.error(err)
 
@@ -52,9 +53,10 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
 
         self._log.info("Radio setup complete")
         
-        self.last_packet_nodeid = 0;
+        self.last_packet_nodeid = 0
         self.last_packet_data = []
-        
+        self.last_packet_time = 0
+
         self.radio.__enter__()
 
     def shutdown(self):
@@ -68,19 +70,20 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         packet = self.radio.get_packet()
         if packet:
             self._log.info("Packet received "+str(len(packet.data))+" bytes")
-            
             # Make sure packet is a unique new packet rather than a 2nd or 3rd retry attempt
-            #if packet.sender != self.last_packet_nodeid or packet.data != self.last_packet_data:
-            #    self.last_packet_nodeid = packet.sender
-            #    self.last_packet_data = packet.data
-                
+            if packet.sender==self.last_packet_nodeid and packet.data==self.last_packet_data and (time.time()-self.last_packet_time)<0.5:
+                self._log.info("Discarding duplicate packet")
+                return False
+
+            self.last_packet_nodeid = packet.sender
+            self.last_packet_data = packet.data
+            self.last_packet_time = time.time()
             # Process packet
             c = Cargo.new_cargo(rawdata='')
             c.nodeid = packet.sender
             c.realdata = packet.data
             c.rssi = packet.RSSI
             return c
-        
 
     def set(self, **kwargs):
         """
