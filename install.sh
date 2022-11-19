@@ -42,7 +42,7 @@ sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pym
 pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 # Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
-pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-2.zip
+pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
