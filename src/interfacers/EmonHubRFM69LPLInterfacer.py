@@ -48,16 +48,17 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             
         self._log.info("Starting radio setup")
         
-        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'selPin':16, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
-        self.radio = Radio(43, node_id, network_id, verbose=False, **board) 
-
-        self._log.info("Radio setup complete")
+        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'selPin':26, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
+        self.radio = Radio(43, node_id, network_id, verbose=False, **board)
         
-        self.last_packet_nodeid = 0
-        self.last_packet_data = []
-        self.last_packet_time = 0
-
-        self.radio.__enter__()
+        if not self.radio.init_success:
+            self._log.error("Could not connect to RFM69 module") 
+        else:
+            self._log.info("Radio setup complete")
+            self.last_packet_nodeid = 0
+            self.last_packet_data = []
+            self.last_packet_time = 0
+            self.radio.__enter__()
 
     def shutdown(self):
         self.radio.__exit__()
@@ -67,6 +68,9 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         """Read data from RFM69
 
         """
+        if not self.radio.init_success:
+            return False
+            
         packet = self.radio.get_packet()
         if packet:
             self._log.info("Packet received "+str(len(packet.data))+" bytes")
