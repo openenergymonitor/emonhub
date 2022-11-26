@@ -20,7 +20,7 @@ auto_conf_enabled = False
 available = {}
 
 def match_from_available(nodeid,realdata):
-    if not nodeid.isnumeric():
+    if not str(nodeid).isnumeric():
         return False
 
     match = False
