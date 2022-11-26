@@ -20,6 +20,9 @@ auto_conf_enabled = False
 available = {}
 
 def match_from_available(nodeid,realdata):
+    if not nodeid.isnumeric():
+        return False
+
     match = False
     # Find templates that match data length
     datalength_match = []
