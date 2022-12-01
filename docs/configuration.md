@@ -1,24 +1,50 @@
-# EmonHub Configuration
+# emonHub Configuration
 
-emonHub is configured with `emonhub.conf` config file. On the emonPi / emonBase this file is located in `/etc/emonhub/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited direct from the EmonHub tab in local Emoncms, see [User Guide](https://guide.openenergymonitor.org)
+## Overview
+
+emonHub is configured with `emonhub.conf` config file. On the emonPi / emonBase this file is located in `/etc/emonhub/emonhub.conf`. If the [Emoncms Config module](https://github.com/emoncms/config) is installed (as in the case of the emonPi / emonBase using pre-buit SD card image) the config file can be edited direct from the EmonHub tab in local Emoncms, see [Overview](overview.md).
 
 Emonhub.conf has 3 sections:
 
-## 1. `hub`
+```
+#######################################################################
+#######################      emonhub.conf     #########################
+#######################################################################
+### emonHub configuration file, for info see documentation:
+### https://github.com/openenergymonitor/emonhub/blob/emon-pi/conf/emonhub.conf
+#######################################################################
+#######################    emonHub  settings    #######################
+#######################################################################
+[hub]
+### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
+loglevel = DEBUG
+
+#######################################################################
+#######################       Interfacers       #######################
+#######################################################################
+[interfacers]
+
+#######################################################################
+#######################          Nodes          #######################
+#######################################################################
+[nodes]
+```
+
+### 1. Hub
 
 Hub is a section for emonhub global settings such as the loglevel.
 
-## 2. `interfacers`
+### 2. Interfacers
 
 Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics. For more interfacer examples see [conf/interfacer_examples](conf/interfacer_examples)
 
-### Channels
+#### Channels
 
 Each interfacer can listen on a `subchannel` or publish on a `pubchannel`. Some interfacers can do both.
 
-For Example:
+**For Example:**
 
-Ther Serial Interfacer listens on the serial port then publishes that data for onward transmission - it has a `pubchannel` defined.
+The Serial Interfacer listens on the serial port then publishes that data for onward transmission - it has a `pubchannel` defined.
 
 The MQTT interfacer listens for data which it then sends out via MQTT, it therefore defines a `subchannel` that it will listen on for data to send via MQTT.
 
@@ -28,39 +54,13 @@ Each interfacer can have multiple channels defined and multiple interfacers can 
 
 **Note** The channel definition is a list so must end with a comma e.g. `pubchannels = ToEmonCMS,` or `pubchannels = ToEmonCMS,ToXYZ,`
 
-## 3. `nodes`
+### 3. Nodes
 
 Nodes holds the decoder configuration for rfm12/69 node data which are sent as binary structures.
 
-```text
-#######################################################################
-        #######################      emonhub.conf     #########################
-        #######################################################################
-        ### emonHub configuration file, for info see documentation:
-        ### https://github.com/openenergymonitor/emonhub/blob/emon-pi/conf/emonhub.conf
-        #######################################################################
-        #######################    emonHub  settings    #######################
-        #######################################################################
-        [hub]
-        ### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
-        loglevel = DEBUG
+---
 
-        #######################################################################
-        #######################       Interfacers       #######################
-        #######################################################################
-        [interfacers]
-
-        #######################################################################
-        #######################          Nodes          #######################
-        #######################################################################
-        [nodes]
-```
-
-**View full latest [default emonHub.conf](conf/emonpi.default.emonhub.conf)**
-
-***
-
-## 1. 'hub' Configuration
+## 1. Hub Configuration
 
 Hub is a section for emonhub global settings such as the loglevel.
 
@@ -73,9 +73,9 @@ loglevel = DEBUG
 # use_syslog = yes
 ```
 
-***
+---
 
-## 2. 'interfacers' Configuration
+## 2. Interfacers Configuration
 
 Interfacers holds the configuration for the different interfacers that emonhub supports such as the EmonHubJeeInterfacer for reading and writing to the RFM69Pi adapter board or emonPi board via serial, or the EmonHubMqttInterfacer which can be used to publish the data received from EmonHubJeeInterfacer to MQTT topics.
 
@@ -261,7 +261,7 @@ In addition to the above core interfacers used as part of the core OpenEnergyMon
 
 ***
 
-## 3. 'nodes' Configuration
+## 3. Nodes Configuration
 
 The 2nd part of the emonhub.conf configuration concerns decoding of RFM12 and RFM69 nodes. The data in encoded before transmission and the received data must therefore be 'decoded' i.e. converted from a raw datacode to recgonisable values.
 
@@ -468,13 +468,31 @@ A comma-separated list of engineering units to describe the data. Common units a
         units =W,W,W,W,V,C,C,C,C,C,C,p
 ```
 
-## Standard node decoders
+### Standard node decoders
 
 The following lists the standard node decoders for recent versions of the EmonPi, EmonTx v3, EmonTH and EmonTxShield. These are currently included in emonhub.conf and provide automatic decoding of node data.
 
 If you upload firmware to any of these nodes, and wish to have the data decoded with names, units, and scaled correctly, these are the decoders for the standard firmware. The node decoders are also included at the top of each firmware file for reference.
 
-### EmonPi
+#### emonTx4
+
+[Firmware location](https://github.com/openenergymonitor/emontx4/)
+
+Copied here for reference:
+
+```text
+[[17]]
+    nodename = emonTx4_17
+    [[[rx]]]
+        names = MSG, Vrms, P1, P2, P3, P4, P5, P6, E1, E2, E3, E4, E5, E6, T1, T2, T3, pulse
+        datacodes = L, h, h, h, h, h, h, h, l, l, l, l, l, l, h, h, h, L
+        scales = 1.0, 0.01, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 0.01, 0.01, 0.01, 1.0
+        units = n, V, W, W, W, W, W, W, Wh, Wh, Wh, Wh, Wh, Wh, C, C, C, p
+```
+
+The emonTx4 may also be configured via the DIP switch on the board to transmit on node 18. If you have two or more emonTx4 units, make multiple copies of this node decoder and adjust the nodeid's in the decoder appropriately.
+
+#### EmonPi
 
 [Firmware location](https://github.com/openenergymonitor/emonpi/)
 
@@ -492,7 +510,7 @@ Copied here for reference:
         units = W,W,W,V,C,C,C,C,C,C,p
 ```
 
-### EmonTx v3.4 DS Firmware V2.3+
+#### EmonTx v3.4 DS Firmware V2.3+
 
 [Firmware location](https://github.com/openenergymonitor/emonTx3)
 
@@ -512,7 +530,7 @@ Copied here for reference:
         units =W,W,W,W,V,C,C,C,C,C,C,p
 ```
 
-### EmonTx v3.4 DS Firmware 1.6+
+#### EmonTx v3.4 DS Firmware 1.6+
 
 EmonTx v3 (emonTxV3_4_DiscreteSampling.ino, v1.6+) [Firmware Location](https://github.com/openenergymonitor/emonTxFirmware)
 
@@ -530,7 +548,7 @@ Can be on either nodeid 10 or 9
         units =W,W,W,W,V,C,C,C,C,C,C,p
 ```
 
-### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, < V1.4
+#### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, < V1.4
 
 ```text
 [[10]]
@@ -544,7 +562,7 @@ Can be on either nodeid 10 or 9
         units =W,W,W,W,V,C
 ```
 
-### EmonTH V2
+#### EmonTH V2
 
 EmonTH V2 [Firmware location](https://github.com/openenergymonitor/emonTH2/)
 
@@ -562,7 +580,7 @@ Standard nodeid's: 23, 24, 25 & 26 depending on DIP switch positions:
         units = C,C,%,V,p
 ```
 
-### EmonTH V1, emonTH_DHT22_DS18B20_RFM69CW.ino v1.5 -> v1.6.1
+#### EmonTH V1, emonTH_DHT22_DS18B20_RFM69CW.ino v1.5 -> v1.6.1
 
 emonTH V1 [Firmware location](https://github.com/openenergymonitor/emonTH)
 
@@ -580,7 +598,7 @@ Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
         units = C,C,%,V
 ```
 
-### EmonTx Shield
+#### EmonTx Shield
 
 EmonTX Shield [Firmware location](https://github.com/openenergymonitor/emontx-shield)
 
@@ -596,14 +614,14 @@ EmonTX Shield [Firmware location](https://github.com/openenergymonitor/emontx-sh
         units =W,W,W,W,V
 ```
 
-***
+---
 
 ## 4. Troubleshooting
 
-## Node data inactive or, node data does not appear for a configured node
+### Node data inactive or, node data does not appear for a configured node
 
 Try replacing the datacodes = h,h,h,h,... line with **datacode = h** (note: datacode without an s). This will decode most of the radio packet content for the standard OpenEnergyMonitor emontx,emonth and emonpi firmwares, including historic versions.
 
-### The data still does not appear on the nodeid I expect
+#### The data still does not appear on the nodeid I expect
 
 Both the EmonTx and EmonTH nodes have switches on their circuit boards to enable changing nodeIDs without the need to reprogram the device. Depending on the switch positions and firmware version, the EmonTx v3 can be assigned nodeID 7,8,9 or 10. The EmonTH can be assigned nodeID 19,20,21,22,23,24,25 or 26.

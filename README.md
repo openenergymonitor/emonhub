@@ -102,7 +102,7 @@ journalctl -f -u emonhub
 
 The emonhub configuration guide can be found here:
 
-[emonhub.conf configuration](configuration.md)
+[emonhub.conf configuration](docs/configuration.md)
 
 ## EmonHub Emoncms config module
 
