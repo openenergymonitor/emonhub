@@ -21,13 +21,17 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 ### Default Interfacers
 
-- `EmonHubJeeInterfacer`: Decode data received from RFM69Pi & emonPi in [JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc.
+- `EmonHubJeeInterfacer`: Decode data received from RFM69Pi & emonPi in [JeeLabs data packet structure](http://jeelabs.org/2010/12/07/binary-packet-decoding/) e.g. emonTx, emonTH, JeeNode RFM12 demo etc. (In the process of being replaced with the new EmonHubOEMInterfacer).
 - `EmonHubMqttInterfacer`: Publish decoded data to MQTT in a format compatible with emonCMS.
+- `EmonHubEmoncmsHTTPInterfacer`: Publish decoded data to Emoncms via HTTP
+
 
 ### Other Interfacers
 
 *See interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
 
+- [OEM Interfacer](conf/interfacer_examples/OEM) (A more flexible version of the Jee, EmonTx3 and space separated serial interfacer)
+- [Emoncms HTTP Interfacer](conf/interfacer_examples/Emoncms)
 - [Socket Interfacer](conf/interfacer_examples/Socket)
 - [Space separated serial interfacer](conf/interfacer_examples/directserial)
 - [EmonTX V3 Interfacer (key:value pairs, added by @owenduffy)](conf/interfacer_examples/directserial-serialtx3e)
@@ -46,6 +50,9 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 - [MBUS Interfacer](conf/interfacer_examples/MBUS)
 - [Redis Interfacer](conf/interfacer_examples/Redis)
 - [Influx Interfacer](conf/interfacer_examples/Influx)
+- [Jaguar Land Rover Interfacer (added by @dconlon)](conf/interfacer_examples/JaguarLandRover)
+- [RFM69 Interfacer](conf/interfacer_examples/RF69)
+
 
 
 ***
@@ -95,7 +102,7 @@ journalctl -f -u emonhub
 
 The emonhub configuration guide can be found here:
 
-[emonhub.conf configuration](configuration.md)
+[emonhub.conf configuration](docs/configuration.md)
 
 ## EmonHub Emoncms config module
 

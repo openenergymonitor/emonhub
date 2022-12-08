@@ -3,6 +3,7 @@ import json
 import datetime
 import Cargo
 import re
+
 from . import EmonHubSerialInterfacer as ehi
 
 """class EmonHubOEMInterfacer
@@ -30,7 +31,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         # self._ser.flushInput()
 
         # Initialize settings
-        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': 'test'})
+        self._defaults.update({'pause': 'off', 'interval': 0, 'datacode': 'h', 'nodename': name})
 
         self._config_map = {'g': 'group',
                             'i': 'baseid',
@@ -59,6 +60,11 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         self._settings.update(self._defaults)
 
         self._first_data_packet_received = False
+        
+        
+        self._com_port = com_port
+        self._com_baud = com_baud
+        self._last_connection_attempt = time.time()
 
 
     def add(self, cargo):
@@ -168,13 +174,22 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         """
 
         if not self._ser:
+            if (time.time()-self._last_connection_attempt)>=10:
+                self._last_connection_attempt = time.time()
+                self._ser = self._open_serial_port(self._com_port, self._com_baud)
+        
+        if not self._ser:
             return
 
         # Read serial RX
         try:
-            self._rx_buf = self._rx_buf + self._ser.readline().decode()
+            ser_data = self._ser.readline()
+            self._rx_buf = self._rx_buf + ser_data.decode()
         except UnicodeDecodeError:
             return
+        except Exception as e:
+            self._log.error(e)
+            self._ser = False
 
         # If line incomplete, exit
         if '\r\n' not in self._rx_buf:
@@ -373,14 +388,12 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
         else:
             data = f.realdata
 
-        payload = ""
+        payload = "T"
         for value in data:
-            if not 0 < int(value) < 255:
-                self._log.warning(self.name + " discarding Tx packet: values out of scope")
+            if not 0 <= int(value) <= 255:
+                self._log.warning(self.name + " discarding Tx packet: value  out of range (0..255) " + str(value))
                 return
             payload += str(int(value)) + ","
-
-        payload += cmd
 
         self._log.debug(str(f.uri) + " sent TX packet: " + payload)
         self._ser.write(payload.encode())

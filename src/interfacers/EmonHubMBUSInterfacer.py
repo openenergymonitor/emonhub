@@ -557,7 +557,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         # 2. Get instantaneous data
                         result = self.request_data_sdm120(address,[1,7,11,23])
                         self.add_result_to_cargo(meter,c,result)
-                    # ------------------------------------------------------
+                    elif meter_type=="kamstrup403":
+                        result = self.request_data(address,[1,4,12,13,14,15,20])
+                        self.add_result_to_cargo(meter,c,result)
+                        # ------------------------------------------------------
                             
 
                             

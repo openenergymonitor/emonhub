@@ -13,11 +13,17 @@ The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to 
             apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
             senddata = 1
             sendstatus = 1
+            sendnames = 1
+            compress = 1
 ```
 
 `sendstatus` - It is possible to the EmonHubEmoncmsHTTPInterfacer to send a 'ping' to the destination emoncms that can be picked up by the myip module which will then list the source IP address. This can be useful for remote login to a home emonpi if port forwarding is enabled on your router.
 
 `senddata` - If you only want to send the ping request, and no data, to emoncms.org set this to 0
+
+`sendnames` - sends input names in addition to values, makes sure compress is also enabled.
+
+`compress` - compress data, particularly important if sendnames is enabled as this effectively removes the overhead of adding in the names to every packet. Compress is enabled automatically if sendnames is enabled.
 
 You can create more than one of these sections to send data to multiple emoncms instances. For example, if you wanted to send to an emoncms running at emoncms.example.com (or on a local LAN) you would add the following underneath the `emoncmsorg` section described above:
 
@@ -32,6 +38,8 @@ You can create more than one of these sections to send data to multiple emoncms 
             apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
             senddata = 1
             sendstatus = 1
+            sendnames = 1
+            compress = 1
 ```
 
 This time, the API key will be the API key from your account at emoncms.example.com.

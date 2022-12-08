@@ -33,6 +33,15 @@ Sample configuration for modbus TCP clients
             interval = 10
 ```
 
+The default unit or slave number is 1. To query registers from different slaves, add a `nUnit` key, and specify as many numbers as there are registers to query.
+
+```
+[[[runtimesettings]]]
+    register = 305, 306, 314, 321, 0xA001
+    # unit number for each Register
+    nUnit = 2, 2, 2, 2, 3
+```
+
 ### Sample Node declaration in emonhub.conf
 Node ID must match node ID set in interfacer definition above
 
@@ -48,4 +57,3 @@ Node ID must match node ID set in interfacer definition above
             scales = 1,0.1,0.1,1,1,1,1,1,0.1,0.1,0.1
             units = V,W,kWh,Wh,W,W,V,V,V,V,V
 ```
-
