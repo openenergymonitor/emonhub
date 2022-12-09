@@ -182,6 +182,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x04: (0.01, "Energy", "kWh"),
             0x05: (0.1, "Energy", "kWh"),
             0x06: (1, "Energy", "kWh"),
+            0x07: (10, "Energy", "kWh"),
             0x13: (0.001, "Volume", "m3"),
             0x14: (0.01, "Volume", "m3"),
             0x15: (0.1, "Volume", "m3"),
