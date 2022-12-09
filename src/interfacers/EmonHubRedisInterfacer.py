@@ -42,6 +42,36 @@ class EmonHubRedisInterfacer(EmonHubInterfacer):
             self._log.error(err)
             self.r = False
 
+
+    def read(self):
+        if self.r:
+            result = self.r.lpop("emonhub:sub")
+            if result:
+                try:  
+                    read_data = json.loads(result)
+                except Exception as e:
+                    logging.error(e)
+                
+                c = Cargo.new_cargo()
+                c.names = []
+                c.realdata = []
+                c.units = []
+                
+                c.nodeid = "redis"
+                if 'node' in read_data:
+                    c.nodeid = read_data['node']
+                    del read_data['node']
+
+                if 'time' in read_data:
+                    del read_data['time']
+                
+                for key in read_data:
+                    c.names.append(key)
+                    c.realdata.append(read_data[key])
+               
+                return c
+        return False
+
     def add(self, cargo):
         """set data in redis
 
