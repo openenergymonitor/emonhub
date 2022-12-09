@@ -5,6 +5,7 @@ import os
 import glob
 from emonhub_interfacer import EmonHubInterfacer
 
+
 """
 [[SDM120]]
     Type = EmonHubMinimalModbusInterfacer
@@ -39,17 +40,17 @@ from emonhub_interfacer import EmonHubInterfacer
         datatype = int
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
-        read_interval = 10
+        read_interval = 20
         nodename = samsung-ashp
         # prefix = sdm_
         [[[[meters]]]]
             [[[[[ashp]]]]]
-                device = samsung
+                device_type = samsung
                 address = 1
-                registers = 75,74,72,65,66,68,52,59,58,2,79
-                names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status, away_status
-                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1
-                precision = 2,2,1,2,2,2,1,2,2,1,1
+                registers = 75,74,72,65,66,68,52,59,58,2,79,87,5,89
+                names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status,away_status,flow_rate,outdoor_temp,3_way_valve
+                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1,0.1,0.1,1
+                precision = 2,2,1,2,2,2,1,2,2,1,1,2,2,1
    
 [[SDM630]]
     Type = EmonHubMinimalModbusInterfacer
@@ -108,7 +109,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         self.baud = baud
         self.parity = parity
         self.datatype = datatype
-        self.rs485_connect()
+        self.rs485_connect()  
                     
     def rs485_connect(self):
         try:
@@ -141,7 +142,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
 
         """
-        
+
         if int(time.time())%self._settings['read_interval']==0:
             if self.next_interval:
                 self.next_interval = False
@@ -157,16 +158,17 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     
                     # Support for multiple MBUS meters on a single bus
                     for meter in self._settings['meters']:
-                        if self._settings['meters'][meter]['device'] == 'samsung':
-                            # Map extra registers
-                            self._rs485.write_register(6001,0x8204) # Outdoor temp
-                            time.sleep(0.1)
-                            self._rs485.write_register(7005,0x42E9) # Flow rate
-                            time.sleep(0.1)
-                            self._rs485.write_register(7007,0x4067) # 3-way valve position
                         
                         self._rs485.address = self._settings['meters'][meter]['address']
                         
+                        if self._settings['meters'][meter]['device_type'] == 'samsung':
+                            self._log.debug("Samsung device active")
+                            self._rs485.write_register(6001,0x8204) # Outdoor temp
+                            time.sleep(0.5)
+                            self._rs485.write_register(7005,0x42E9) # Flow rate
+                            time.sleep(0.5)
+                            self._rs485.write_register(7007,0x4067) # 3-way valve position
+                            
                         for i in range(0,len(self._settings['meters'][meter]['registers'])):
                             register_count += 1
                             valid = True
@@ -174,6 +176,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 if self.datatype == 'int':
                                     time.sleep(0.1)
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3)
+                                        
                                 elif self.datatype == 'float':
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                                 else:
@@ -246,13 +249,17 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 self._settings['meters'] = {}
                 for meter in setting:
                     # default
-                    device = []
+                    device_type = []
                     address = 1
                     registers = []
                     names = []
                     precision = []
                     scales = []
                     # address
+                    if 'device_type' in setting[meter]:
+                        device_type = setting[meter]['device_type']
+                        self._log.info("Setting %s meters %s device_type %s", self.name, meter, device_type)
+                        
                     if 'address' in setting[meter]:
                         address = int(setting[meter]['address'])
                         self._log.info("Setting %s meters %s address %s", self.name, meter, address)
@@ -279,7 +286,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                              
                     #assign
                     self._settings['meters'][meter] = {
-                        'device':device,
+                        'device_type':device_type,
                         'address':address,
                         'registers':registers,
                         'names':names,
