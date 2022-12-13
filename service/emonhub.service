@@ -6,14 +6,19 @@ Requires=var-log.mount
 After=var-log.mount network.target
 
 [Service]
-User=emonhub
-ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
-PermissionsStartOnly=true
-ExecStartPre=/bin/mkdir -p -m 0775 /var/log/emonhub/
-ExecStartPre=/bin/chgrp -R emonhub /var/log/emonhub/
 Type=exec
+ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
+User=pi
+Environment='USER=pi'
+Environment='LOG_PATH=/var/log/emonhub'
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p ${LOG_PATH}
+ExecStartPre=/bin/chown ${USER} ${LOG_PATH}
+
 Restart=always
 RestartSec=5
+
+SyslogIdentifier=emonhub
 
 [Install]
 WantedBy=multi-user.target

@@ -14,7 +14,7 @@ import traceback
 
 import emonhub_coder as ehc
 import emonhub_buffer as ehb
-
+import emonhub_auto_conf as eha
 """class EmonHubInterfacer
 
 Monitors a data source.
@@ -87,7 +87,6 @@ class EmonHubInterfacer(threading.Thread):
         self.last_msg = {}
         self.missed = {}
         self.rx_msg = {}
-        
 
     @log_exceptions_from_class_method
     def run(self):
@@ -277,7 +276,19 @@ class EmonHubInterfacer(threading.Thread):
         #     self._log.warning("%d Discarded RX frame 'node id outside scope' : %s",
         #                       cargo.uri, rxc.realdata)
         #     return False
-
+        
+        if eha.auto_conf_enabled and not node in ehc.nodelist:
+            match = eha.match_from_available(rxc.nodeid,rxc.realdata)
+            if match:
+                self._log.debug("Match found: "+str(match));
+                # Assign node to nodelist
+                ehc.nodelist[node] = eha.available[match].copy()
+                ehc.nodelist[node]['nodename'] = match+"_"+str(node)
+                if 'nodeids' in ehc.nodelist[node]:
+                    del ehc.nodelist[node]['nodeids']
+                if 'datalength' in ehc.nodelist[node]:
+                    del ehc.nodelist[node]['datalength']                    
+            
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
@@ -287,7 +298,7 @@ class EmonHubInterfacer(threading.Thread):
         # check if node is listed and has individual datacodes for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'datacodes' in ehc.nodelist[node]['rx']:
             # fetch the string of datacodes
-            datacodes = ehc.nodelist[node]['rx']['datacodes']
+            datacodes = ehc.nodelist[node]['rx']['datacodes'].copy()
 
             # fetch a string of data sizes based on the string of datacodes
             datasizes = []
@@ -353,7 +364,7 @@ class EmonHubInterfacer(threading.Thread):
 
         # check if node is listed and has individual scales for each value
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'scales' in ehc.nodelist[node]['rx']:
-            scales = ehc.nodelist[node]['rx']['scales']
+            scales = ehc.nodelist[node]['rx']['scales'].copy()
             # === Removed check for scales length so that failure mode is more gracious ===
             # Discard the frame & return 'False' if it doesn't match the number of scales
             # if len(decoded) != len(scales):
@@ -396,7 +407,7 @@ class EmonHubInterfacer(threading.Thread):
         names = rxc.names
 
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'names' in ehc.nodelist[node]['rx']:
-            names = ehc.nodelist[node]['rx']['names']
+            names = ehc.nodelist[node]['rx']['names'].copy()
         rxc.names = names
          
         # Count missed packets
