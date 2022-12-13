@@ -182,6 +182,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x04: (0.01, "Energy", "kWh"),
             0x05: (0.1, "Energy", "kWh"),
             0x06: (1, "Energy", "kWh"),
+            0x07: (10, "Energy", "kWh"),
             0x13: (0.001, "Volume", "m3"),
             0x14: (0.01, "Volume", "m3"),
             0x15: (0.1, "Volume", "m3"),
@@ -557,7 +558,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         # 2. Get instantaneous data
                         result = self.request_data_sdm120(address,[1,7,11,23])
                         self.add_result_to_cargo(meter,c,result)
-                    # ------------------------------------------------------
+                    elif meter_type=="kamstrup403":
+                        result = self.request_data(address,[1,4,12,13,14,15,20])
+                        self.add_result_to_cargo(meter,c,result)
+                        # ------------------------------------------------------
                             
 
                             

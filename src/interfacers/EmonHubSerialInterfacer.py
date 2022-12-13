@@ -21,6 +21,8 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         # Initialization
         super().__init__(name)
 
+        self._connect_failure_count = 0
+
         # Open serial port
         self._ser = self._open_serial_port(com_port, com_baud)
 
@@ -45,12 +47,15 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         #if not int(com_baud) in [75, 110, 300, 1200, 2400, 4800, 9600, 19200, 38400, 57600, 115200]:
         #    self._log.debug("Invalid 'com_baud': %d | Default of 9600 used", com_baud)
         #    com_baud = 9600
-
         try:
             s = serial.Serial(com_port, com_baud, timeout=0)
             self._log.debug("Opening serial port: %s @ %s bits/s", com_port, com_baud)
+            self._connect_failure_count = 0
         except serial.SerialException as e:
-            self._log.error(e)
+            self._connect_failure_count += 1
+            if self._connect_failure_count==1:
+                self._log.error("Could not open serial port: %s @ %s bits/s (retry every 10s)", com_port, com_baud)
+                
             s = False
             # raise EmonHubInterfacerInitError('Could not open COM port %s' % com_port)
         return s
