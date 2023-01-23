@@ -25,25 +25,25 @@ This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb
 
 ## Basic Concept
 
-A number of individual **Interfacers** can be configured within emonHib to collect data from multiple sources and distribute that information to multiple targets, but different protocols.
+A number of individual **Interfacers** can be configured within emonHub to collect data from multiple sources and distribute that information to multiple targets, using different protocols.
 
-In its simplest form, it takes data from a Serial Interface and transforms it to a format suitable for emoncms to take as an Input, then sends it to emoncms via HTTP or MQTT.
+In its simplest form, emonHub takes data from a Serial Interface and transforms it to a format suitable for emoncms to take as an Input, then sends it to emoncms via HTTP or MQTT.
 
-Each Interfacer communicates by creating *channels* much like an MQTT Broker, that allows the Interfacer to *Publish* data to a channel and *Subscribe* (get) data from a channel. Each interfacer can communicate over multiple channels.
+Each Interfacer communicates by creating *channels*, much like an MQTT Broker, that allows the Interfacer to *Publish* data to a channel and *Subscribe* (get) data from a channel. Each interfacer can communicate over multiple channels.
 
 Each interfacer can listen on a `subchannel` or publish on a `pubchannel`. Some interfacers can do both. An Interfacer needs at least one channel defined of either type.
 
 **For Example:**
 
-The Serial Interfacer listens on the serial port then publishes that data for onward transmission - it has a `pubchannel` defined.
+The Serial Interfacer listens on a serial port then publishes that data for onward transmission - it has a `pubchannel` defined.
 
 The MQTT interfacer listens for data which it then sends out via MQTT, it therefore defines a `subchannel` that it will listen on for data to send via MQTT.
 
 For data to be passed, the name of the 2 channels must match.
 
-Each interfacer can have multiple channels defined and multiple interfacers can listen to the same channel. e.g. data published by the Serial Interfacer can be listened (subscribed) for by the MQTT and the HTTP interfacer.
+Each Interfacer can have multiple channels defined and multiple interfacers can listen to the same channel. e.g. data published by the Serial Interfacer can be listened (subscribed) for by the MQTT and the HTTP interfacer.
 
-**Note** The channel definition is a list so must end with a comma e.g. `pubchannels = ToEmonCMS,` or `pubchannels = ToEmonCMS,ToXYZ,`
+**Note** The channel definition is a list so **must** end with a comma e.g. `pubchannels = ToEmonCMS,` or `pubchannels = ToEmonCMS,ToXYZ,`
 
 ## View the emonHub log
 

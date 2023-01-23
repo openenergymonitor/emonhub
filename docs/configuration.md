@@ -86,9 +86,11 @@ Each interfacer has a unique name between the first set of double brackets `[[xx
 
 The `Type` setting corresponds to the interfacer file name as found in `src/interfacers/` directory.
 
-`[[[init_settings]]]` are settings used by the interfacer on setup. These are usually defined in the header of the interfacer file. If cahnged, emonHub service must be restarted.
+`[[[init_settings]]]` are settings used by the interfacer on setup. These are usually defined in the header of the interfacer file. If changed, the emonHub service must be restarted.
 
-`[[[runtime_settings]]]` are other settings for the interfacer.  The first setting in this group must be either `pubchannels` or `subchannels` and must end with a comma. There must be a blank line. The remaining options are optional and if not specified will fall back to the interfacer defaults.
+`[[[runtime_settings]]]` are other settings for the interfacer.  The first setting in this group must be either `pubchannels` or `subchannels` and **must** end with a comma. There **must** be a blank line between this and subsequent settings.
+
+The remaining options are optional and if not specified will fall back to the interfacer defaults.
 
 ---
 
@@ -447,7 +449,7 @@ EmonTX Shield [Firmware location](https://github.com/openenergymonitor/emontx-sh
 
 ---
 
-## 4. Troubleshooting
+## Troubleshooting
 
 ### Node data inactive or, node data does not appear for a configured node
 
