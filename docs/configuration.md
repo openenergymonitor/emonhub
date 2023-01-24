@@ -1,3 +1,6 @@
+---
+github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/configuration.md"
+---
 # emonHub Configuration File
 
 ## Overview
