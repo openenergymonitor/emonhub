@@ -1,35 +1,49 @@
 # emonHub Overview
 
+## Introduction
+
 EmonHub is a piece of software running on the emonPi and emonBase that can read/subscribe or send/publish data to and from a multitude of services. It is primarily used as the bridge between the OpenEnergyMonitor monitoring hardware and the Emoncms software but it can also be used to read in data from a number of other sources, providing an easy way to interface with a wider range of sensors.
 
 ```{admonition} emonCMS inputs not updating?
 emonHub is a good place to look first. [Check the emonHub log](#view-the-emonhub-log) and configuration. See below for more details.
 ```
 
-## Default configuration
+---
 
-The default emonhub configuration file shipped with the `emonSD-10Nov22` image can be found here:
-[https://github.com/openenergymonitor/emonhub/blob/master/conf/default.emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/master/conf/default.emonhub.conf)
+## Features
 
-The previous default emonhub configuration file installed on emonPi systems can be found here: [https://github.com/openenergymonitor/emonhub/blob/master/conf/emonpi.default.emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/master/conf/emonpi.default.emonhub.conf)
+This version of emonhub is based on [@pb66 Paul Burnell's](https://github.com/pb66) original adding:
 
-Please see the [emonHub configuration guide](configuration.md) for an explanation of the emonHub configuration contents.
+- Internal pub/sub message bus based on pydispatcher
+- Publish to MQTT
+- Https Emoncms interface
+- A multi-file implementation of interfacers.
+- Rx and tx modes for node decoding/encoding provides improved control support.
+- json based config file option so that emonhub.conf can be loaded by emoncms
 
-## Editing the emonHub configuration file
+---
 
-For users with an emonPi/emonBase or RaspberryPi running emonSD, emonHub can be configured from within emonCMS. Navigate to Setup > EmonHub > Edit Config:
+## Basic Concept
 
-![emonhubconf.png](img/emonhubconf.png)
+A number of individual **Interfacers** can be configured within emonHub to collect data from multiple sources and distribute that information to multiple targets, using different protocols.
 
-Alternatively the emonHub configuration can be edited in the config file directly via command line:
+In its simplest form, emonHub takes data from a Serial Interface and transforms it to a format suitable for emoncms to take as an Input, then sends it to emoncms via HTTP or MQTT.
 
-    nano /etc/emonhub/emonhub.conf
+Each Interfacer communicates by creating *channels*, much like an MQTT Broker, that allows the Interfacer to *Publish* data to a channel and *Subscribe* (get) data from a channel. Each interfacer can communicate over multiple channels.
 
-In most cases, EmonHub will automatically update to use the latest configuration. If a change does not update, emonHub can be restarted either by clicking on 'Restart' on the emonCMS > EmonHub page, or by restarting via command line:
+Each interfacer can listen on a `subchannel` or publish on a `pubchannel`. Some interfacers can do both. An Interfacer needs at least one channel defined of either type.
 
-    sudo systemctl restart emonhub
+**For Example:**
 
-Please see the [emonHub configuration guide](configuration.md) for an explanation of the emonHub configuration contents.
+The Serial Interfacer listens on a serial port then publishes that data for onward transmission - it has a `pubchannel` defined.
+
+The MQTT interfacer listens for data which it then sends out via MQTT, it therefore defines a `subchannel` that it will listen on for data to send via MQTT.
+
+For data to be passed, the name of the 2 channels must match.
+
+Each Interfacer can have multiple channels defined and multiple interfacers can listen to the same channel. e.g. data published by the Serial Interfacer can be listened (subscribed) for by the MQTT and the HTTP interfacer.
+
+**Note** The channel definition is a list so **must** end with a comma e.g. `pubchannels = ToEmonCMS,` or `pubchannels = ToEmonCMS,ToXYZ,`
 
 ## View the emonHub log
 
@@ -63,4 +77,46 @@ In the standard emonSD configuration, data frames received and passed on to the 
     2022-12-01 09:51:03,218 DEBUG    MQTT       Publishing: emon/emonTx4_17/MSG 1
 
 emonCMS is seperately subscribed to the `emon/` MQTT channel and will show these messages as emoncms inputs.
+
+## Installing Emonhub
+
+### emonScripts
+
+emonHub can be installed by making suitable modifications to the emonScripts script.
+
+### Manual Install
+
+Install emonHub:
+
+```bash
+git clone https://github.com/openenergymonitor/emonhub.git
+cd emonhub
+git checkout stable
+sudo ./install.sh
+```
+
+To view the emonhub log via terminal on the emonpi or emonbase:
+
+```bash
+journalctl -f -u emonhub
+```
+
+If the MQTT Interfacer is to be used, Mosquitto needs to be installed.
+
+```bash
+sudo apt-get update
+sudo apt-get install -y mosquitto
+```
+
+It is recommended to turn off mosquitto persistence
+
+```bash
+sudo nano /etc/mosquitto/mosquitto.conf
+```
+
+Set
+
+```text
+persistence false
+```
 
