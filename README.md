@@ -9,3 +9,7 @@ EmonHub is a piece of software running on the emonPi and emonBase that can read/
 - [Interfacers](https://docs.openenergymonitor.org/emonhub/emonhub-interfacers.html)
 
 Alternatively view the documentation directly on github here: [emonhub/docs](docs).
+
+## Licence
+
+GNU Affero General Public License
