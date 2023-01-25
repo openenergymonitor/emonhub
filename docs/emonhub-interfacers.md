@@ -10,12 +10,6 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
     - [SDS011 Air-Quality sensor](#sds011-air-quality-sensor)
     - [Reading from a SDM120 single-phase meter](#reading-from-a-sdm120-single-phase-meter)
     - [M-Bus Reader for Electric and Heat meters](#m-bus-reader-for-electric-and-heat-meters)
-      - [Kamstrup Multical 403](#kamstrup-multical-403)
-      - [Sontex 531](#sontex-531)
-      - [Sontex 789\*](#sontex-789)
-        - [Extra Config for Sontex 789](#extra-config-for-sontex-789)
-      - [Qalcosonic E3](#qalcosonic-e3)
-      - [Sharky 775](#sharky-775)
     - [Direct DS18B20 temperature sensing](#direct-ds18b20-temperature-sensing)
     - [Direct Pulse counting](#direct-pulse-counting)
     - [Read State of charge of a Tesla Power Wall](#read-state-of-charge-of-a-tesla-power-wall)
@@ -26,7 +20,7 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
 
 For a full list of interfacers, view GitHub source [https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers](https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers). A number of these interfacers are not maintained and may not have been updated to work with Python3.
 
-*Links to interfacer specific readmes in [/conf/interfacer_examples](conf/interfacer_examples)*
+*Links to interfacer specific readmes in [/conf/interfacer_examples](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples)*
 
 - [OEM Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/OEM) (A more flexible version of the Jee, EmonTx3 and space separated serial interfacer)
 - [Emoncms HTTP Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Emoncms)
