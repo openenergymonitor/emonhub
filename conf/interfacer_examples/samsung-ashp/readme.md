@@ -14,12 +14,12 @@ Read data from a Samsung Heat Pump or HVAC unit using the [MIM-B19N Modbus modul
         datatype = int
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
-        read_interval = 10
+        read_interval = 20
         nodename = samsung-ashp
         # prefix = sdm_
         [[[[meters]]]]
             [[[[[ashp]]]]]
-                device = samsung
+                device_type = samsung
                 address = 1
                 registers = 75,74,72,65,66,68,52,59,58,2,79,87,5,89
                 names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status,away_status,flow_rate,outdoor_temp,3_way_valve

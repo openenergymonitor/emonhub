@@ -1,18 +1,55 @@
+---
+github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonhub-interfacers.md"
+---
 # emonHub Interfacers
 
-- [SDS011 Air-Quality sensor](#sds011-air-quality-sensor)
-- [SDM120 Modbus single-phase meter](#reading-from-a-sdm120-single-phase-meter)
-- [MBUS Reader for electric and heat meters](#mbus-reader-for-electric-and-heat-meters)
-- [Direct DS18B20 temperature sensing](#direct-ds18b20-temperature-sensing)
-- [Direct Pulse counting](#direct-pulse-counting)
-- [Read State of charge of a Tesla Power Wall](#read-state-of-charge-of-a-tesla-power-wall)
-- [Modbus: Renogy](#modbus-renogy)
-- [SMA Solar](#sma-solar)
-- [Victron VEDirect Protocol](#victron-vedirect-protocol)
-- [Modbus TCP](#modbus-tcp)
-- [Samsung ASHP](#samsung-ashp)
 
-## SDS011 Air-Quality sensor 
+- [emonHub Interfacers](#emonhub-interfacers)
+  - [List of Interfacers - (Links to GitHub)](#list-of-interfacers---links-to-github)
+  - [Using emonHub](#using-emonhub)
+    - [SDS011 Air-Quality sensor](#sds011-air-quality-sensor)
+    - [Reading from a SDM120 single-phase meter](#reading-from-a-sdm120-single-phase-meter)
+    - [M-Bus Reader for Electric and Heat meters](#m-bus-reader-for-electric-and-heat-meters)
+    - [Direct DS18B20 temperature sensing](#direct-ds18b20-temperature-sensing)
+    - [Direct Pulse counting](#direct-pulse-counting)
+    - [Read State of charge of a Tesla Power Wall](#read-state-of-charge-of-a-tesla-power-wall)
+    - [Samsung ASHP](#samsung-ashp)
+    - [Modbus Renogy](#modbus-renogy)
+
+## List of Interfacers - (Links to GitHub)
+
+For a full list of interfacers, view GitHub source [https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers](https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers). A number of these interfacers are not maintained and may not have been updated to work with Python3.
+
+*Links to interfacer specific readmes in [/conf/interfacer_examples](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples)*
+
+- [OEM Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/OEM) (A more flexible version of the Jee, EmonTx3 and space separated serial interfacer)
+- [Emoncms HTTP Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Emoncms)
+- [Socket Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Socket)
+- [Space separated serial interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/directserial)
+- [EmonTX V3 Interfacer (key:value pairs, added by @owenduffy)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/directserial-serialtx3e)
+- [SDS011 Air Quality Sensor Interfacer (added by @danbates)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDS011)
+- [Tesla Power Wall Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/PowerWall)
+- [BMW Connected Drive Interface (added by @stuartpittaway)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/bmw)
+- [Graphite interfacer (added by @hmm01i)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/graphite)
+- [TCP Modbus interfacer e.g Fronius Inverters (added by @cjthuys)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/modbus)
+- [Renogy Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Renogy)
+- [SMA Solar Interfacer (added by @stuartpittaway)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smasolar)
+- [Smilics energy monitors interfacer (added by @K0den)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smilices)
+- [Victron VE.Direct Protocol Interfacer (added by @jlark)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/vedirect)
+- [Pulse counting interfacer (added by @borpin)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Pulse)
+- [DS18B20 temperature sensing interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/DS18B20)
+- [SDM120-Modbus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDM120)
+- [M-Bus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/MBUS)
+- [Redis Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Redis)
+- [Influx Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Influx)
+- [Jaguar Land Rover Interfacer (added by @dconlon)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/JaguarLandRover)
+- [RFM69 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/RF69)
+
+## Using emonHub
+
+Examples of using emonHub for specific purposes.
+
+### SDS011 Air-Quality sensor
 
 1\. Plug the SDS011 sensor into a USB port on either the emonPi or emonBase.
 
@@ -26,7 +63,8 @@
 
 Example SDS011 EmonHub configuration:
 
-```
+```text
+
 [[SDS011]]
     Type = EmonHubSDS011Interfacer
     [[[init_settings]]]
@@ -47,8 +85,7 @@ Example SDS011 EmonHub configuration:
 
 ---
 
-## Reading from a SDM120 single-phase meter
-
+### Reading from a SDM120 single-phase meter
 
 The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a/) single phase electricity meter provides MID certified electricity monitoring up to 45A, ideal for monitoring the electricity supply of heat pumps and EV chargers. A [USB to RS485 converter](https://shop.openenergymonitor.com/modbus-rs485-to-usb-adaptor/) is needed to read from the modbus output of the meter.The SDM120 meter comes in a number of different variants, be sure to order the version with a modbus output (SDM120-MBUS-MID).
 
@@ -64,7 +101,7 @@ The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a
 
 Example single SDM120 EmonHub (V2.3.4) configuration:
 
-```
+```text
 [[SDM120]]
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
@@ -85,7 +122,7 @@ Example single SDM120 EmonHub (V2.3.4) configuration:
 
 EmonHub (V2.3.4) can also possible to read data from multiple SDM120 modbus meters, each meter will need an unique modbus ID, this ID can be set using the push button menu on the SDM120. Example emonhub config multiple  SDM120 EmonHub configuration:
 
-```
+```text
 [[SDM120]]
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
@@ -119,31 +156,31 @@ EmonHub (V2.3.4) can also possible to read data from multiple SDM120 modbus mete
 
 ---
 
-## MBUS Reader for Electric and Heat meters
+### M-Bus Reader for Electric and Heat meters
 
-Many electricity and heat meters are available with meter bus (MBUS) outputs. Using an [MBUS to USB converter](https://shop.openenergymonitor.com/m-bus-to-usb-converter/), these can be read from an emonPi or emonBase. For heat pumps, this provides a convenient way of monitoring the heat output, flow temperature, return temperature, flow rate and cumulative heat energy provided by the system.
+Many electricity and heat meters are available with meter bus (M-Bus) outputs. Using an [M-Bus to USB converter](https://shop.openenergymonitor.com/m-bus-to-usb-converter/), these can be read from an emonPi or emonBase. For heat pumps, this provides a convenient way of monitoring the heat output, flow temperature, return temperature, flow rate and cumulative heat energy provided by the system.
 
-1\. Connect up the USB to MBUS converter to the MBUS output of the meter and plug the converter into a USB port on either the emonPi or emonBase.
+1\. Connect up the USB to M-Bus converter to the M-Bus output of the meter and plug the converter into a USB port on either the emonPi or emonBase.
 
 ```{image} img/mbus_reader.png
 :width: 600px
 ```
 
-2\. Login to the local copy of Emoncms running on the emonPi/emonBase and navigate to Setup > EmonHub. Click on 'Edit Config' and add the following config in the interfacers section to enable reading from the MBUS meter:
+2\. Login to the local copy of Emoncms running on the emonPi/emonBase and navigate to Setup > EmonHub. Click on 'Edit Config' and add the following config in the interfacers section to enable reading from the M-Bus meter:
 
-- **baud:** The MBUS baud rate is typically 2400 or 4800. It is usually possible to check the baud rate of the meter using the meter configuration interface.
+- **baud:** The M-Bus baud rate is typically 2400 or 4800. It is usually possible to check the baud rate of the meter using the meter configuration interface.
 - **read_interval:** Interval between readings in seconds.
 
 List attached meters as shown in the example below.
 
-- **address:** The address of the meter is also usually possible to find and or set via the meter LCD configuration interface. If in doubt try 0 or 254. It's also usually possible to set the ID by MBUS interface [Here is a script](https://github.com/emoncms/usefulscripts/tree/master/mbus) to check and set the address which has been tested to work on Kamstrup Multical 403 and Sontex 531.
+- **address:** The address of the meter is also usually possible to find and or set via the meter LCD configuration interface. If in doubt try 0 or 254. It's also usually possible to set the ID by M-Bus interface [Here is a script](https://github.com/emoncms/usefulscripts/tree/master/mbus) to check and set the address which has been tested to work on Kamstrup Multical 403 and Sontex 531.
 - **type:** Available options include: standard, qalcosonic_e3, sontex531, sdm120
 
-**Note:** We've experienced reliability issues reading from the MBUS version of the SDM120 electric meters. We recommend using the Modbus version with a seperate Modbus reader for more reliable results. For more information please see [https://community.openenergymonitor.org/t/sdm120-mbus-meter-freezing-drop-out/20765/2](https://community.openenergymonitor.org/t/sdm120-mbus-meter-freezing-drop-out/20765/2).
+**Note:** We've experienced reliability issues reading from the M-Bus version of the SDM120 electric meters. We recommend using the Modbus version with a seperate Modbus reader for more reliable results. For more information please see [https://community.openenergymonitor.org/t/sdm120-mbus-meter-freezing-drop-out/20765/2](https://community.openenergymonitor.org/t/sdm120-mbus-meter-freezing-drop-out/20765/2).
 
-### Kamstrup Multical 403
+#### Kamstrup Multical 403
 
-```
+```text
 [[MBUS]]
     Type = EmonHubMBUSInterfacer
     [[[init_settings]]]
@@ -160,9 +197,9 @@ List attached meters as shown in the example below.
                 type = kamstrup403
 ```
 
-### Sontex 531
+#### Sontex 531
 
-```
+```text
 [[MBUS]]
     Type = EmonHubMBUSInterfacer
     [[[init_settings]]]
@@ -179,9 +216,9 @@ List attached meters as shown in the example below.
                 type = sontex531
 ```
 
-### Sontex 789*
+#### Sontex 789*
 
-```
+```text
 [[MBUS]]
     Type = EmonHubMBUSInterfacer
     [[[init_settings]]]
@@ -198,30 +235,28 @@ List attached meters as shown in the example below.
                 type = standard
 ```
 
-
-**\*Extra Config for Sontex 789**
+##### Extra Config for Sontex 789
 
 Note: Sontex 789 requires an additional step, sontex 531 works fine without this extra config:
 
-Sontex 789 and 749 have 3 pages of Mbus info. We're interested in the 3rd page of info. To scroll through the pages
+Sontex 789 and 749 have 3 pages of M-Bus info. We're interested in the 3rd page of info. To scroll through the pages
 
 Edit `/opt/openenergymonitor/emonhub/src/interfacers/EmonHubMBUSInterfacer.py`
 
 1. change L402 `self.mbus_short_frame(address, 0x5b)` to `self.mbus_short_frame(address, 0x7b)`
 
 `nano +402 /opt/openenergymonitor/emonhub/src/interfacers/EmonHubMBUSInterfacer.py`
-
 2. restart emonhub
 3. change L402 `self.mbus_short_frame(address, 0x7b)` back to `self.mbus_short_frame(address, 0x5b)`
 4. restart emonhub
 
 Each change moves the meter on to the next page. Each time after restarting emonHub check the data from the heat meter in the emonHub logs or Emoncms Inputs. Look for data which includes Energy, Power, FlowT and ReturnT.
 
-*The battery powered Sontex 789 receives power via the MBUS reader, thefore battery will last indefinitely.*
+*The battery powered Sontex 789 receives power via the M-Bus reader, thefore battery will last indefinitely.*
 
-### Qalcosonic E3
+#### Qalcosonic E3
 
-```
+```text
 [[MBUS]]
     Type = EmonHubMBUSInterfacer
     [[[init_settings]]]
@@ -238,9 +273,9 @@ Each change moves the meter on to the next page. Each time after restarting emon
                 type = qalcosonic_e3
 ```
 
-### Sharky 775
+#### Sharky 775
 
-```
+```text
 [[MBUS]]
     Type = EmonHubMBUSInterfacer
     [[[init_settings]]]
@@ -267,7 +302,7 @@ Example heat meter data:
 
 ---
 
-## Direct DS18B20 temperature sensing
+### Direct DS18B20 temperature sensing
 
 This EmonHub interfacer can be used to read directly from DS18B20 temperature sensors connected to the GPIO pins on the RaspberryPi. At present a couple of manual setup steps are required to enable DS18B20 temperature sensing before using this EmonHub interfacer.
 
@@ -275,20 +310,27 @@ This EmonHub interfacer can be used to read directly from DS18B20 temperature se
 
 1\. SSH into your RaspberryPi, open /boot/config.txt in an editor:
 
+```bash
     sudo nano /boot/config.txt
-
+```
 2\. Add the following to the end of the file:
 
+```bash
     dtoverlay=w1-gpio
+```
 
 3\. Exit and reboot the Pi
 
+```bash
     sudo reboot
-    
+```
+
 4\. SSH back in again and run the following to enable the required modules:
 
+```bash
     sudo modprobe w1-gpio
     sudo modprobe w1-therm
+```
 
 **Configuring the Interfacer:**
 
@@ -298,10 +340,9 @@ Login to the local copy of Emoncms running on the emonPi/emonBase and navigate t
 - **ids:** This can be used to link specific sensors addresses to input names listed under the names property. 
 - **names:** Names associated with sensor id's, ordered by index.
 
-
 Example DS18B20 EmonHub configuration:
 
-```
+```text
 [[DS18B20]]
     Type = EmonHubDS18B20Interfacer
     [[[init_settings]]]
@@ -315,7 +356,7 @@ Example DS18B20 EmonHub configuration:
 
 ---
 
-## Direct Pulse counting
+### Direct Pulse counting
 
 This EmonHub interfacer can be used to read directly from pulse counter connected to a GPIO pin on the RaspberryPi.
 
@@ -329,7 +370,7 @@ This EmonHub interfacer can be used to read directly from pulse counter connecte
 
 Example Pulse counting EmonHub configuration:
 
-```
+```text
 [[pulse]]
     Type = EmonHubPulseCounterInterfacer
     [[[init_settings]]]
@@ -343,11 +384,11 @@ Example Pulse counting EmonHub configuration:
 
 ---
 
-## Read State of charge of a Tesla Power Wall
+### Read State of charge of a Tesla Power Wall
 
 This interfacer fetches the state of charge of a Tesla Power Wall on the local network. Enter your PowerWall IP-address or hostname in the URL section of the following emonhub.conf configuration:
 
-```
+```text
 [[PowerWall]]
     Type = EmonHubTeslaPowerWallInterfacer
     [[[init_settings]]]
@@ -360,23 +401,7 @@ This interfacer fetches the state of charge of a Tesla Power Wall on the local n
 
 ---
 
-## Modbus Renogy
-
-See example config:<br>[EmonHub Github: Renogy.emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/master/conf/interfacer_examples/Renogy/Renogy.emonhub.conf)
-
-## SMA Solar
-
-See example config and documentation:<br>[EmonHub Github: SMA Solar](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smasolar)
-
-## Victron VEDirect Protocol
-
-See example config and documentation:<br>[EmonHub Github: Victron VE.Direct Protocol](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/vedirect)
-
-## Modbus TCP
-
-See example config and documentation:<br>[EmonHub Github: modbus TCP configuration](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/modbus)
-
-## Samsung ASHP
+### Samsung ASHP
 
 ```{image} img/samsung-ashp.jpg
 :width: 400px
@@ -386,23 +411,27 @@ EmonHub (V2.3.4) can read data directly from a Samsung Air Souce Heat Pump (ASHP
 
 Example emonhub config:
 
-```
-[[SAMSUNGASHP]]
+```text
+[[SAMSUNG-ASHP-MIB19N]]
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
         baud = 9600
+        parity = even
+        datatype = int
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
-        read_interval = 10
+        read_interval = 20
         nodename = samsung-ashp
         # prefix = sdm_
         [[[[meters]]]]
             [[[[[ashp]]]]]
+                device_type = samsung
                 address = 1
-                registers = 75,74,72,65,66,68,52,59,58,2,79
-                names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status, away_status
-                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0,1,1
+                registers = 75,74,72,65,66,68,52,59,58,2,79,87,5,89
+                names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status,away_status,flow_rate,outdoor_temp,3_way_valve
+                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1,0.1,0.1,1
+                precision = 2,2,1,2,2,2,1,2,2,1,1,2,2,1
 ```
 
 Example Samsung ASHP data in Emoncms:
@@ -412,3 +441,9 @@ Example Samsung ASHP data in Emoncms:
 ```
 
 EmonHub also makes this data available via MQTT `emon/samsung-ashp`
+
+---
+
+### Modbus Renogy
+
+See example config:<br>[EmonHub Github: Renogy.emonhub.conf](https://github.com/openenergymonitor/emonhub/blob/master/conf/interfacer_examples/Renogy/Renogy.emonhub.conf)
