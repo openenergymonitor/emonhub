@@ -163,11 +163,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         
                         if self._settings['meters'][meter]['device_type'] == 'samsung':
                             self._log.debug("Samsung device active")
-                            self._rs485.write_register(6001,0x8204) # Outdoor temp
-                            time.sleep(0.5)
-                            self._rs485.write_register(7005,0x42E9) # Flow rate
-                            time.sleep(0.5)
-                            self._rs485.write_register(7007,0x4067) # 3-way valve position
+                            # map Flow rate (l/min), OutdoorT, 3-way valve 0=CH 1=DHW, Compressor controll %, Compressor freq (Hz), Immersion heater status
+                            self._rs485.write_registers(7005,[0x42E9, 0x8204, 0x4067, 0x42F1, 0x8238, 0x4087])
                             
                         for i in range(0,len(self._settings['meters'][meter]['registers'])):
                             register_count += 1
