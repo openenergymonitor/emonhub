@@ -81,8 +81,10 @@ fi
 if [ ! -d /etc/emonhub ]; then
     echo "Creating /etc/emonhub directory"
     sudo mkdir /etc/emonhub
+    sudo chown $user:root /var/log/emonhub
 else
     echo "/etc/emonhub directory already exists"
+    sudo chown $user:root /var/log/emonhub
 fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
@@ -101,7 +103,7 @@ fi
 # Fix emonhub log file permissions
 if [ -d /var/log/emonhub ]; then
     echo "Setting ownership of /var/log/emonhub to $user"
-    sudo chown $user /var/log/emonhub
+    sudo chown $user:root /var/log/emonhub
 fi
 
 if [ -f /var/log/emonhub/emonhub.log ]; then
