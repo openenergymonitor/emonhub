@@ -42,7 +42,7 @@ sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pym
 pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
 
 # Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
-pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-1.zip
+pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
@@ -81,8 +81,10 @@ fi
 if [ ! -d /etc/emonhub ]; then
     echo "Creating /etc/emonhub directory"
     sudo mkdir /etc/emonhub
+    sudo chown $user:root /var/log/emonhub
 else
     echo "/etc/emonhub directory already exists"
+    sudo chown $user:root /var/log/emonhub
 fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
@@ -101,7 +103,7 @@ fi
 # Fix emonhub log file permissions
 if [ -d /var/log/emonhub ]; then
     echo "Setting ownership of /var/log/emonhub to $user"
-    sudo chown $user /var/log/emonhub
+    sudo chown $user:root /var/log/emonhub
 fi
 
 if [ -f /var/log/emonhub/emonhub.log ]; then

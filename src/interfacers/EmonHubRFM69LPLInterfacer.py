@@ -25,6 +25,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         try:            
             import RPi.GPIO as GPIO
             self.GPIO = GPIO
+            GPIO.setwarnings(False)
         except ModuleNotFoundError as err:      
             self._log.error(err)
 
@@ -47,15 +48,17 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             
         self._log.info("Starting radio setup")
         
-        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
-        self.radio = Radio(43, node_id, network_id, verbose=False, **board) 
-
-        self._log.info("Radio setup complete")
+        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'selPin':26, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
+        self.radio = Radio(43, node_id, network_id, verbose=False, **board)
         
-        self.last_packet_nodeid = 0;
-        self.last_packet_data = []
-        
-        self.radio.__enter__()
+        if not self.radio.init_success:
+            self._log.error("Could not connect to RFM69 module") 
+        else:
+            self._log.info("Radio setup complete")
+            self.last_packet_nodeid = 0
+            self.last_packet_data = []
+            self.last_packet_time = 0
+            self.radio.__enter__()
 
     def shutdown(self):
         self.radio.__exit__()
@@ -65,22 +68,26 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         """Read data from RFM69
 
         """
+        if not self.radio.init_success:
+            return False
+            
         packet = self.radio.get_packet()
         if packet:
             self._log.info("Packet received "+str(len(packet.data))+" bytes")
-            
             # Make sure packet is a unique new packet rather than a 2nd or 3rd retry attempt
-            #if packet.sender != self.last_packet_nodeid or packet.data != self.last_packet_data:
-            #    self.last_packet_nodeid = packet.sender
-            #    self.last_packet_data = packet.data
-                
+            if packet.sender==self.last_packet_nodeid and packet.data==self.last_packet_data and (time.time()-self.last_packet_time)<0.5:
+                self._log.info("Discarding duplicate packet")
+                return False
+
+            self.last_packet_nodeid = packet.sender
+            self.last_packet_data = packet.data
+            self.last_packet_time = time.time()
             # Process packet
             c = Cargo.new_cargo(rawdata='')
             c.nodeid = packet.sender
             c.realdata = packet.data
             c.rssi = packet.RSSI
             return c
-        
 
     def set(self, **kwargs):
         """
