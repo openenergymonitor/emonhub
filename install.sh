@@ -37,20 +37,34 @@ else
   echo "user provided as arg = $user"
 fi
 
+sudo apt-get install -y  bluetooth libbluetooth-dev
+
+sudo mkdir -p /opt/v
+sudo chown $(id -u -n):$(id -u -n) /opt/v
+python3 -m venv /opt/v/emonhub
+cd /opt/v/emonhub/bin/
+source activate
 echo "installing or updating emonhub dependencies"
-sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev python3-spidev
-pip3 install paho-mqtt requests pybluez py-sds011 sdm_modbus minimalmodbus
+python3 -m pip install pip --upgrade
+python3 -m pip install pyserial
+python3 -m pip install -U pymodbus==2.5.3
+python3 -m pip install configobj
+python3 -m pip install paho-mqtt
+python3 -m pip install requests 
+python3 -m pip install spidev pybluez py-sds011 sdm_modbus minimalmodbus
 
 # Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
-pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
+python3 -m pip install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
 
 if [ "$emonSD_pi_env" = 1 ]; then
-
-    echo "installing or updating raspberry pi related dependencies"
-    
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
-    pip3 install RPi.GPIO
+	echo "installing or updating raspberry pi related dependencies"
+    python3 -m pip install RPi.GPIO
+fi
+deactivate
 
+
+if [ "$emonSD_pi_env" = 1 ]; then
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=miniuart-bt?
