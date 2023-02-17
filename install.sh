@@ -37,7 +37,8 @@ else
   echo "user provided as arg = $user"
 fi
 
-sudo apt-get install -y  bluetooth libbluetooth-dev
+sudo apt-get install -y bluetooth libbluetooth-dev
+sudo apt-get install -y python3-venv
 
 sudo mkdir -p /opt/v
 sudo chown $(id -u -n):$(id -u -n) /opt/v
