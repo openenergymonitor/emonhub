@@ -41,7 +41,7 @@ sudo apt-get install -y bluetooth libbluetooth-dev
 sudo apt-get install -y python3-venv
 
 sudo mkdir -p /opt/v
-sudo chown $(id -u -n):$(id -u -n) /opt/v
+sudo chown $user:$user /opt/v
 python3 -m venv /opt/v/emonhub
 cd /opt/v/emonhub/bin/
 source activate
