@@ -53,6 +53,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         
         self.device = device
         self.baud = baud
+        
+        self.debug_data_frame = False
 
         # Only load module if it is installed
         try:
@@ -245,7 +247,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         name_count = {}
         record = 0
         
-        debug = False
+        debug = self.debug_data_frame
 
         for bid in range(0,len(data)):
             this = next
