@@ -235,22 +235,37 @@ List attached meters as shown in the example below.
                 type = standard
 ```
 
-##### Extra Config for Sontex 789
+##### Extra Config for Sontex 789 & Supercal5
 
-Note: Sontex 789 requires an additional step, sontex 531 works fine without this extra config:
+An additional step seems to be required to get these meters into the right mode. We have created a couple of scripts to help with this.
 
-Sontex 789 and 749 have 3 pages of M-Bus info. We're interested in the 3rd page of info. To scroll through the pages
+1\. Stop emonhub
 
-Edit `/opt/openenergymonitor/emonhub/src/interfacers/EmonHubMBUSInterfacer.py`
+    sudo systemctl stop emonhub
 
-1. change L402 `self.mbus_short_frame(address, 0x5b)` to `self.mbus_short_frame(address, 0x7b)`
+2\. Try to read a data from from the Sontex using the `usefulscripts/mbus/mbus_request_data_5b.py` script:
 
-`nano +402 /opt/openenergymonitor/emonhub/src/interfacers/EmonHubMBUSInterfacer.py`
-2. restart emonhub
-3. change L402 `self.mbus_short_frame(address, 0x7b)` back to `self.mbus_short_frame(address, 0x5b)`
-4. restart emonhub
+    python3 /opt/emoncms/modules/usefulscripts/mbus/mbus_app_reset.py       (maybe optional)
+    python3 /opt/emoncms/modules/usefulscripts/mbus/mbus_request_data_5b.py
 
-Each change moves the meter on to the next page. Each time after restarting emonHub check the data from the heat meter in the emonHub logs or Emoncms Inputs. Look for data which includes Energy, Power, FlowT and ReturnT.
+This will likely not give the full page of data that we are after. 
+
+3\. Try running `usefulscripts/mbus/mbus_request_data_7b.py` to switch modes:
+
+    python3 /opt/emoncms/modules/usefulscripts/mbus/mbus_request_data_7b.py
+
+
+4\. Try running `usefulscripts/mbus/mbus_request_data_5b.py` to switch modes again:
+
+    python3 /opt/emoncms/modules/usefulscripts/mbus/mbus_request_data_5b.py
+
+The meter should now be in the right mode and returning the correct page of data.
+
+5\. Restart emonhub:
+
+    sudo systemctl restart emonhub
+
+Look for data which includes Energy, Power, FlowT and ReturnT in the emonhub log.
 
 *The battery powered Sontex 789 receives power via the M-Bus reader, thefore battery will last indefinitely.*
 
