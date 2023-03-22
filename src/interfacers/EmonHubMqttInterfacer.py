@@ -253,7 +253,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.info("connection status: %s", connack_string[rc])
             self._connected = True
             # Subscribe to MQTT topics
-            if len(self._settings["pubchannels"]) and !len(self._settings["subchannels"]):
+            if len(self._settings["pubchannels"]) and not len(self._settings["subchannels"]):
                 if int(self._settings["nodevar_format_enable"]) == 1:
                     self._log.info("subscribe "+str(self._settings["nodevar_format_basetopic"]) + "#")
                     self._mqttc.subscribe(str(self._settings["nodevar_format_basetopic"]) + "#")
