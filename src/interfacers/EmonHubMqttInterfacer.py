@@ -255,14 +255,14 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             # Subscribe to MQTT topics
             if len(self._settings["pubchannels"]) and not len(self._settings["subchannels"]):
                 if int(self._settings["nodevar_format_enable"]) == 1:
-                    self._log.info("subscribe "+str(self._settings["nodevar_format_basetopic"]) + "#")
-                    self._mqttc.subscribe(str(self._settings["nodevar_format_basetopic"]) + "#")
+                    self._log.info("subscribe "+str(self._settings["nodevar_format_basetopic"]))
+                    self._mqttc.subscribe(str(self._settings["nodevar_format_basetopic"]))
                 if int(self._settings["node_format_enable"]) == 1:
-                    self._log.info("subscribe "+str(self._settings["node_format_basetopic"]) + "#")
-                    self._mqttc.subscribe(str(self._settings["node_format_basetopic"]) + "#")
+                    self._log.info("subscribe "+str(self._settings["node_format_basetopic"]))
+                    self._mqttc.subscribe(str(self._settings["node_format_basetopic"]))
                 if int(self._settings["node_JSON_enable"]) == 1:
-                    self._log.info("subscribe "+str(self._settings["node_JSON_enable"]) + "#")
-                    self._mqttc.subscribe(str(self._settings["node_JSON_basetopic"]) + "#")
+                    self._log.info("subscribe "+str(self._settings["node_JSON_enable"]))
+                    self._mqttc.subscribe(str(self._settings["node_JSON_basetopic"]))
                          
         self._log.debug("CONACK => Return code: %d", rc)
 
@@ -284,7 +284,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     
         # General MQTT format: emon/emonpi/power1 ... 100
         if int(self._settings["nodevar_format_enable"]) == 1:
-            if topic_parts[0] == self._settings["nodevar_format_basetopic"][:-1]:
+            # if topic_parts[0] == self._settings["nodevar_format_basetopic"][:-1]:
                 nodeid = topic_parts[1]
                 variable_name = "_".join(topic_parts[2:])
                 try:
@@ -299,7 +299,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             
         # Emoncms nodes module format: emon/tx/10/values ... 100,200,300
         if int(self._settings["node_format_enable"]) == 1:
-            if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
+            # if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
                 if len(topic_parts)==4 and topic_parts[1] == "tx" and topic_parts[3] == "values":
                     nodeid = topic_parts[2]
                     payload = msg.payload.decode()
@@ -315,7 +315,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 
         # JSON format: zigbeemqtt/temp1 {"battery":100,"humidity":80,"temperature":22,"voltage":3100}
         if int(self._settings["node_JSON_enable"]) == 1:
-            if topic_parts[0] == self._settings["node_JSON_basetopic"][:-1]:
+            # if topic_parts[0] == self._settings["node_JSON_basetopic"][:-1]:
                 nodeid = topic_parts[1]
                 json_string = msg.payload.decode()
                 try:
