@@ -8,8 +8,8 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
   - [List of Interfacers - (Links to GitHub)](#list-of-interfacers---links-to-github)
   - [Using emonHub](#using-emonhub)
     - [SDS011 Air-Quality sensor](#sds011-air-quality-sensor)
-    - [Reading from a SDM120 single-phase meter](#reading-from-a-sdm120-single-phase-meter)
-    - [M-Bus Reader for Electric and Heat meters](#m-bus-reader-for-electric-and-heat-meters)
+    - [Modbus Reader for Electric Meters](#modbus-electric-meters)
+    - [M-Bus Reader for Heat meters](#m-bus-reader-for-electric-and-heat-meters)
     - [Direct DS18B20 temperature sensing](#direct-ds18b20-temperature-sensing)
     - [Direct Pulse counting](#direct-pulse-counting)
     - [Read State of charge of a Tesla Power Wall](#read-state-of-charge-of-a-tesla-power-wall)
@@ -85,7 +85,9 @@ Example SDS011 EmonHub configuration:
 
 ---
 
-### Reading from a SDM120 single-phase meter
+### Modbus Electric Meters
+
+#### SDM120
 
 The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a/) single phase electricity meter provides MID certified electricity monitoring up to 45A, ideal for monitoring the electricity supply of heat pumps and EV chargers. A [USB to RS485 converter](https://shop.openenergymonitor.com/modbus-rs485-to-usb-adaptor/) is needed to read from the modbus output of the meter.The SDM120 meter comes in a number of different variants, be sure to order the version with a modbus output (SDM120-MBUS-MID).
 
@@ -152,7 +154,35 @@ EmonHub (V2.3.4) can also possible to read data from multiple SDM120 modbus mete
 :width: 500px
 ```
 
-**Tip:** When logging the SDM120 cumulative energy output (sdm_E) to a feed, use the 'log to feed (join)' input processor to create a feed that can work with the delta mode in graphs. This removes any data gaps and makes it possible for the graph to generate daily kWh data on the fly.
+**Tip:** When logging the cumulative energy output (sdm_E) to a feed, use the 'log to feed (join)' input processor to create a feed that can work with the delta mode in graphs. This removes any data gaps and makes it possible for the graph to generate daily kWh data on the fly.
+
+#### Rayleigh RI-d35-100
+
+EmonHub can read from a [Rayleigh RI-D35-100](https://www.rayleigh.com/ri-d35-100-mid-certified-single-phase-multifunction-energy-meter.html) single-phase 100A electricity meter via modbus using the following config:
+
+```
+[[modbus]]
+    Type = EmonHubMinimalModbusInterfacer
+    [[[init_settings]]]
+        device = /dev/ttyUSB0
+        baud = 9600
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        nodename = electricity
+        # prefix = sdm_
+        [[[[meters]]]]
+            [[[[[ri-d35-100]]]]]
+                address = 1
+                registers = 3,5,15,19,23,21,27
+                names = EI,EE,P,VA,I,V,FR,PF
+                precision = 1,1,1,2,2,1,2
+                scales = 1,1,1000,1,1,1,1
+```
+
+[Rayleigh Modbus register documentaion](https://www.rayleigh.com/media/uploads/RI-D35-C-COMM-V01.pdf)
+
+
 
 ---
 
@@ -248,7 +278,7 @@ An additional step seems to be required to get these meters into the right mode.
     python3 /opt/emoncms/modules/usefulscripts/mbus/mbus_app_reset.py       (maybe optional)
     python3 /opt/emoncms/modules/usefulscripts/mbus/mbus_request_data_5b.py
 
-This will likely not give the full page of data that we are after. 
+This will likely not give the full page of data that we are after.
 
 3\. Try running `usefulscripts/mbus/mbus_request_data_7b.py` to switch modes:
 
@@ -351,8 +381,8 @@ This EmonHub interfacer can be used to read directly from DS18B20 temperature se
 
 Login to the local copy of Emoncms running on the emonPi/emonBase and navigate to Setup > EmonHub. Click on 'Edit Config' and add the following config in the interfacers section to enable reading from the temperature sensors.
 
-- **read_interval:** Interval between readings in seconds. 
-- **ids:** This can be used to link specific sensors addresses to input names listed under the names property. 
+- **read_interval:** Interval between readings in seconds.
+- **ids:** This can be used to link specific sensors addresses to input names listed under the names property.
 - **names:** Names associated with sensor id's, ordered by index.
 
 Example DS18B20 EmonHub configuration:
@@ -381,7 +411,7 @@ This EmonHub interfacer can be used to read directly from pulse counter connecte
 
 - **pulse_pin:** Pi GPIO pin number must be specified. Create a second interfacer for more than one pulse sensor
 - **Rate_limit:** The rate in seconds at which the interfacer will pass data to emonhub for sending on. Too short and pulses will be missed. Pulses are accumulated in this period.
-- **nodeoffset:** Default NodeID is 0. Use nodeoffset to set NodeID 
+- **nodeoffset:** Default NodeID is 0. Use nodeoffset to set NodeID
 
 Example Pulse counting EmonHub configuration:
 
