@@ -175,8 +175,10 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3, signed=True)
                                         
                                 elif self.datatype == 'float':
+                                    time.sleep(0.1)
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                                 else:
+                                    time.sleep(0.1)
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                             
                                     
