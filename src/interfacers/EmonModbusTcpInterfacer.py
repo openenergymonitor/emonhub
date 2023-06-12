@@ -1,14 +1,5 @@
 import time
 import Cargo
-
-try:
-    from pymodbus.constants import Endian
-    from pymodbus.payload import BinaryPayloadDecoder
-    from pymodbus.client.sync import ModbusTcpClient as ModbusClient
-    pymodbus_found = True
-except ImportError:
-    pymodbus_found = False
-
 import emonhub_coder as ehc
 from emonhub_interfacer import EmonHubInterfacer
 
@@ -29,10 +20,23 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         super().__init__(name)
 
         self._modcon = False
-        if not pymodbus_found:
+
+        self.pymodbus_found = True
+        try:
+            from pymodbus.constants import Endian
+            self.Endian = Endian
+            from pymodbus.payload import BinaryPayloadDecoder
+            self.BinaryPayloadDecoder = BinaryPayloadDecoder
+            from pymodbus.client import ModbusTcpClient
+            self.ModbusTcpClient = ModbusTcpClient
+        except ModuleNotFoundError as err:
+            self.pymodbus_found = False
+            self._log.error(err)
+
+        if not self.pymodbus_found:
             self._log.error("PYMODBUS NOT PRESENT BUT NEEDED !!")
         # open connection
-        if pymodbus_found:
+        else:
             self._log.info("pymodbus installed")
             self._log.debug("EmonModbusTcpInterfacer args: %s - %s", modbus_IP, modbus_port)
             self._con = self._open_modTCP(modbus_IP, modbus_port)
@@ -57,7 +61,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
         """ Open connection to modbus device """
 
         try:
-            c = ModbusClient(modbus_IP, modbus_port)
+            c = self.ModbusTcpClient(modbus_IP, modbus_port)
             if c.connect():
                 self._log.info("Opening modbusTCP connection: %s @ %s", modbus_port, modbus_IP)
                 self._modcon = True
@@ -72,7 +76,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
 
     def read(self):
         """ Read registers from client"""
-        if pymodbus_found:
+        if self.pymodbus_found:
             time.sleep(float(self._settings["interval"]))
             f = []
             c = Cargo.new_cargo(rawdata="")
@@ -175,7 +179,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     else:
                         #self._log.debug("register value: %s type= %s", self.rVal.registers, type(self.rVal.registers))
                         #f = f + self.rVal.registers
-                        decoder = BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=Endian.Big, wordorder=Endian.Big)
+                        decoder = self.BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=self.Endian.Big, wordorder=self.Endian.Big)
                         if datacode == 'h':
                             rValD = decoder.decode_16bit_int()
                         elif datacode == 'H':
