@@ -3,7 +3,6 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
 ---
 # emonHub Interfacers
 
-
 - [emonHub Interfacers](#emonhub-interfacers)
   - [List of Interfacers - (Links to GitHub)](#list-of-interfacers---links-to-github)
   - [Using emonHub](#using-emonhub)
@@ -48,6 +47,8 @@ For a full list of interfacers, view GitHub source [https://github.com/openenerg
 ## Using emonHub
 
 Examples of using emonHub for specific purposes.
+
+**Important: ensure there is no conflic of ttyUSB ports between emonHub interfacers e.g by default there is a `EmonOEMInterfacer` which reads from ttyUSB0 which is used to read data from emonTx V4 if connected via USB, this interfacer will need to be removed to allow another interfacer eg SDM120 / MBUS etc to read from ttyUSB0**
 
 ### SDS011 Air-Quality sensor
 
