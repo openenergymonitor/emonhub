@@ -15,6 +15,8 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
     - [Samsung ASHP](#samsung-ashp)
     - [Modbus Renogy](#modbus-renogy)
 
+To configure emonHub interfacers edit `emonhub.conf` which can be done via the emonHub section of Emoncms web UI or by editing the config file directly `/etc/emonhub/emonhub.conf`
+
 ## List of Interfacers - (Links to GitHub)
 
 For a full list of interfacers, view GitHub source [https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers](https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers). A number of these interfacers are not maintained and may not have been updated to work with Python3.
