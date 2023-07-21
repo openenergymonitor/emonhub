@@ -189,9 +189,9 @@ Default config to read from SDM630 Modbus three-phase 100A meter, see [here more
         [[[[meters]]]]
             [[[[[electric]]]]]
                 address = 1
-                registers = 0,2,4,52,12,14,16,72,90,92,94,68,68,99,6,8,10       
-                names = V1,V2,V3,P_total,P1,P2,P3,EI_total,EI1,EI2,EI3,EE1,EE2,EE3,I1,I2,I3
-                precision = 2,2,2,1,1,1,1,3,3,3,3,3,3,3,3,3,3
+                registers = 0,2,4,52,12,14,16,72,90,92,94,74,68,68,99,6,8,10       
+                names = V1,V2,V3,P_total,P1,P2,P3,EI_total,EI1,EI2,EI3,EE_total,EE1,EE2,EE3,I1,I2,I3
+                precision = 2,2,2,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3
 ```
 
 
