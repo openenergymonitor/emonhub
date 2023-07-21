@@ -39,7 +39,7 @@ For a full list of interfacers, view GitHub source [https://github.com/openenerg
 - [Victron VE.Direct Protocol Interfacer (added by @jlark)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/vedirect)
 - [Pulse counting interfacer (added by @borpin)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Pulse)
 - [DS18B20 temperature sensing interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/DS18B20)
-- [SDM120-Modbus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDM120)
+- [SDMXXX-Modbus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDM120)
 - [M-Bus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/MBUS)
 - [Redis Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Redis)
 - [Influx Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Influx)
@@ -90,7 +90,9 @@ Example SDS011 EmonHub configuration:
 
 ### Modbus Electric Meters
 
-#### SDM120
+#### SDMXXX
+
+##### SDM120 single-phase
 
 The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a/) single phase electricity meter provides MID certified electricity monitoring up to 45A, ideal for monitoring the electricity supply of heat pumps and EV chargers. A [USB to RS485 converter](https://shop.openenergymonitor.com/modbus-rs485-to-usb-adaptor/) is needed to read from the modbus output of the meter.The SDM120 meter comes in a number of different variants, be sure to order the version with a modbus output (SDM120-MBUS-MID).
 
@@ -158,6 +160,28 @@ EmonHub (V2.3.4) can also possible to read data from multiple SDM120 modbus mete
 ```
 
 **Tip:** When logging the cumulative energy output (sdm_E) to a feed, use the 'log to feed (join)' input processor to create a feed that can work with the delta mode in graphs. This removes any data gaps and makes it possible for the graph to generate daily kWh data on the fly.
+
+##### SDM630 Three-phase
+
+Default config to read from SDM630 Modbus three-phase 100A meter, see [here more full SDM630 register list](http://support.innon.com/PowerMeters/SDM630-MOD-MID/Manual/SDM630-Modbus_Protocol.pdf), convert hex register to decimal before inserting into emonhub.conf
+```
+[[SDM630]]
+    Type = EmonHubMinimalModbusInterfacer
+    [[[init_settings]]]
+        device = /dev/ttyUSB0
+        baud = 9600
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        nodename = SDM630
+        [[[[meters]]]]
+            [[[[[electric]]]]]
+                address = 1
+                registers = 0,2,4,52,12,14,16,86,90,92,94,68,68,99,6,8,10,104       
+                names = V1,V2,V3,P_total,P1,P2,P3,EI_total,EI1,EI2,EI3,EE1,EE2,EE3,I1,I2,I3,IN
+                precision = 2,2,2,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3
+```
+
 
 #### Rayleigh RI-d35-100
 
