@@ -92,6 +92,19 @@ Example SDS011 EmonHub configuration:
 
 #### SDMXXX
 
+
+V = Voltage (Neutral to phase) (VRMS)
+P = Power (W)
+I = Current (A)
+EI = Energy Imported (kWh)
+EE = Energy Exported (kWh)
+VA = Volt Amps (VoltAmps)
+RI = Reactive Power (VArh)
+FR = Frequency (Hz)
+IN = Neutral Current (A)
+
+A number next to the referance denoates a phase e.g P1 is power in phase 1
+
 ##### SDM120 single-phase
 
 The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a/) single phase electricity meter provides MID certified electricity monitoring up to 45A, ideal for monitoring the electricity supply of heat pumps and EV chargers. A [USB to RS485 converter](https://shop.openenergymonitor.com/modbus-rs485-to-usb-adaptor/) is needed to read from the modbus output of the meter.The SDM120 meter comes in a number of different variants, be sure to order the version with a modbus output (SDM120-MBUS-MID).
