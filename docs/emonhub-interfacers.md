@@ -101,7 +101,6 @@ EE = Energy Exported (kWh)
 VA = Volt Amps (VoltAmps)
 RI = Reactive Power (VArh)
 FR = Frequency (Hz)
-IN = Neutral Current (A)
 
 A number next to the referance denoates a phase e.g P1 is power in phase 1
 
@@ -190,9 +189,9 @@ Default config to read from SDM630 Modbus three-phase 100A meter, see [here more
         [[[[meters]]]]
             [[[[[electric]]]]]
                 address = 1
-                registers = 0,2,4,52,12,14,16,86,90,92,94,68,68,99,6,8,10,104       
-                names = V1,V2,V3,P_total,P1,P2,P3,EI_total,EI1,EI2,EI3,EE1,EE2,EE3,I1,I2,I3,IN
-                precision = 2,2,2,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3
+                registers = 0,2,4,52,12,14,16,72,90,92,94,68,68,99,6,8,10       
+                names = V1,V2,V3,P_total,P1,P2,P3,EI_total,EI1,EI2,EI3,EE1,EE2,EE3,I1,I2,I3
+                precision = 2,2,2,1,1,1,1,3,3,3,3,3,3,3,3,3,3
 ```
 
 
