@@ -104,9 +104,9 @@ FR = Frequency (Hz)
 
 A number next to the referance denoates a phase e.g P1 is power in phase 1
 
-##### SDM120 single-phase
+##### SDM120 and SDM230 single-phase
 
-The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a/) single phase electricity meter provides MID certified electricity monitoring up to 45A, ideal for monitoring the electricity supply of heat pumps and EV chargers. A [USB to RS485 converter](https://shop.openenergymonitor.com/modbus-rs485-to-usb-adaptor/) is needed to read from the modbus output of the meter.The SDM120 meter comes in a number of different variants, be sure to order the version with a modbus output (SDM120-MBUS-MID).
+The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a/) and SDM230 are single phase electricity meter provides MID certified electricity monitoring up to 45A or 100A, ideal for monitoring the electricity supply of heat pumps and EV chargers. A [USB to RS485 converter](https://shop.openenergymonitor.com/modbus-rs485-to-usb-adaptor/) is needed to read from the modbus output of the meter.The SDM120 / SDM230 meter comes in a number of different variants, be sure to order the version with a modbus output (SDM120-MBUS-MID).
 
 1\. Connect up the USB to RS485 converter to the modbus output of the SDM120 meter and plug the converter into a USB port on either the emonPi or emonBase.
 
@@ -118,7 +118,7 @@ The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a
 
 **read_interval:** Interval between readings in seconds
 
-Example single SDM120 EmonHub (V2.3.4) configuration:
+Example single SDM120 / SDM230 EmonHub (V2.3.4+) configuration:
 
 ```text
 [[SDM120]]
@@ -139,7 +139,7 @@ Example single SDM120 EmonHub (V2.3.4) configuration:
                 precision = 2,3,1,1,3,3,3,3,3
 ```
 
-EmonHub (V2.3.4) can also possible to read data from multiple SDM120 modbus meters, each meter will need an unique modbus ID, this ID can be set using the push button menu on the SDM120. Example emonhub config multiple  SDM120 EmonHub configuration:
+EmonHub (V2.3.4+) can also possible to read data from multiple SDM120 modbus meters, each meter will need an unique modbus ID, this ID can be set using the push button menu on the SDM120. Example emonhub config multiple  SDM120 EmonHub configuration:
 
 ```text
 [[SDM120]]
@@ -165,6 +165,25 @@ EmonHub (V2.3.4) can also possible to read data from multiple SDM120 modbus mete
                 precision = 2,3,1,1,3,3,3,3,3
 ```
 
+Here's a cut down interfacer which just reads Power and Energy imported:
+
+```
+    [[SDM120]]
+        Type = EmonHubMinimalModbusInterfacer
+        [[[init_settings]]]
+            device = /dev/ttyUSB0
+            baud = 2400
+        [[[runtimesettings]]]
+            pubchannels = ToEmonCMS,
+            read_interval = 10
+            nodename = sdm120
+            [[[[meters]]]]
+                [[[[[electric]]]]]
+                    address = 1
+                    registers = 12, 72
+                    names = Power, Energy
+                    precision = 1, 3
+```
 3\. The SDM120 readings will appear on the Emoncms Inputs page within a few seconds and should look like this:
 
 ```{image} img/sdm120_emoncms.png
