@@ -33,9 +33,10 @@ class EmonHubSolaxHybridxInterfacer(EmonHubInterfacer):
         # This line will stop the default values printing to logfile at start-up
         # self._settings.update(self._defaults)
 
+        self.ip = ip
+
         # Interfacer specific settings
         self._Solax_settings = {
-            'ip': ip,
             'read_interval': 10.0,
             'nodename':'solax'
         }
@@ -116,7 +117,7 @@ class EmonHubSolaxHybridxInterfacer(EmonHubInterfacer):
                 c.realdata = []
                 c.nodeid = self._settings['nodename']
 
-                data = self.read_from_solax(self._settings['ip'])
+                data = self.read_from_solax(self.ip)
 
                 if data:
                     for key, value in data.items():
