@@ -35,6 +35,7 @@ class EmonHubSolaxHybridxInterfacer(EmonHubInterfacer):
 
         # Interfacer specific settings
         self._Solax_settings = {
+            'ip': ip,
             'read_interval': 10.0,
             'nodename':'solax'
         }
