@@ -27,6 +27,7 @@ from xknx.core import ValueReader
     [[[init_settings]]]
         gateway_ip = 192.168.254.40
         port = 3691
+        local_ip = 192.168.254.1
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
