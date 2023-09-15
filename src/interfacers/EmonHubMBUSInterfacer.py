@@ -198,6 +198,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x2c: (10, "Power", "W"),
             0x2d: (100, "Power", "W"),       
             0x2e: (1000, "Power", "W"),
+            
+            0x38: (0.000001, "FlowRate", "m3/h"), # mm3/h
+            0x39: (0.00001, "FlowRate", "m3/h"), # mm3/h
+            0x3a: (0.0001, "FlowRate", "m3/h"), # mm3/h
             0x3b: (0.001, "FlowRate", "m3/h"), # mm3/h
             0x3c: (0.01, "FlowRate", "m3/h"), # mm3/h
             0x3d: (0.1, "FlowRate", "m3/h"), # mm3/h
