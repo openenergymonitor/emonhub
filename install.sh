@@ -138,7 +138,7 @@ if [ "$user" != "pi" ]; then
     if [ ! -d /lib/systemd/system/emonhub.service.d ]; then
         sudo mkdir /lib/systemd/system/emonhub.service.d
     fi
-    echo $'[Service]\nUser='$user'\nEnvironment="USER='$user'"' > emonhub.service.conf
+    echo $'[Service]\nUser='$user$'\nEnvironment="USER='$user'"' > emonhub.service.conf
     sudo mv emonhub.service.conf /lib/systemd/system/emonhub.service.d/emonhub.conf
 fi
 sudo systemctl daemon-reload
