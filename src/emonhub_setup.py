@@ -23,6 +23,7 @@ dictionary with the following keys:
 
         The hub settings are:
         'loglevel': the logging level
+        'relaod_interval': the interval between checking the settings file in seconds
 
         interfacers are dictionaries with the following keys:
         'Type': class name
@@ -77,6 +78,7 @@ class EmonHubFileSetup(EmonHubSetup):
         # Initialize update timestamp
         self._settings_update_timestamp = 0
         self._retry_time_interval = 5
+        self._reload_interval = 1
 
         self.retry_msg = " Retry in " + str(self._retry_time_interval) + " seconds"
 
@@ -102,10 +104,14 @@ class EmonHubFileSetup(EmonHubSetup):
         Update attribute settings and return True if modified.
 
         """
+        # If there is a setting to change the reload interval use it
+        if self.settings is not None:
+            if 'reload_interval' in self.settings['hub']:
+                self._reload_interval = int(self.settings['hub']['reload_interval'])
 
-        # Check settings only once per second (could be extended if processing power is scarce)
+        # Check settings only once per second or at the relaod_interval in the settings
         now = time.time()
-        if now - self._settings_update_timestamp < 1:
+        if now - self._settings_update_timestamp <  self._reload_interval:
             return
         # Update timestamp
         self._settings_update_timestamp = now
