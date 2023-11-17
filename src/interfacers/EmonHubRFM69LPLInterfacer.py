@@ -10,7 +10,7 @@ Read RFM69 radio data (LowPowerLabs format)
 """
 class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, nodeid, networkID):
+    def __init__(self, name, nodeid = 5, networkID = 210, interruptPin = 22, resetPin = None, selPin = 26):
         """Initialize Interfacer
 
         nodeid (integer): radio nodeid 1-1023
@@ -41,14 +41,24 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         
         node_id = int(nodeid)
         network_id = int(networkID)
+        interruptPin = int(interruptPin)
+        selPin = int(selPin)
+        
+        if resetPin != None and resetPin != 'None':
+            resetPin = int(resetPin)
+        else:
+            resetPin = None
         
         self._log.info("Creating RFM69 LowPowerLabs interfacer")
-        self._log.info("node_id = "+str(node_id))
-        self._log.info("network_id = "+str(network_id))  
-            
+        self._log.info("RFM69 node_id = "+str(node_id))
+        self._log.info("RFM69 network_id = "+str(network_id))  
+        self._log.info("RFM69 interruptPin = "+str(interruptPin))
+        self._log.info("RFM69 resetPin = "+str(resetPin))
+        self._log.info("RFM69 selPin = "+str(selPin))
+        
         self._log.info("Starting radio setup")
         
-        board = {'isHighPower': False, 'interruptPin': 22, 'resetPin': None, 'selPin':26, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
+        board = {'isHighPower': False, 'interruptPin': interruptPin, 'resetPin': resetPin, 'selPin':selPin, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
         self.radio = Radio(43, node_id, network_id, verbose=False, **board)
         
         if not self.radio.init_success:
