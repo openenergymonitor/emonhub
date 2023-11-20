@@ -88,7 +88,7 @@ else
 fi
 
 if [ ! -f /etc/emonhub/emonhub.conf ]; then
-    sudo cp $script_dir/conf/emonpi.default.emonhub.conf /etc/emonhub/emonhub.conf
+    sudo cp $script_dir/conf/emonpi2.default.emonhub.conf /etc/emonhub/emonhub.conf
     echo "No existing emonhub.conf configuration file found, installing default"
     
     # requires write permission for configuration from emoncms:config module
