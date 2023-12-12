@@ -52,7 +52,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         # Add any MQTT specific settings
         self._mqtt_settings = {
             # emonhub/rx/10/values format - default emoncms nodes module
-            'node_format_enable': 1,
+            'node_format_enable': 0,
             'node_format_basetopic': 'emonhub/',
 
             # nodes/emontx/power1 format
@@ -119,6 +119,17 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         # no time is transmitted to the subscribing clients
 
         # self.buffer.storeItem(f)
+
+    def read(self):
+        if not self._connected:
+            self._log.info("Connecting to MQTT Server")
+            try:
+                self._mqttc.username_pw_set(self.init_settings['mqtt_user'], self.init_settings['mqtt_passwd'])
+                self._mqttc.connect(self.init_settings['mqtt_host'], int(self.init_settings['mqtt_port']), 60)
+            except Exception:
+                self._log.info("Could not connect...")
+                time.sleep(1.0)  # FIXME why sleep? we're just about to return True
+
 
 
     def _process_post(self, databuffer):
@@ -242,8 +253,17 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.info("connection status: %s", connack_string[rc])
             self._connected = True
             # Subscribe to MQTT topics
-            self._mqttc.subscribe(str(self._settings["node_format_basetopic"]) + "tx/#")
-
+            if len(self._settings["pubchannels"]) and not len(self._settings["subchannels"]):
+                if int(self._settings["nodevar_format_enable"]) == 1:
+                    self._log.info("subscribe "+str(self._settings["nodevar_format_basetopic"]))
+                    self._mqttc.subscribe(str(self._settings["nodevar_format_basetopic"]))
+                if int(self._settings["node_format_enable"]) == 1:
+                    self._log.info("subscribe "+str(self._settings["node_format_basetopic"]))
+                    self._mqttc.subscribe(str(self._settings["node_format_basetopic"]))
+                if int(self._settings["node_JSON_enable"]) == 1:
+                    self._log.info("subscribe "+str(self._settings["node_JSON_enable"]))
+                    self._mqttc.subscribe(str(self._settings["node_JSON_basetopic"]))
+                         
         self._log.debug("CONACK => Return code: %d", rc)
 
     def on_disconnect(self, client, userdata, rc):
@@ -256,33 +276,72 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
     def on_message(self, client, userdata, msg):
         topic_parts = msg.topic.split("/")
-        
-        if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
-            if topic_parts[1] == "tx":
-                if topic_parts[3] == "values":
-                    nodeid = int(topic_parts[2])
-                    
-                    payload = msg.payload,decode()
-                    realdata = payload.split(",")
-                    self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
 
+        self._log.debug("Received topic:"+str(msg.topic))
+        self._log.debug("Received payload:"+str(msg.payload.decode()))
+          
+        rxc = False
+    
+        # General MQTT format: emon/emonpi/power1 ... 100
+        if int(self._settings["nodevar_format_enable"]) == 1:
+            # if topic_parts[0] == self._settings["nodevar_format_basetopic"][:-1]:
+                nodeid = topic_parts[1]
+                variable_name = "_".join(topic_parts[2:])
+                try:
+                    value = float(msg.payload.decode())
+                    realdata = [value]
                     rxc = Cargo.new_cargo(realdata=realdata)
-                    rxc.nodeid = nodeid
+                    rxc.nodeid = nodeid       
+                    rxc.names = [variable_name]
 
-                    if rxc:
-                        # rxc = self._process_tx(rxc)
-                        if rxc:
-                            for channel in self._settings["pubchannels"]:
-                            
-                                # Initialize channel if needed
-                                if not channel in self._pub_channels:
-                                    self._pub_channels[channel] = []
-                                    
-                                # Add cargo item to channel
-                                self._pub_channels[channel].append(rxc)
-                                
-                                self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
-                                
+                except Exception:
+                    self._log.error("Payload format error")
+            
+        # Emoncms nodes module format: emon/tx/10/values ... 100,200,300
+        if int(self._settings["node_format_enable"]) == 1:
+            # if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
+                if len(topic_parts)==4 and topic_parts[1] == "tx" and topic_parts[3] == "values":
+                    nodeid = topic_parts[2]
+                    payload = msg.payload.decode()
+                    realdata = payload.split(",")
+                    try:
+                        for i in range(0,len(realdata)):
+                            realdata[i] = float(realdata[i])
+                        
+                        rxc = Cargo.new_cargo(realdata=realdata)
+                        rxc.nodeid = nodeid
+                    except Exception:
+                        self._log.error("Payload format error")        
+                
+        # JSON format: zigbeemqtt/temp1 {"battery":100,"humidity":80,"temperature":22,"voltage":3100}
+        if int(self._settings["node_JSON_enable"]) == 1:
+            # if topic_parts[0] == self._settings["node_JSON_basetopic"][:-1]:
+                nodeid = topic_parts[1]
+                json_string = msg.payload.decode()
+                try:
+                    json_data = json.loads(json_string)
+                    names = []
+                    values = []
+                    for key in json_data:
+                        names.append(key)
+                        values.append(json_data[key])
+                    rxc = Cargo.new_cargo(realdata=values)
+                    rxc.nodeid = nodeid   
+                    rxc.names = names
+                except Exception:     
+                    self._log.error("Payload JSON format error")                       
+        if rxc:
+            for channel in self._settings["pubchannels"]:
+            
+                # Initialize channel if needed
+                if not channel in self._pub_channels:
+                    self._pub_channels[channel] = []
+                    
+                # Add cargo item to channel
+                self._pub_channels[channel].append(rxc)
+                
+                self._log.debug(str(rxc.uri) + " Sent to channel' : " + str(channel))
+            
 
     def set(self, **kwargs):
         super().set(**kwargs)
