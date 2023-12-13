@@ -565,7 +565,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         result = self.request_data_sdm120(address,[1,7,11,23])
                         self.add_result_to_cargo(meter,c,result)
                     elif meter_type=="kamstrup403":
-                        result = self.request_data(address,[1,4,7,8,9,10,11,12,14])
+                        result = self.request_data(address,[1,10,11,12,13,14,15,16,19,26,27])
                         self.add_result_to_cargo(meter,c,result)
                         # ------------------------------------------------------
                             
