@@ -33,7 +33,7 @@ MBUS interfacer for use in development
 
 class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device="/dev/ttyUSB0", baud=2400, use_meterbus_lib=False):
+    def __init__(self, name, device="/dev/ttyUSB0", baud=2400, use_meterbus_lib=True):
         """Initialize Interfacer
 
         """
@@ -58,23 +58,50 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
         # Only load module if it is installed
         try:
-            self._log.debug("Connecting to MBUS serial: " + device + " " + str(baud))
-            self.ser = serial.Serial(device, baud, 8, 'E', 1, 0.5)
+            # If we need a socket connection, use meterbus_lib
+            # pip3 install pyMeterBus
+            if (device.index("socket://")>=0):
+                self._log.info("Connecting using meterbus_lib:" + device)
+                self.ser=serial.serial_for_url(device, str(baud), 8, 'E', 1, timeout=1)
+                self.use_meterbus_lib = True
+                if use_meterbus_lib:
+                    try:
+                        self._log.info("importing mertbus_lib")
+                        import meterbus
+                        self.meterbus = meterbus
+                        self.use_meterbus_lib = True
+                    except ModuleNotFoundError as err:
+                        self._log.error(err)
+                        self.use_meterbus_lib = False
+            else:
+                self._log.info("Connecting to MBUS serial: " + device + " " + str(baud))
+                self.ser = serial.Serial(device, str(baud), 8, 'E', 1, timeout=1)
+
+
+            if self.ping_address(self.ser, 1, 3):
+                self._log.info("ok ping")
+            else:
+                print("no reply")
+
         except ModuleNotFoundError as err:
             self._log.error(err)
             self.ser = False
             
-        # If use_meterbus_lib is true, try to load module
-        # pip3 install pyMeterBus
-        self.use_meterbus_lib = False
-        if use_meterbus_lib:
+        
+
+    def ping_address(self, ser, address, retries=5, read_echo=False):
+        for i in range(0, retries + 1):
+            self.meterbus.send_ping_frame(ser, address, read_echo)
             try:
-                from pyMeterBus import meterbus
-                self.meterbus = meterbus
-                self.use_meterbus_lib = True
-            except ModuleNotFoundError as err:
-                self._log.error(err)
-                self.use_meterbus_lib = False
+                frame = self.meterbus.load(self.meterbus.recv_frame(ser, 1))
+                if isinstance(frame, self.meterbus.TelegramACK):
+                    return True
+            except self.meterbus.MBusFrameDecodeError as e:
+                pass
+
+            time.sleep(0.5)
+
+        return False
 
     def mbus_serial_write(self,data):
         try:
@@ -391,22 +418,30 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         return result
 
     def parse_frame_meterbus_lib(self,data,records):
+        self._log.info("parse_frame_meterbus_lib");
         telegram = self.meterbus.load(data)
         meterbus_obj = json.loads(telegram.to_JSON())
         
         result = {}
+        idx = 0;
         for record in meterbus_obj['body']['records']:
             if type(record['value'])==int or type(record['value'])==float:
                 name = record['type'].replace('VIFUnit.','').replace('VIFUnitExt.','').lower()
+                if name in result:
+                    name = name + str(idx)
+
                 value = record['value']
                 unit = record['unit'].replace('MeasureUnit.','')
                 result[name] = [value, unit]
-            
+            idx = idx+1
         return result
 
     def request_data(self, address, records):
         for i in range(0,2):
-            self.mbus_short_frame(address, 0x5b)
+            if self.use_meterbus_lib:
+                self.meterbus.send_request_frame(self.ser, address)
+            else:
+                self.mbus_short_frame(address, 0x5b)
             # time.sleep(1.0)
             result = self.read_data_frame(records)
             if result!=None:
@@ -516,33 +551,44 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 
                 if not self.ser:
                     try:
-                        self._log.debug("Connecting to MBUS serial: " + self.device + " " + str(self.baud))
-                        self.ser = serial.Serial(self.device, self.baud, 8, 'E', 1, 0.5)
+                        if use_meterbus_lib:
+                            self._log.info("Connecting using meterbus_lib:" + device)
+                            self.ser=serial.serial_for_url(device, str(baud), 8, 'E', 1, timeout=1)
+                        else:
+                            self._log.info("Connecting to MBUS serial: " + device + " " + str(baud))
+                            self.ser = serial.Serial(device, str(baud), 8, 'E', 1, timeout=1)
                     except Exception:
                         self._log.error("Could not connect to MBUS serial")
                         self.ser = False
-                        
-                c = Cargo.new_cargo()
-                c.names = []
-                c.realdata = []
-                c.units = []
-                c.nodeid = self._settings['nodename']
                 
+                res = []
+
                 # Support for multiple MBUS meters on a single bus
                 for meter in self._settings['meters']:
+                    c = Cargo.new_cargo()
+                    c.names = []
+                    c.realdata = []
+                    c.units = []
                     
                     address = self._settings['meters'][meter]['address']
                     meter_type = self._settings['meters'][meter]['type']
-                
+                    if not self._settings['nodename']:
+                        c.nodeid = meter
+                    else:
+                        c.nodeid = self._settings['nodename']
+
+                    meterPrefix = self._settings['meters'][meter]['name'];
+                    res.append(c)
+        
                     # Most mbus meters use standard request, page 0 or default, all records
                     if meter_type=="standard":
                         result = self.request_data(address,[])
-                        self.add_result_to_cargo(meter,c,result)
+                        self.add_result_to_cargo(meterPrefix,c,result)
 
                     # Qalcosonic E3
                     if meter_type=="qalcosonic_e3":
                         result = self.request_data(address,[4,5,6,7,8,9,10,11,12,13,14,15])
-                        self.add_result_to_cargo(meter,c,result) 
+                        self.add_result_to_cargo(meterPrefix,c,result) 
 
                     # ------------------------------------------------------
                     # Sontex Multical 531
@@ -550,29 +596,26 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         # p1
                         self.set_page(address, 1)
                         result = self.request_data(address,[4,5])
-                        self.add_result_to_cargo(meter,c,result)
+                        self.add_result_to_cargo(meterPrefix,c,result)
                         # p3
                         self.set_page(address, 3)                     
                         result = self.request_data(address,[1,2,3,4])
-                        self.add_result_to_cargo(meter,c,result)                            
+                        self.add_result_to_cargo(meterPrefix,c,result)                            
                             
                     # SDM120 special request command
                     elif meter_type=="sdm120":
                         # 1. Get energy data
                         result = self.request_data(address,[1])
-                        self.add_result_to_cargo(meter,c,result)                       
+                        self.add_result_to_cargo(meterPrefix,c,result)                       
                         # 2. Get instantaneous data
                         result = self.request_data_sdm120(address,[1,7,11,23])
-                        self.add_result_to_cargo(meter,c,result)
+                        self.add_result_to_cargo(meterPrefix,c,result)
                     elif meter_type=="kamstrup403":
                         result = self.request_data(address,[1,4,7,8,9,10,11,12,14])
-                        self.add_result_to_cargo(meter,c,result)
+                        self.add_result_to_cargo(meterPrefix,c,result)
                         # ------------------------------------------------------
-                            
 
-                            
-                if len(c.realdata) > 0:
-                    return c
+                return res
 
         else:
             self.next_interval = True
@@ -610,12 +653,15 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 for meter in setting:
                     # default
                     address = 1
+                    name=""
                     meter_type = "standard"
                     records = []
                     
                     # address
                     if 'address' in setting[meter]:
                         address = int(setting[meter]['address'])
+                    if 'name' in setting[meter]:
+                        name = setting[meter]['name']
                     # type e.g sdm 
                     if 'type' in setting[meter]:
                         meter_type = str(setting[meter]['type'])
@@ -623,6 +669,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     self._settings['meters'][meter] = {
                         'address':address,
                         'type':meter_type,
+                        'name':name
                     }
                 continue
             else:
