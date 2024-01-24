@@ -41,6 +41,11 @@ In most cases, EmonHub will automatically update to use the latest configuration
 ### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
 loglevel = DEBUG
 
+### Autoconf is used to automatically add node decoders
+### If you have unknown nodes appearing disable this feature
+### Make sure to restart emonHub after changing this
+autoconf = 1
+
 #######################################################################
 #######################       Interfacers       #######################
 #######################################################################
@@ -75,8 +80,14 @@ The hub configuration should be self explanatory. Emonhub log can be viewed in t
 ```text
 ### loglevel must be one of DEBUG, INFO, WARNING, ERROR, and CRITICAL
 loglevel = DEBUG
+
 ### Uncomment this to also send to syslog
 # use_syslog = yes
+
+### Autoconf is used to automatically add node decoders
+### If you have unknown nodes appearing disable this feature
+### Make sure to restart emonHub after changing this
+autoconf = 1
 ```
 
 ---
@@ -130,6 +141,18 @@ Here's an example of what this section looks like from the default emonpi `emonh
 
 ```
 
+```{tip}
+Autoconf is enabled as standard and is used to automatically add node decoders from a known list of common packet lengths and nodeid's. 
+
+If you have unknown nodes appearing **Turn off autoconf** at the top of emonhub.conf (set autoconf = 0) and **restart emonHub**. Remove the unknown nodes, keep only the nodes that you wish to keep.
+
+Unknown nodes can also be cleared in emoncms with the following URL:
+
+    https://emoncms.org/device/clean.json
+    http://emonpi.local/device/clean.json
+       
+```
+
 ### NodeID
 
 ```text
@@ -147,22 +170,6 @@ nodename =
 A text string, for your benefit in identifying each node. *This field is optional.*
 
 MQTT: The nodename can be used with the MQTT interfacer to send topics of the form nodes/nodename/variablename.
-
-### firmware
-
-```text
-firmware =
-```
-
-A text string specifying the sketch running on the node. (At present, this is for information only. At some future time, it might be used to auto-configure emonHub and/or the sketch.) *This field is optional.*
-
-### hardware
-
-```text
-hardware =
-```
-
-Indicates the host environment for human reference. **This field is optional.**
 
 ### rx
 
@@ -337,8 +344,6 @@ Copied here for reference:
 ```text
 [[5]]
     nodename = emonPi
-    firmware = emonPi_RFM69CW_RF12Demo_DiscreteSampling.ino
-    hardware = emonpi
     [[[rx]]]
         names = power1,power2,power1_plus_power2,Vrms,T1,T2,T3,T4,T5,T6,pulseCount
         datacodes = h, h, h, h, h, h, h, h, h, h, L
@@ -357,8 +362,6 @@ Copied here for reference:
 ```text
 [[8]]
     nodename = emonTx_3
-    firmware =V2_3_emonTxV3_4_DiscreteSampling
-    hardware = emonTx_(NodeID_DIP_Switch1:OFF)
     [[[rx]]]
         names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
         datacodes = h,h,h,h,h,h,h,h,h,h,h,L
@@ -375,8 +378,6 @@ Can be on either nodeid 10 or 9
 ```text
 [[10]]
     nodename = emonTx_1
-    firmware =V1_6_emonTxV3_4_DiscreteSampling
-    hardware = emonTx_(NodeID_DIP_Switch1:OFF)
     [[[rx]]]
         names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
         datacode = h
@@ -389,8 +390,6 @@ Can be on either nodeid 10 or 9
 ```text
 [[10]]
     nodename = emonTx_1
-    firmware =V1_6_emonTxV3_4_DiscreteSampling
-    hardware = emonTx_(NodeID_DIP_Switch1:OFF)
     [[[rx]]]
         names = power1, power2, power3, power4, Vrms, temp
         datacode = h
@@ -407,8 +406,6 @@ Standard nodeid's: 23, 24, 25 & 26 depending on DIP switch positions:
 ```text
 [[23]]
     nodename = emonTH_5
-    firmware = V2.x_emonTH_DHT22_DS18B20_RFM69CW_Pulse
-    hardware = emonTH_(Node_ID_Switch_DIP1:OFF_DIP2:OFF)
     [[[rx]]]
         names = temperature, external temperature, humidity, battery, pulseCount
         datacodes = h,h,h,h,L
@@ -425,8 +422,6 @@ Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
 ```text
 [[19]]
     nodename = emonTH_1
-    firmware = emonTH_DHT22_DS18B20_RFM69CW
-    hardware = emonTH_(Node_ID_Switch_DIP1:OFF_DIP2:OFF)
     [[[rx]]]
         names = temperature, external temperature, humidity, battery
         datacode = h
@@ -441,8 +436,6 @@ EmonTX Shield [Firmware location](https://github.com/openenergymonitor/emontx-sh
 ```text
 [[6]]
     nodename = emonTxShield
-    firmware =emonTxShield
-    hardware = emonTxShield
     [[[rx]]]
         names = power1, power2, power3, power4, Vrms
         datacode = h
