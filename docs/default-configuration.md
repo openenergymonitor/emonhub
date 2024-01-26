@@ -12,54 +12,136 @@ The previous default emonhub configuration file installed on emonPi systems can 
 
 The default interfacers employed are
 
-* RFM data decoding
-* MQTT
-* HTTP to emoncms.org
+* **EmonPi2:** *EmonHubOEMInterfacer* - serial data over ttyAMA0, e.g emonPi CT data
+* **USB0:** *EmonHubOEMInterfacer* - serial data over ttyUSB0, e.g emonTx4 connected via USB
+* **SPI:** *EmonHubRFM69LPLInterfacer* - emonPi2 or rfm69spi radio receiver
+* **DS18B20** *EmonHubDS18B20Interfacer* - reads temperature data from connected DS18B20 temperature sensors on the emonPi2
+* **MQTT:** *EmonHubRFM69LPLInterfacer* - publish data from above via MQTT
+* **emoncmsorg:** *EmonHubEmoncmsHTTPInterfacer* - publish data from above via HTTP
 
-### [[RFM2Pi]]
+### [[EmonPi2]]
 
-The `[[RFM2Pi]]` interfacer section contains the settings to read from RFM69Pi / emonPi boards via GPIO internal serial port `/dev/ttyAMA0`. The default serial baud on all emonPi and RFM69Pi is `38400`. Older RFM12Pi boards using `9600` baud.
+The `[[EmonPi2]]` interfacer section contains the settings to read data via GPIO internal serial port `/dev/ttyAMA0` from an attached emonPi v1 or v2. **Note that serial baud rated differ for different hardware:**
 
-The frequency and network group must match the hardware and other nodes on the network.
-
-The `calibration` config is used to set the calibration of the emonPi when using USA AC-AC adapters 110V. Set `calibration = 110V` when using USA AC-AC adapter.
+- RFM12Pi: 9600
+- RFM69Pi: 38400
+- emonPi v1: 38400
+- emonPi v2: 115200
 
 ```text
-[[RFM2Pi]]
-    Type = EmonHubJeeInterfacer
+[[EmonPi2]]
+    Type = EmonHubOEMInterfacer
     [[[init_settings]]]
         com_port = /dev/ttyAMA0
-        com_baud = 38400                        # 9600 for old RFM12Pi
+        com_baud = 38400
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         subchannels = ToRFM12,
+```
 
-        group = 210
-        frequency = 433
-        baseid = 5                              # emonPi / emonBase nodeID
-        quiet = true                            # Report incomplete RF packets (not implemented on emonPi)
-        calibration = 230V                      # (UK/EU: 230V, US: 110V)
-        # interval =  0                         # Interval to transmit time to emonGLCD (seconds)
+### [[USB0]]
+
+This interfacer is present to enable reading of data from an EmonTx4 connected to the emonPi/emonBase via USB. This interfacer can be left in place even if no devices are connected via USB serial.
+
+```text
+[[USB0]]
+    Type = EmonHubOEMInterfacer
+    [[[init_settings]]]
+        com_port = /dev/ttyUSB0
+        com_baud = 115200
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        subchannels = ToRFM12,
+        nodename = emonTx4
+```
+
+### [[SPI]]
+
+This interfacer is used to read from a SPI connected RFM69 radio module. This may be on the emonPi2 board or on the rfm69spi board.
+
+**rfm69spi configuration:**
+
+```test
+[[SPI]]
+    Type = EmonHubRFM69LPLInterfacer
+    [[[init_settings]]]
+        nodeid = 5
+        networkID = 210
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+```
+
+**emonPi2 configuration (resetPin = 24 and selPin = 16)**
+
+```test
+[[SPI]]
+    Type = EmonHubRFM69LPLInterfacer
+    [[[init_settings]]]
+        nodeid = 5
+        networkID = 210
+        resetPin = 24
+        selPin = 16
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+```
+
+### [[DS18B20]]
+
+This interfacer is used to read from DS18B20 temperature sensors directly and is used on the emonPi2 to read from temperature sensors plugged into the temperature input terminals on the side of the unit. 
+
+The temperature sensor data pin is connected to RaspberryPi GPIO17 and this pin is configured in */boot/config.txt.*
+
+```test
+[[DS18B20]]
+    Type = EmonHubDS18B20Interfacer
+    [[[init_settings]]]
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        nodename = sensors
+        # ids = 28-000008e2db06, 28-000009770529, 28-0000096a49b4
+        # names = ambient, cyl_bot, cyl_top
 ```
 
 ### [[MQTT]]
 
-Emonhub supports publishing to MQTT topics through the EmonHubMqttInterfacer, defined in the interfacers section of emonhub.conf.
-
-There are two formats that can be used for publishing node data to MQTT:
-
-#### **1. Node only format**
-
-(default base topic is `emonhub`)
+Emonhub supports publishing to MQTT topics using the EmonHubMqttInterfacer. The default configuration looks like this:
 
 ```text
-    topic: basetopic/rx/10/values
-    payload: 100,200,300
+[[MQTT]]
+    Type = EmonHubMqttInterfacer
+    [[[init_settings]]]
+        mqtt_host = 127.0.0.1
+        mqtt_port = 1883
+        mqtt_user = emonpi
+        mqtt_passwd = emonpimqtt2016
+    
+    [[[runtimesettings]]]
+        pubchannels = ToRFM12,
+        subchannels = ToEmonCMS,
+        
+        # emonhub/rx/10/values format
+        # Use with emoncms Nodes module
+        node_format_enable = 0
+        node_format_basetopic = emonhub/
+        
+        # emon/emontx/power1 format - use with Emoncms MQTT input
+        # http://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md
+        nodevar_format_enable = 1
+        nodevar_format_basetopic = emon/
+        
+        # Single JSON payload published  - use with Emoncms MQTT
+        node_JSON_enable = 0
+        node_JSON_basetopic = emon/
 ```
 
-The 'node only format' is used with the emoncms Nodes Module (now deprecated on Emoncms V9+) and the emonPiLCD python service.
+There are three different MQTT topic message formats to choose from:
 
-#### **2. Node variable format**
+- **Node variable format - enabled by default**
+- Node only format - disabled by default
+- JSON format - disabled by default
+
+#### **1. Node variable format (standard)**
 
 (default base topic is `emon`)
 
@@ -68,99 +150,67 @@ The 'node only format' is used with the emoncms Nodes Module (now deprecated on 
     payload: 100
 ```
 
-The 'Node variable format' is the current default format from Emoncms V9. It's a more generic MQTT publishing format that can more easily be used by applications such as NodeRED and OpenHab. This format can also be used with the emoncms `phpmqtt_input.php` script in conjunction with the emoncms inputs module. See [User Guide > Technical MQTT](https://guide.openenergymonitor.org/technical/mqtt/).
+The 'Node variable format' is the current default format. It's a more generic MQTT publishing format that can more easily be used by external applications such as NodeRED, OpenHab and HomeAssistant. This format is also used with the emoncms `emoncms_mqtt.service` to bring data into emoncms.
 
-#### **3. JSON format**
+#### **2. Node only format (disabled by default)**
 
-##### Defaults
+(default base topic is `emonhub`)
 
-```python
-'node_format_enable': 1,
-'node_format_basetopic': 'emonhub/',
-'nodevar_format_enable': 0,
-'nodevar_format_basetopic': "nodes/",
-'node_JSON_enable': 0,
-'node_JSON_basetopic': "emon/"
+```text
+    topic: basetopic/rx/10/values
+    payload: 100,200,300
 ```
 
-Emoncms default base topic that it listens for is `emon/`.
+
+#### **3. JSON format (disabled by default)**
+
+This forat exports the data as a single JSOn string with key:value pairs. The timestamp is automatically added and used for the input time to emoncms. The RSSI is added if available (RF in use).
+
+(default base topic is `emon`)
 
 ```text
 topic: basetopic/<noeid>
 payload: {"key1":value1, "key2":value2, .... "time":<timestamp>, "rssi":<rssi>}
 ```
 
-This forat exports the data as a single JSOn string with key:value pairs. The timestamp is automatically added and used for the input time to emoncms. The RSSI is added if available (RF in use).
-
-### Default `[MQTT]` config
-
-Note - the trailing `/` is required on the topic definition.
-
-```text
-[[MQTT]]
-
-    Type = EmonHubMqttInterfacer
-    [[[init_settings]]]
-        mqtt_host = 127.0.0.1
-        mqtt_port = 1883
-        mqtt_user = emonpi
-        mqtt_passwd = emonpimqtt2016
-
-    [[[runtimesettings]]]
-        # pubchannels = ToRFM12,
-        subchannels = ToEmonCMS,
-
-        # emonhub/rx/10/values format
-        # Use with emoncms Nodes module
-        node_format_enable = 0
-        node_format_basetopic = emonhub/
-
-        # emon/emontx/power1 format - use with Emoncms MQTT input
-        # http://github.com/emoncms/emoncms/blob/master/docs/RaspberryPi/MQTT.md
-        nodevar_format_enable = 1
-        nodevar_format_basetopic = emon/
-
-        # Single JSON payload published  - use with Emoncms MQTT
-        node_JSON_enable = 0
-        node_JSON_basetopic = emon/
-```
-
-To enable one of the formats set the `enable` flag to `1`.  More than one format can be used simultaneously.
-
 ### [[emoncmsorg]]
 
-The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org (or any instance of emoncms). If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page. See [Setup Guide > Setup > Remote logging](https://guide.openenergymonitor.org/setup/remote).
+The EmonHubEmoncmsHTTPInterfacer configuration that is used for sending data to emoncms.org (or any instance of emoncms). If you wish to use emoncms.org the only change to make here is to replace the blank apikey with your write apikey from emoncms.org found on the user account page.
 
 ```text
-    [[emoncmsorg]]
-        Type = EmonHubEmoncmsHTTPInterfacer
-        [[[init_settings]]]
-        [[[runtimesettings]]]
-            pubchannels = ToRFM12,
-            subchannels = ToEmonCMS,
-            url = https://emoncms.org
-            apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-            senddata = 1
-            sendstatus = 1
+[[emoncmsorg]]
+    Type = EmonHubEmoncmsHTTPInterfacer
+    [[[init_settings]]]
+    [[[runtimesettings]]]
+        pubchannels = ToRFM12,
+        subchannels = ToEmonCMS,
+        url = https://emoncms.org
+        apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        senddata = 1     # Enable sending data to Emoncms.org
+        sendnames = 1    # Send full input names (compression will be automatically enabled)
+        interval = 30    # Bulk send interval to Emoncms.org in seconds
 ```
 
-`sendstatus` - It is possible to the EmonHubEmoncmsHTTPInterfacer to send a 'ping' to the destination emoncms that can be picked up by the myip module which will then list the source IP address. This can be useful for remote login to a home emonpi if port forwarding is enabled on your router.
+- `senddata`: Enable the sending of data.
+- `sendnames`: Send input names (this also automatically enables compression).
+- `interval`: Data upload interval in seconds. Increase this to reduce bandwidth, 30s is a minimum value to provide responsive data on the target server, to reduce bandwidth we would recommend using 300-900s.
 
-`senddata` - If you only want to send the ping request, and no data, to emoncms.org set this to 0
+**Posting to multiple emoncms servers**
 
 You can create more than one of these sections to send data to multiple emoncms instances. For example, if you wanted to send to an emoncms running at emoncms.example.com (or on a local LAN) you would add the following underneath the `emoncmsorg` section described above:
 
 ```text
-    [[emoncmsexample]]
-        Type = EmonHubEmoncmsHTTPInterfacer
-        [[[init_settings]]]
-        [[[runtimesettings]]]
-            pubchannels = ToRFM12,
-            subchannels = ToEmonCMS,
-            url = https://emoncms.example.com
-            apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
-            senddata = 1
-            sendstatus = 1
+[[emoncmsexample]]
+    Type = EmonHubEmoncmsHTTPInterfacer
+    [[[init_settings]]]
+    [[[runtimesettings]]]
+        pubchannels = ToRFM12,
+        subchannels = ToEmonCMS,
+        url = https://emoncms.example
+        apikey = xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+        senddata = 1     # Enable sending data to Emoncms.org
+        sendnames = 1    # Send full input names (compression will be automatically enabled)
+        interval = 30    # Bulk send interval to Emoncms.org in seconds
 ```
 
 This time, the API key will be the API key from your account at emoncms.example.com.
