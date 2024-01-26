@@ -52,7 +52,9 @@ class EmonHubInterfacer(threading.Thread):
                           'nodeoffset': '0',
                           'pubchannels': [],
                           'subchannels': [],
-                          'batchsize': '1'}
+                          'batchsize': '1',
+                          'nodelistonly': False
+                          }
 
         self.init_settings = {}
         self._settings = {}
@@ -287,7 +289,13 @@ class EmonHubInterfacer(threading.Thread):
                 if 'nodeids' in ehc.nodelist[node]:
                     del ehc.nodelist[node]['nodeids']
                 if 'datalength' in ehc.nodelist[node]:
-                    del ehc.nodelist[node]['datalength']                    
+                    del ehc.nodelist[node]['datalength']      
+                    
+                    
+        # If not in nodelist and pass through disabled return false
+        if node not in ehc.nodelist and self._settings['nodelistonly']:
+            self._log.warning("%d Discarded RX frame not in nodelist, node:%s, length:%s bytes", cargo.uri, node, len(rxc.realdata))
+            return False
             
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
@@ -628,6 +636,8 @@ class EmonHubInterfacer(threading.Thread):
                 setting = str(setting).lower() == "true"
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
                 setting = str(setting).lower() == "true"
+            elif key == 'nodelistonly' and str(setting).lower() in ['true', 'false','1','0']:
+                setting = str(setting).lower() == "true" or str(setting).lower() == "1"
             elif key == 'pubchannels':
                 pass
             elif key == 'subchannels':
