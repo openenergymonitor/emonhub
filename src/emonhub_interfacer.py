@@ -53,7 +53,8 @@ class EmonHubInterfacer(threading.Thread):
                           'pubchannels': [],
                           'subchannels': [],
                           'batchsize': '1',
-                          'nodelistonly': False
+                          'autoconf': False,
+                          'nodelistonly': True
                           }
 
         self.init_settings = {}
@@ -279,7 +280,13 @@ class EmonHubInterfacer(threading.Thread):
         #                       cargo.uri, rxc.realdata)
         #     return False
         
-        if eha.auto_conf_enabled and not node in ehc.nodelist:
+        # If global auto conf enabled overwrite local setting
+        # this is a work around for the pre-existing presence of the global setting
+        auto_conf_enabled = self._settings['autoconf']
+        if eha.auto_conf_enabled:
+            auto_conf_enabled = True
+        
+        if auto_conf_enabled and not node in ehc.nodelist:
             match = eha.match_from_available(rxc.nodeid,rxc.realdata)
             if match:
                 self._log.debug("Match found: "+str(match));
@@ -636,6 +643,8 @@ class EmonHubInterfacer(threading.Thread):
                 setting = str(setting).lower() == "true"
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
                 setting = str(setting).lower() == "true"
+            elif key == 'autoconf' and str(setting).lower() in ['true', 'false','1','0']:
+                setting = str(setting).lower() == "true" or str(setting).lower() == "1"
             elif key == 'nodelistonly' and str(setting).lower() in ['true', 'false','1','0']:
                 setting = str(setting).lower() == "true" or str(setting).lower() == "1"
             elif key == 'pubchannels':
