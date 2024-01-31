@@ -62,6 +62,9 @@ if [ "$emonSD_pi_env" = 1 ]; then
     echo "Disabling Bluetooth"
     sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
 
+    # Enable SPI
+    sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
+
     # We also need to stop the Bluetooth modem trying to use UART
     echo "Stop Bluetooth modem"
     sudo systemctl disable hciuart
