@@ -46,6 +46,11 @@ pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
+    boot_config=/boot/config.txt
+    if [ -f /boot/firmware/config.txt ]; then
+        boot_config=/boot/firmware/config.txt
+    fi
+
     echo "installing or updating raspberry pi related dependencies"
     
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
@@ -55,7 +60,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=miniuart-bt?
     echo "Disabling Bluetooth"
-    sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' /boot/config.txt
+    sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
 
     # We also need to stop the Bluetooth modem trying to use UART
     echo "Stop Bluetooth modem"
@@ -63,7 +68,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
 
     # Remove console from /boot/cmdline.txt
     echo "Remove console from /boot/cmdline.txt"
-    sudo sed -i "s/console=serial0,115200 //" /boot/cmdline.txt
+    sudo sed -i "s/console=serial0,115200 //" $boot_config
 
     # stop and disable serial service??
     echo "Stop and disable serial service"
