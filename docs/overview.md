@@ -57,7 +57,22 @@ Each Interfacer can have multiple channels defined and multiple interfacers can 
 
 emonHub is installed as standard on the emonSD image built using the EmonScripts install scripts.
 
-### Manual Install
+### Manual Install (standalone)
+
+Preparation:
+On a vanilla system, you will need to install git.
+```bash
+sudo apt install git
+```
+
+To fit in with the usual filesystem conventions, create an `openenergymonitor` folder. It is assumed the standard user `pi` is being used (adjust as necessary).
+
+```bash
+cd /opt
+sudo mkdir openenergymonitor
+sudo chown pi openenergymonitor/
+cd openenergymonitor/
+```
 
 Install emonHub:
 
@@ -74,7 +89,9 @@ To view the emonhub log via terminal on the emonpi or emonbase:
 journalctl -f -u emonhub
 ```
 
-If the MQTT Interfacer is to be used, Mosquitto needs to be installed.
+If the MQTT Interfacer is to be used, either Mosquitto needs to be installed locally or the configuration file needs to be edited to point to the MQTT Broker to be used.
+
+To install mosquitto locally;
 
 ```bash
 sudo apt-get update
