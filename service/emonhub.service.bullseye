@@ -1,0 +1,23 @@
+[Unit]
+Description=emonHub data multiplexer
+# The config file lives in /etc/emonhub/emonhub.conf
+# The log file lives in /var/log/emonhub/emonhub.log
+After= network.target
+
+[Service]
+Type=exec
+ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
+User=pi
+Environment='USER=pi'
+Environment='LOG_PATH=/var/log/emonhub'
+PermissionsStartOnly=true
+ExecStartPre=/bin/mkdir -p ${LOG_PATH}
+ExecStartPre=/bin/chown ${USER} ${LOG_PATH}
+
+Restart=always
+RestartSec=5
+
+SyslogIdentifier=emonhub
+
+[Install]
+WantedBy=multi-user.target
