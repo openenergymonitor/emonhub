@@ -55,6 +55,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         self.baud = baud
         
         self.debug_data_frame = False
+        
+        self.invalid_count = 0
 
         # Only load module if it is installed
         try:
@@ -471,7 +473,9 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                             
                     if bid == bid_end and val == 0x16:
                         time_elapsed = time.time()-start_time
-                        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))
+
+                        self.invalid_count += 1
+                        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms, count: %d" % (bid,time_elapsed*1000,self.invalid_count))
                                 
                         if valid: # Parse frame if still valid
                             if self.use_meterbus_lib:
@@ -486,8 +490,15 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             self._log.error("read_data_frame could not read from serial port")         
         # If we are here data response is corrupt
         time_elapsed = time.time()-start_time
-        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))       
+        self.invalid_count += 1
+        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms, count: %d" % (bid,time_elapsed*1000,self.invalid_count))
         # end of read_data_frame
+        
+        if self.invalid_count>=10:
+            # Reset invalid count
+            self.invalid_count = 0
+            self._log.debug("Invalid count = 10. Restarting MBUS serial connection on next read")
+            self.ser = False
 
     def add_result_to_cargo(self,meter,c,result):
         if result != None:
