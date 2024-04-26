@@ -262,9 +262,11 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
                 if topic_parts[3] == "values":
                     nodeid = int(topic_parts[2])
                     
-                    payload = msg.payload,decode()
+                    payload = msg.payload.decode()
                     realdata = payload.split(",")
-                    self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
+                    #self._log.debug("Nodeid: "+str(nodeid)+" values: "+msg.payload)
+                    self._log.debug("Nodeid: %s values: %s", nodeid, msg.payload)
+
 
                     rxc = Cargo.new_cargo(realdata=realdata)
                     rxc.nodeid = nodeid
