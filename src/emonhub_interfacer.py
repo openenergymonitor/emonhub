@@ -90,6 +90,22 @@ class EmonHubInterfacer(threading.Thread):
         self.missed = {}
         self.rx_msg = {}
 
+    def processRxc(self, rxc):
+        if rxc:
+            rxc = self._process_rx(rxc)
+            if rxc:
+                for channel in self._settings["pubchannels"]:
+                    self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
+
+                    # Initialise channel if needed
+                    if channel not in self._pub_channels:
+                        self._pub_channels[channel] = []
+
+                    # Add cargo item to channel
+                    self._pub_channels[channel].append(rxc)
+
+                    self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
+
     @log_exceptions_from_class_method
     def run(self):
         """
@@ -102,22 +118,16 @@ class EmonHubInterfacer(threading.Thread):
             # Only read if there is a pub channel defined for the interfacer
             if len(self._settings["pubchannels"]):
                 # Read the input and process data if available
-                rxc = self.read()
-                if rxc:
-                    rxc = self._process_rx(rxc)
-                    if rxc:
-                        for channel in self._settings["pubchannels"]:
-                            self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
-
-                            # Initialise channel if needed
-                            if channel not in self._pub_channels:
-                                self._pub_channels[channel] = []
-
-                            # Add cargo item to channel
-                            self._pub_channels[channel].append(rxc)
-
-                            self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
-
+                result = self.read()
+                if isinstance(result, list):
+                    for rxc in result:
+                        self.processRxc(rxc)
+                elif isinstance(result, dict):
+                    for rxc in result:
+                        self.processRxc(result[rxc])
+                else:
+                    self.processRxc(result)
+                
             # Subscriber channels
             for channel in self._settings["subchannels"]:
                 if channel in self._sub_channels:
