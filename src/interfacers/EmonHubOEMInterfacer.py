@@ -366,7 +366,7 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
             if t - self._interval_timestamp > interval:
                 self._interval_timestamp = t
                 now = datetime.datetime.now()
-                self._log.debug(self.name + " broadcasting time: %02d:%02d" % (now.hour, now.minute))
+                self._log.debug(self.name + " Broadcasting time: %02d:%02d" % (now.hour, now.minute))
                 self._ser.write(b"00,%02d,%02d,00,s" % (now.hour, now.minute))
 
     def _process_post(self, databuffer):
@@ -381,19 +381,22 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
 
     def send(self, cargo):
         f = cargo
-        cmd = "s"
+        cmd = "T"
 
         if self.getName() in f.encoded:
             data = f.encoded[self.getName()]
         else:
             data = f.realdata
 
-        payload = "T"
         for value in data:
             if not 0 <= int(value) <= 255:
-                self._log.warning(self.name + " discarding Tx packet: value  out of range (0..255) " + str(value))
+                self._log.error(self.name + " Discarding TX packet: value  out of range (0..255) " + str(value))
                 return
-            payload += str(int(value)) + ","
+            cmd += str(int(value)) + ","
+        cmd = cmd[:-1]  #remove trailing ","
 
-        self._log.debug(str(f.uri) + " sent TX packet: " + payload)
-        self._ser.write(payload.encode())
+        self._log.info(str(f.uri) + " Sending TX packet: " + cmd)
+        reply = self.send_cmd(cmd)
+        if reply:
+            self._log.debug(reply)
+
