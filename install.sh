@@ -17,7 +17,9 @@ if [ -z "$1" ]; then
     emonSD_pi_env=1
   fi
 else
-  emonSD_pi_env=$1
+  openenergymonitor_dir=$1
+  cd $openenergymonitor_dir/EmonScripts/update
+  source load_config.sh
   echo "emonSD_pi_env provided in arg = $emonSD_pi_env"
 fi
 
@@ -36,6 +38,8 @@ else
   user=$2
   echo "user provided as arg = $user"
 fi
+
+exit 0
 
 echo "installing or updating emonhub dependencies"
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev python3-spidev
