@@ -39,8 +39,6 @@ else
   echo "user provided as arg = $user"
 fi
 
-exit 0
-
 echo "installing or updating emonhub dependencies"
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev python3-spidev
 # FIXME paho-mqtt V2 has new API. stick to V1.x for now
