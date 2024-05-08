@@ -71,9 +71,14 @@ if [ "$emonSD_pi_env" = 1 ]; then
     echo "Stop Bluetooth modem"
     sudo systemctl disable hciuart
 
+    boot_cmdline=/boot/cmdline.txt
+    if [ -f /boot/firmware/cmdline.txt ]; then
+        boot_cmdline=/boot/firmware/cmdline.txt
+    fi
+
     # Remove console from /boot/cmdline.txt
     echo "Remove console from /boot/cmdline.txt"
-    sudo sed -i "s/console=serial0,115200 //" $boot_config
+    sudo sed -i "s/console=serial0,115200 //" $boot_cmdline
 
     # stop and disable serial service??
     echo "Stop and disable serial service"
