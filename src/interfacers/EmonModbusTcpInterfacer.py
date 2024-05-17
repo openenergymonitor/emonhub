@@ -168,7 +168,10 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     self._log.debug("reading register #: %s, qty #: %s, unit #: %s", register, qty, unitId)
 
                     try:
-                        self.rVal = self._con.read_holding_registers(register - 1, qty, unit=unitId)
+                        # According to the Modbus specification, input registers numbered, e.g., 1-16 are
+                        # transmitted as 0-15. If input registers must be read instead of holding registers,
+                        # change read_holding_registers to read_input_registers in the following line.
+                        self.rVal = self._con.read_holding_registers(register - 1, qty, slave=unitId)
                         assert self.rVal.function_code < 0x80
                     except Exception as e:
                         self._log.error("Connection failed on read of register: %s : %s", register, e)
@@ -179,7 +182,7 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     else:
                         #self._log.debug("register value: %s type= %s", self.rVal.registers, type(self.rVal.registers))
                         #f = f + self.rVal.registers
-                        decoder = self.BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=self.Endian.Big, wordorder=self.Endian.Big)
+                        decoder = self.BinaryPayloadDecoder.fromRegisters(self.rVal.registers, byteorder=self.Endian.BIG, wordorder=self.Endian.BIG)
                         if datacode == 'h':
                             rValD = decoder.decode_16bit_int()
                         elif datacode == 'H':
