@@ -253,10 +253,12 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._log.info("connection status: %s", connack_string[rc])
             self._connected = True
             # Subscribe to MQTT topics
-            if len(self._settings["pubchannels"]) and not len(self._settings["subchannels"]):
+            if len(self._settings["pubchannels"]): 
                 if int(self._settings["nodevar_format_enable"]) == 1:
                     self._log.info("subscribe "+str(self._settings["nodevar_format_basetopic"]))
                     self._mqttc.subscribe(str(self._settings["nodevar_format_basetopic"]))
+                    self._log.info("subscribe "+str(self._settings["nodevar_format_basetopic"]+ "tx/#"))
+                    self._mqttc.subscribe(str(self._settings["node_format_basetopic"]) + "tx/#")
                 if int(self._settings["node_format_enable"]) == 1:
                     self._log.info("subscribe "+str(self._settings["node_format_basetopic"]))
                     self._mqttc.subscribe(str(self._settings["node_format_basetopic"]))
@@ -272,7 +274,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             self._connected = False
 
     def on_subscribe(self, mqttc, obj, mid, granted_qos):
-        self._log.info("on_subscribe")
+        self._log.debug("on_subscribe")
 
     def on_message(self, client, userdata, msg):
         topic_parts = msg.topic.split("/")
@@ -284,7 +286,7 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
     
         # General MQTT format: emon/emonpi/power1 ... 100
         if int(self._settings["nodevar_format_enable"]) == 1:
-            # if topic_parts[0] == self._settings["nodevar_format_basetopic"][:-1]:
+             if topic_parts[0] == self._settings["nodevar_format_basetopic"][:-1]:
                 nodeid = topic_parts[1]
                 variable_name = "_".join(topic_parts[2:])
                 try:
@@ -299,8 +301,8 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             
         # Emoncms nodes module format: emon/tx/10/values ... 100,200,300
         if int(self._settings["node_format_enable"]) == 1:
-            # if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
-                if len(topic_parts)==4 and topic_parts[1] == "tx" and topic_parts[3] == "values":
+             if topic_parts[0] == self._settings["node_format_basetopic"][:-1]:
+                if len(topic_parts)==5 and topic_parts[1] == "tx" and topic_parts[3] == "values":
                     nodeid = topic_parts[2]
                     payload = msg.payload.decode()
                     realdata = payload.split(",")
