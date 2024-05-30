@@ -407,7 +407,9 @@ Example heat meter data:
 
 ### Direct DS18B20 temperature sensing
 
-This EmonHub interfacer can be used to read directly from DS18B20 temperature sensors connected to the GPIO pins on the RaspberryPi. At present a couple of manual setup steps are required to enable DS18B20 temperature sensing before using this EmonHub interfacer.
+This EmonHub interfacer can be used to read directly from DS18B20 temperature sensors connected to the GPIO pins on the RaspberryPi. For direct connection of DS18B20 a 4k7 pull-up resistor is required. 
+
+At present a couple of manual setup steps are required to enable DS18B20 temperature sensing before using this EmonHub interfacer. These steps are pre-configured on emonSD / emonPi2. 
 
 **Manual RaspberryPi configuration:**
 
@@ -416,11 +418,12 @@ This EmonHub interfacer can be used to read directly from DS18B20 temperature se
 ```bash
     sudo nano /boot/config.txt
 ```
-2\. Add the following to the end of the file:
+2\. Add the following to the end of the file which will set the Pi to read DS28B20 on GPIO4:
 
 ```bash
-    dtoverlay=w1-gpio
+    dtoverlay=w1-gpio,gpiopin=4
 ```
+*Note: the default DS18B20 pin on the emonPi2 is 17*
 
 3\. Exit and reboot the Pi
 
