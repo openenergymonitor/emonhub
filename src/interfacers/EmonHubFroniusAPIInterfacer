@@ -1,0 +1,130 @@
+import time
+import json
+import Cargo
+import requests
+
+from emonhub_interfacer import EmonHubInterfacer
+
+"""class EmonFroniusAPIInterfacer
+
+Fronius WebaPI interfacer
+
+"""
+
+class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
+
+    def __init__(self, name,  webAPI_IP='192.168.1.13', webAPI_port=0):
+        """Initialize Interfacer
+
+        """
+
+        # Initialization
+        super().__init__(name)
+
+        # add or alter any default settings for this interfacer
+        # defaults previously defined in inherited emonhub_interfacer
+        # here we are just changing the batchsize from 1 to 100
+        # and the interval from 0 to 30
+        # self._defaults.update({'batchsize': 100,'interval': 30})
+
+        # This line will stop the default values printing to logfile at start-up
+        #self._settings.update(self._defaults)
+
+        # Interfacer specific settings
+        # (settings not included in the inherited EmonHubInterfacer)
+        # The set method below is called from emonhub.py on
+        # initialisation and settings change and copies the
+        # interfacer specific settings over to _settings
+        #self._template_settings = {'read_interval': 10.0}
+       # self._template_settings = {'webAPI_IP': '192.168.1.13'}
+       # #self._template_settings = ('webAPI_port': 69}
+       # try:
+       #     webAPI_IP =  self.init_settings['webAPI_IP']
+       #     webAPI_port =  self.init_settings['webAPI_port']
+       # except Exception as err:
+       #     print("Other error occurred: " + str(err))
+        self._NodeName = name
+        self._webAPI_IP = webAPI_IP
+        self._webAPI_port = webAPI_port
+        self._log.debug("EmonModbusTcpInterfacer args: %s - %s", webAPI_IP, webAPI_port)
+        #print(self.webAPI_IP)
+        #print(self.webAPI_port)
+
+    def call(self, host, path ):
+        """
+        Call the API at the given path.
+        """
+
+        url = "http://" + host + path 
+        try:
+            self._log.debug("Status URL: " + url)
+            response = requests.get(url)
+            response.raise_for_status()
+        except HTTPError as http_err:
+            self._log.error("HTTP error occurred: "+ str(http_err))
+        except Exception as err:
+            self._log.error("Other error occurred: " + str(err))
+        else:
+            
+            self._log.debug("reponse . json: ")
+            self._log.debug( response.json)
+            return response.json()
+
+    def read(self):
+        """Read data and process
+
+        Return data as a list: [NodeID, val1, val2]
+
+        """
+        self._log.info("starting read")
+        self._log.debug("EmonHubAPIInterfacer args: %s - %s", self._webAPI_IP, self._webAPI_port)
+            
+        # create a new cargo object, set data values
+        time.sleep(float(self._settings['interval']))
+
+        names = []
+        values = []
+
+        self._log.info("Get Inverter data")
+        attributesMap = self.call( self._webAPI_IP , "/solar_api/v1/GetInverterInfo.cgi") 
+        InvStatus = attributesMap["Body"]["Data"]["1"]["StatusCode"]
+        names.append('StatusCode')
+        values.append(int(InvStatus))
+        if InvStatus != 7 :
+            self._log.info("webAPI Device Offline" + str(InvStatus))
+
+        self._log.info("Get Power flow realtime data")
+        attributesMap = self.call( self._webAPI_IP , "/solar_api/v1/GetPowerFlowRealtimeData.fcgi")["Body"]["Data"]["Inverters"]["1"]
+        for key in ['P', 'E_Year', 'E_Total', 'E_Day']:
+             if key in attributesMap:
+                    names.append(key)
+                    values.append(float(attributesMap[key]))
+
+        self._log.info("Get inverter realtime data")
+        attributesMap = self.call( self._webAPI_IP , "/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceID=1&DataCollection=3PInverterData&DeviceId=1")["Body"]["Data"]
+        for key in ["IAC_L1", "IAC_L2", "IAC_L3", "UAC_L1", "UAC_L2", "UAC_L3"]:
+             if key in attributesMap:
+                    names.append(key)
+                    values.append(float(attributesMap[key]["Value"]))
+
+
+        self._log.debug("Nodename: " + str(self._NodeName))
+        self._log.debug("Cargo Build: " + str(names))
+        self._log.debug("Cargo Build: " + str(values))
+        c = Cargo.new_cargo()
+        c.nodeid = self._settings["nodeId"]
+        c.nodename = self._NodeName
+        c.rawdata = None
+        c.realdata = values
+        c.names = names
+        self._log.debug("Return from read data: " + str(c.realdata))
+
+        self._log.debug("Returning cargo")
+        return c
+
+
+    def set(self, **kwargs):
+        for key in kwargs:
+            setting = kwargs[key]
+            self._settings[key] = setting
+            self._log.debug("Setting %s %s: %s", self.name, key, setting)
