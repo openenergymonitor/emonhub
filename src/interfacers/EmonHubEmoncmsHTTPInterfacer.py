@@ -17,7 +17,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # defaults previously defined in inherited emonhub_interfacer
         # here we are just changing the batchsize from 1 to 100
         # and the interval from 0 to 30
-        self._defaults.update({'batchsize': 100, 'interval': 30})
+        self._defaults.update({'batchsize': 1000, 'interval': 30})
         # This line will stop the default values printing to logfile at start-up
         self._settings.update(self._defaults)
 
@@ -32,7 +32,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         }
 
         # set an absolute upper limit for number of items to process per post
-        self._item_limit = 250
+        self._item_limit = 1000
 
         # maximum buffer size
         self.buffer._maximumEntriesInBuffer = 100000
