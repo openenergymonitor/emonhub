@@ -40,7 +40,9 @@ else
 fi
 
 echo "installing or updating emonhub dependencies"
-sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth libbluetooth-dev python3-spidev
+sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth python3-spidev
+# removed libbluetooth-dev as this was causing a kernel update
+
 # FIXME paho-mqtt V2 has new API. stick to V1.x for now
 pip install --upgrade paho-mqtt==1.6.1
 pip install requests py-sds011 sdm_modbus minimalmodbus

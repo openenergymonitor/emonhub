@@ -1,6 +1,6 @@
 {
     "name"         : "Emonhub",
-    "version"      : "2.6.13",
+    "version"      : "2.6.14",
     "location"     : "/opt/openenergymonitor",
     "branches_available": ["stable","master"],
     "requires": []
