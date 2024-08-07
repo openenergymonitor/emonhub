@@ -62,7 +62,10 @@ if [ "$emonSD_pi_env" = 1 ]; then
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
     # pip3 install RPi.GPIO
     
+    echo "\nRemoving python3-rpi-gpio"
     sudo apt remove python3-rpi.gpio
+    
+    echo "\nInstalling python3-rpi-lgpio"
     sudo apt install python3-rpi-lgpio
 
     # RaspberryPi Serial configuration
@@ -73,6 +76,12 @@ if [ "$emonSD_pi_env" = 1 ]; then
 
     # Enable SPI
     sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
+
+    # Move CS0 to GPIO26
+    # add line if not present
+    if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
+        echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
+    fi
 
     # We also need to stop the Bluetooth modem trying to use UART
     echo "Stop Bluetooth modem"
