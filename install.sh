@@ -60,7 +60,10 @@ if [ "$emonSD_pi_env" = 1 ]; then
     echo "installing or updating raspberry pi related dependencies"
     
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
-    pip3 install RPi.GPIO
+    # pip3 install RPi.GPIO
+    
+    sudo apt remove python3-rpi.gpio
+    sudo apt install python3-rpi-lgpio
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
