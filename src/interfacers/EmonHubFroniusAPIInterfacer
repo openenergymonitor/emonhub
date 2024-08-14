@@ -119,6 +119,7 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
              "Voltage_AC_PhaseToPhase_12","Voltage_AC_PhaseToPhase_23", "Voltage_AC_PhaseToPhase_31","Voltage_AC_Phase_1","Voltage_AC_Phase_2","Voltage_AC_Phase_3"]:
              if key in attributesMap:
                     names.append(key)
+                    values.append(float(attributesMap[key]["Value"]))
    
 
         self._log.debug("Nodename: " + str(self._NodeName))
