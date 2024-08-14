@@ -13,7 +13,7 @@ Fronius WebaPI interfacer
 
 class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name,  webAPI_IP='192.168.1.13', webAPI_port=0):
+    def __init__(self, name,  webAPI_IP='192.168.1.13', webAPI_port=0, inverterDeviceId=0, meterDeviceId=1):
         """Initialize Interfacer
 
         """
@@ -46,7 +46,9 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
         self._NodeName = name
         self._webAPI_IP = webAPI_IP
         self._webAPI_port = webAPI_port
-        self._log.debug("EmonModbusTcpInterfacer args: %s - %s", webAPI_IP, webAPI_port)
+        self.inverterDeviceId = inverterDeviceId
+        self.meterDeviceId = meterDeviceId
+        self._log.debug("EmonModbusTcpInterfacer args: %s - %s", webAPI_IP, webAPI_port, inverterDeviceId, meterDeviceId)
         #print(self.webAPI_IP)
         #print(self.webAPI_port)
 
@@ -77,7 +79,7 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
 
         """
         self._log.info("starting read")
-        self._log.debug("EmonHubAPIInterfacer args: %s - %s", self._webAPI_IP, self._webAPI_port)
+        self._log.debug("EmonHubAPIInterfacer args: %s - %s", self._webAPI_IP, self._webAPI_port, self._inverterDeviceId, self._meterDeviceId)
             
         # create a new cargo object, set data values
         time.sleep(float(self._settings['interval']))
@@ -107,6 +109,17 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
                     names.append(key)
                     values.append(float(attributesMap[key]["Value"]))
 
+        self._log.info("Get Meter realtime data")
+        attributesMap = self.call( self._webAPI_IP , "/solar_api/v1/GetMeterRealtimeData.cgi?Scope=Device&DeviceId=0")["Body"]["Data"]
+        for key in ["Current_AC_Phase_1", "Current_AC_Phase_2", "Current_AC_Phase_3", "EnergyReactive_VArAC_Sum_Consumed" ,"EnergyReal_WAC_Minus_Absolute",
+             "EnergyReal_WAC_Plus_Absolute", "EnergyReal_WAC_Sum_Consumed", "EnergyReal_WAC_Sum_Produced", "Frequency_Phase_Average",
+             "Meter_Location_Current", "PowerApparent_S_Phase_1","PowerApparent_S_Phase_2", "PowerApparent_S_Phase_3","PowerApparent_S_Sum",
+             "PowerFactor_Phase_1", "PowerFactor_Phase_2" , "PowerFactor_Phase_3","PowerFactor_Sum", "PowerReactive_Q_Phase_1" ,"PowerReactive_Q_Phase_2",
+             "PowerReactive_Q_Phase_3","PowerReactive_Q_Sum", "PowerReal_P_Phase_1","PowerReal_P_Phase_2", "PowerReal_P_Phase_3","PowerReal_P_Sum","TimeStamp",
+             "Voltage_AC_PhaseToPhase_12","Voltage_AC_PhaseToPhase_23", "Voltage_AC_PhaseToPhase_31","Voltage_AC_Phase_1","Voltage_AC_Phase_2","Voltage_AC_Phase_3"]:
+             if key in attributesMap:
+                    names.append(key)
+   
 
         self._log.debug("Nodename: " + str(self._NodeName))
         self._log.debug("Cargo Build: " + str(names))
