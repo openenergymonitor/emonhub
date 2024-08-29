@@ -192,9 +192,9 @@ Here's a cut down interfacer which just reads Power and Energy imported:
 
 **Tip:** When logging the cumulative energy output (sdm_E) to a feed, use the 'log to feed (join)' input processor to create a feed that can work with the delta mode in graphs. This removes any data gaps and makes it possible for the graph to generate daily kWh data on the fly.
 
-##### SDM630 Three-phase
+##### SDM630 and SDM72D Three-phase
 
-Default config to read from SDM630 Modbus three-phase 100A meter, see [here more full SDM630 register list](http://support.innon.com/PowerMeters/SDM630-MOD-MID/Manual/SDM630-Modbus_Protocol.pdf), convert hex register to decimal before inserting into emonhub.conf
+Default config to read from SDM630 and SDM72D Modbus three-phase 100A meter, see [datasheet for full register list](http://support.innon.com/PowerMeters/SDM630-MOD-MID/Manual/SDM630-Modbus_Protocol.pdf), convert hex register to decimal before inserting into emonhub.conf
 ```
 [[SDM630]]
     Type = EmonHubMinimalModbusInterfacer
