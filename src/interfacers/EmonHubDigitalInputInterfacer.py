@@ -27,7 +27,7 @@ Example emonhub configuration
         invert = 1
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
-        nodename = digital
+        nodename = gpio
         read_interval = 10
 """
 
@@ -46,8 +46,8 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
             pins = pins.split(',')
 
         self._settings.update({
-            'pins'  : pins
-            'read_interval' : 10
+            'pins'  : pins,
+            'read_interval' : 10,
             'nodename' : 'gpio'
         })
 
