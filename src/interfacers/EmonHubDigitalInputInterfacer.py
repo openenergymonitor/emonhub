@@ -75,6 +75,7 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
             self._log.debug('%s : state: %d', self.name, state)
 
             # Add to cargo
+            time_now = int(time.time())
             c = Cargo.new_cargo(nodename=self.name, timestamp=time_now)
             c.names = ["digital"]
             c.realdata = [state]
