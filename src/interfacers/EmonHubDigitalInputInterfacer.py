@@ -79,8 +79,12 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
             # self._log.debug('%s : state: %d', self.name, state)
 
             # Add to cargo
-            time_now = int(time.time())
-            c = Cargo.new_cargo(nodename=self.name, timestamp=time_now)
+            c = Cargo.new_cargo()
+            c.names = []
+            c.realdata = []
+            c.units = []
+            c.nodeid = self._settings['nodename']
+            c.timestamp = int(time.time())
 
             for pin in self._settings['pins']:
                 state = GPIO.input(int(pin))
