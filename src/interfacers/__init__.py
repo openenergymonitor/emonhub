@@ -1,5 +1,6 @@
 __all__ = [
     "EmonHubPulseCounterInterfacer",
+    "EmonHubDigitalInputInterfacer",
     "EmonHubSocketInterfacer",
     "EmonHubSerialInterfacer",
     "EmonHubJeeInterfacer",
