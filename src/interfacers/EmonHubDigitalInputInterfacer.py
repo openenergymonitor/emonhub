@@ -41,15 +41,9 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
         # Initialization
         super().__init__(name)
 
-        self._log.debug("Pins: '%s'", pins)
-
-        # if pins is a string, convert to list
-        if isinstance(pins, str):
-            tmp_pins = pins.split(',')
-            pins = []
-            # convert to int
-            for pin in tmp_pins:
-                pins.append(int(pin))                
+        # Pins is already a list e.g ['13','15']
+        # convert to list of integers
+        pins = [int(p) for p in pins]
 
         self._settings.update({
             'pins'  : pins,
