@@ -22,21 +22,18 @@ Example emonhub configuration
 [[digital]]
     Type = EmonHubDigitalInputInterfacer
     [[[init_settings]]]
-        # pin number must be specified. Create a second
-        # interfacer for more than one digital pin
-        digital_pin = 15
+        # Include comma even if only one pin
+        pins = 13, 15
+        invert = 1
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
-
-        # Default NodeID is 0. Use nodeoffset to set NodeID
-        # No decoder required as key:value pair returned
-        nodeoffset = 3
+        nodename = digital
         read_interval = 10
 """
 
 class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, digital_pin=None, read_interval=10):
+    def __init__(self, name, pins):
         """Initialize interfacer
 
         """
@@ -44,9 +41,14 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
         # Initialization
         super().__init__(name)
 
+        # if pins is a string, convert to list
+        if isinstance(pins, str):
+            pins = pins.split(',')
+
         self._settings.update({
-            'digital_pin'  : int(digital_pin),
-            'read_interval' : int(read_interval)
+            'pins'  : pins
+            'read_interval' : 10
+            'nodename' : 'gpio'
         })
 
         self._digital_settings = {}
@@ -60,30 +62,32 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
         """Register GPIO callbacks
 
         """
-
         atexit.register(GPIO.cleanup)
         GPIO.setmode(GPIO.BOARD)
-        self._log.info('%s : Digital pin set to: %d', self.name, self._settings['digital_pin'])
-        GPIO.setup(self._settings['digital_pin'], GPIO.IN)
+
+        for pin in self._settings['pins']:
+            self._log.info('%s : Setting up digital pin: %d', self.name, pin)
+            GPIO.setup(int(pin), GPIO.IN)
 
     def read(self):
 
         if int(time.time()) % self._settings['read_interval'] == 0:
 
             # Read the digital pin state
-            state = GPIO.input(self._settings['digital_pin'])
-            self._log.debug('%s : state: %d', self.name, state)
+            # state = GPIO.input(self._settings['digital_pin'])
+            # self._log.debug('%s : state: %d', self.name, state)
 
             # Add to cargo
             time_now = int(time.time())
             c = Cargo.new_cargo(nodename=self.name, timestamp=time_now)
-            c.names = ["digital"]
-            c.realdata = [state]
 
-            if int(self._settings['nodeoffset']):
-                c.nodeid = int(self._settings['nodeoffset'])
-            else:
-                c.nodeid = 0
+            for pin in self._settings['pins']:
+                state = GPIO.input(int(pin))
+                self._log.debug('%s : state: %d', self.name, state)
+                c.realdata.append(state)
+                c.names.append("pin" + str(pin))
+
+            c.nodeid = self._settings['nodename']
 
             # Minimum sleep time is 1 second
             time.sleep(1)
@@ -104,9 +108,19 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
             if key in self._settings and self._settings[key] == setting:
                 continue
 
+            # How fast to read the digital pins
             elif key == 'read_interval':
                 self._log.info("Setting %s read_interval: %s", self.name, setting)
                 self._settings[key] = float(setting)
+                # Minimum read interval is 1 second
+                if self._settings[key] < 1:
+                    self._settings[key] = 1
+                continue
+
+            # Option to set nodename
+            elif key == 'nodename':
+                self._log.info("Setting %s nodename: %s", self.name, setting)
+                self._settings[key] = str(setting)
                 continue
 
             else:
