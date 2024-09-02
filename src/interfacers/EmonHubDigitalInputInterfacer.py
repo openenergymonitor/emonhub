@@ -33,7 +33,7 @@ Example emonhub configuration
 
 class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, pins):
+    def __init__(self, name, pins, invert=0):
         """Initialize interfacer
 
         """
@@ -44,9 +44,12 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
         # if pins is a string, convert to list
         if isinstance(pins, str):
             pins = pins.split(',')
+            # convert to int
+            pins = [int(p) for p in pins]
 
         self._settings.update({
             'pins'  : pins,
+            'invert' : int(invert),
             'read_interval' : 10,
             'nodename' : 'gpio'
         })
@@ -84,6 +87,11 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
             for pin in self._settings['pins']:
                 state = GPIO.input(int(pin))
                 self._log.debug('%s : state: %d', self.name, state)
+
+                # Invert the state if invert is set
+                if self._settings['invert']:
+                    state = not state
+
                 c.realdata.append(state)
                 c.names.append("pin" + str(pin))
 
