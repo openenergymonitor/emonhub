@@ -93,6 +93,7 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
                 # Invert the state if invert is set
                 if self._settings['invert']:
                     state = not state
+                    self._log.debug('%s : inverted state: %d', self.name, state)
 
                 c.realdata.append(state)
                 c.names.append("pin" + str(pin))
