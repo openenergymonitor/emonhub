@@ -2,7 +2,9 @@ import time
 import json
 import Cargo
 import serial
+import serial.tools.list_ports
 import struct
+import os
 from emonhub_interfacer import EmonHubInterfacer
 
 """
@@ -33,7 +35,7 @@ MBUS interfacer for use in development
 
 class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device="/dev/ttyUSB0", baud=2400, use_meterbus_lib=False):
+    def __init__(self, name, device="/dev/ttyUSB0", device_vid=False, device_pid=False, baud=2400, use_meterbus_lib=False):
         """Initialize Interfacer
 
         """
@@ -52,6 +54,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         self.next_interval = True
         
         self.device = device
+        self.device_vid = device_vid
+        self.device_pid = device_pid
         self.baud = baud
         
         self.debug_data_frame = False
@@ -59,12 +63,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         self.invalid_count = 0
 
         # Only load module if it is installed
-        try:
-            self._log.debug("Connecting to MBUS serial: " + device + " " + str(baud))
-            self.ser = serial.Serial(device, baud, 8, 'E', 1, 0.5)
-        except ModuleNotFoundError as err:
-            self._log.error(err)
-            self.ser = False
+        self.connect()
             
         # If use_meterbus_lib is true, try to load module
         # pip3 install pyMeterBus
@@ -77,6 +76,57 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             except ModuleNotFoundError as err:
                 self._log.error(err)
                 self.use_meterbus_lib = False
+
+
+    def connect(self):
+        """Connect to MBUS
+
+        """
+        device = False
+
+        # List available ports
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+
+            # if self.device ends with * then filter devices by matching self.device up to the *
+            if self.device[-1] == "*":
+                if not port.device.startswith(self.device[:-1]):
+                    continue
+            else:
+                if port.device != self.device:
+                    continue
+
+            # if device_vid filter by vid
+            if self.device_vid:
+                if port.vid != int(self.device_vid):
+                    continue
+
+            # if device_pid filter by pid
+            if self.device_pid:
+                if port.pid != int(self.device_pid):
+                    continue
+
+            # print port details
+            self._log.info("Device found: %s" % port.device)
+            device = port.device
+
+        # check for valid symbolic link
+        if not device:
+            if os.path.islink(self.device):
+                device = self.device
+
+        # if device is still False, log error and return False
+        if not device:
+            self._log.error("Could not find MBUS device")
+            self.ser = False
+            return False
+
+        try:
+            self._log.debug("Connecting to MBUS serial: " + device + " " + str(self.baud))
+            self.ser = serial.Serial(device, self.baud, 8, 'E', 1, 0.5)
+        except Exception:
+            self._log.error("Could not connect to MBUS serial")
+            self.ser = False
 
     def mbus_serial_write(self,data):
         try:
@@ -526,12 +576,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 self.next_interval = False
                 
                 if not self.ser:
-                    try:
-                        self._log.debug("Connecting to MBUS serial: " + self.device + " " + str(self.baud))
-                        self.ser = serial.Serial(self.device, self.baud, 8, 'E', 1, 0.5)
-                    except Exception:
-                        self._log.error("Could not connect to MBUS serial")
-                        self.ser = False
+                    self.connect()
                         
                 c = Cargo.new_cargo()
                 c.names = []
@@ -641,3 +686,4 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super().set(**kwargs)
+
