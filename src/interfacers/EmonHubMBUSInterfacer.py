@@ -107,7 +107,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     continue
 
             # print port details
-            self._log.info("Device found: %s" % port.device)
+            self._log.info("MBUS device found: %s, vid:%s, pid:%s" % (port.device, port.vid, port.pid))
             device = port.device
 
         # check for valid symbolic link
@@ -686,4 +686,5 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super().set(**kwargs)
+
 
