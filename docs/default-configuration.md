@@ -55,6 +55,32 @@ This interfacer is present to enable reading of data from an EmonTx4 connected t
         nodename = emonTx4
 ```
 
+EmonHub can handle wildcard USB devices e.g any device on a ttyUSB:
+
+`com_port = /dev/ttyUSB*`
+
+It's also possible to specify a VID / PID of a USB device and emonHub will search for that device e.g here's an example of an MBUS reader 
+
+```
+[[MBUS]]
+    Type = EmonHubMBUSInterfacer
+    [[[init_settings]]]
+        device_vid = 1659
+        device_pid = 9123
+        baud = 2400
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        validate_checksum = False
+        nodename = heatpump
+        [[[[meters]]]]
+            [[[[[heatmeter]]]]]
+                address = 1
+                type = standard
+```
+
+For other USB emonHub examples see [forum thread](https://community.openenergymonitor.org/t/emonhub-automatic-serial-device-detection-for-mbus-and-modbus-interfacers/27025)
+
 ### [[SPI]]
 
 This interfacer is used to read from a SPI connected RFM69 radio module. This may be on the emonPi2 board or on the rfm69spi board.
