@@ -91,7 +91,7 @@ class EmonHub:
             eha.auto_conf_enabled = self.autoconf.enabled
         except eha.EmonHubAutoConfError as e:
             logger.error(e)
-            sys.exit("Unable to load available.conf")
+            self._exit = True # Exit process if main thread cannot start
         
     def run(self):
         """Launch the hub.
