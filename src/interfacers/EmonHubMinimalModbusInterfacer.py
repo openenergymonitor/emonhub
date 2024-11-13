@@ -214,18 +214,27 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         for i in range(0,len(self._settings['meters'][meter]['registers'])):
                             register_count += 1
                             valid = True
+
+                            # set datatype default
+                            datatype = self.datatype
+
+                            if i<len(self._settings['meters'][meter]['datatypes']):
+                                datatype = self._settings['meters'][meter]['datatypes'][i]
+
                             try:
-                                if self.datatype == 'int':
+                                if datatype == 'int':
                                     time.sleep(0.1)
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3, signed=True)
-                                        
-                                elif self.datatype == 'float':
+                                elif datatype == 'uint32':
+                                    time.sleep(0.1)
+                                    parts = self._rs485.read_registers(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                    value = (parts[0] << 16) + parts[1]
+                                elif datatype == 'float':
                                     time.sleep(0.1)
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                                 else:
                                     time.sleep(0.1)
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
-                            
                                     
                             except Exception as e:
                                 valid = False
@@ -299,6 +308,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     names = []
                     precision = []
                     scales = []
+                    datatypes = []
                     # address
                     if 'device_type' in setting[meter]:
                         device_type = setting[meter]['device_type']
@@ -327,6 +337,11 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         for scale in setting[meter]['scales']:
                             scales.append(float(scale))
                         self._log.info("Setting %s meters %s scales %s", self.name, meter, json.dumps(scales))
+
+                    if 'datatypes' in setting[meter]:
+                        for datatype in setting[meter]['datatypes']:
+                            datatypes.append(str(datatype))
+                        self._log.info("Setting %s meters %s datatypes %s", self.name, meter, json.dumps(datatypes))
                                              
                     #assign
                     self._settings['meters'][meter] = {
@@ -335,7 +350,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         'registers':registers,
                         'names':names,
                         'precision':precision,
-                        'scales':scales
+                        'scales':scales,
+                        'datatypes':datatypes
                     }
                     
                 continue
