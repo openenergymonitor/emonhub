@@ -227,7 +227,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                     value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3, signed=True)
                                 elif datatype == 'uint32':
                                     time.sleep(0.1)
-                                    parts = self._rs485.read_registers(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                    parts = self._rs485.read_registers(int(self._settings['meters'][meter]['registers'][i]), 2)
                                     value = (parts[0] << 16) + parts[1]
                                 elif datatype == 'float':
                                     time.sleep(0.1)
