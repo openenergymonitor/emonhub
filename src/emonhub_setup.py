@@ -96,6 +96,10 @@ class EmonHubFileSetup(EmonHubSetup):
             raise EmonHubSetupInitError(
                 'Configuration file error - section: ' + str(e))
 
+    @property
+    def filename(self):
+        return self._filename
+
     def check_settings(self):
         """Check settings
 
