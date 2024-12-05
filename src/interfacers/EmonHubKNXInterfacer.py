@@ -92,24 +92,27 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
                                         local_ip = local_ip
         )
 
-        self._log.trace("Connect to KNX Gateway : " + gateway_ip)
+        self._log.debug("Connect to KNX Gateway : " + gateway_ip)
         self.xknx = XKNX(connection_config=connection_config,   connection_state_changed_cb = self.connection_state_changed_cb,device_updated_cb=self.device_updated_cb, daemon_mode=False)
 
     async def startKnx(self):
         try:
             await self.xknx.start()
-        except Exception:
-            self._log.error("KNX Error start")
+        except Exception as err: 
+            self._log.error("KNX Error start:")
+            self._log.error(err);
 
     def connection_state_changed_cb(self, state):
-        self._log.trace("KNX CnxUpdate:" + state)
+        self._log.debug("KNX CnxUpdate:" )
+        self._log.debug(state)
+        
 
     def device_updated_cb(self, device):
         value = device.resolve_state()
         name = device.name
         unit = device.unit_of_measurement()
 
-        self._log.debug("Device:" + name + ' <> ' + str(value))
+        self._log.info("Device:" + name + ' <> ' + str(value))
 
         pos = name.index("_")
         meter = name[0:pos]
