@@ -92,24 +92,28 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
                                         local_ip = local_ip
         )
 
-        self._log.info("Connect to KNX Gateway : " + gateway_ip)
-        self.xknx = XKNX(connection_config=connection_config,   device_updated_cb=self.device_updated_cb, daemon_mode=False)
+        self._log.trace("Connect to KNX Gateway : " + gateway_ip)
+        self.xknx = XKNX(connection_config=connection_config,   connection_state_changed_cb = self.connection_state_changed_cb,device_updated_cb=self.device_updated_cb, daemon_mode=False)
 
     async def startKnx(self):
-        await self.xknx.start()
+        try:
+            await self.xknx.start()
+        except Exception:
+            self._log.error("KNX Error start")
 
+    def connection_state_changed_cb(self, state):
+        self._log.trace("KNX CnxUpdate:" + state)
 
-    #@asyncio.coroutine
-    async def device_updated_cb(self, device):
+    def device_updated_cb(self, device):
         value = device.resolve_state()
         name = device.name
         unit = device.unit_of_measurement()
 
         self._log.debug("Device:" + name + ' <> ' + str(value))
 
-        namePart = name.split("_")
-        meter = namePart[0]
-        key = namePart[1]
+        pos = name.index("_")
+        meter = name[0:pos]
+        key = name[pos+1:]
 
         meterObj=self._settings['meters'][meter]
         dptConf = meterObj[key]
@@ -142,7 +146,7 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
                 cargo.names.append(key)
                 cargo.realdata.append(result[key][0])
         else:
-            self._log.debug("Decoded KNX data: None")
+            self._log.info("Decoded KNX data: None")
 
 
     async def setupSensor(self):
@@ -158,7 +162,9 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
                 group = dpConfig["group"]
                 eis = dpConfig["eis"]
 
+                self._log.debug("add Sensors:" + metter+"_"+dpKey + ' <> ' + group)
                 self.sensor[metter+"_"+dpKey] = Sensor(self.xknx, metter + "_" + dpKey, value_type=eis, group_address_state=group, always_callback=True)
+                self.xknx.devices.async_add(self.sensor[metter+"_"+dpKey])
 
 
 
@@ -177,10 +183,12 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
 
         """
+        
         interval = int(self._settings['read_interval'])
         if time.time() - self._last_read_time < interval:
             return
 
+        
         self._last_read_time = time.time()
 
         #self.displayCargo("read")
@@ -203,7 +211,7 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         self.updater.start()
 
         super().start()
-
+        
 
     def set(self, **kwargs):
         for key, setting in self._KNX_settings.items():
