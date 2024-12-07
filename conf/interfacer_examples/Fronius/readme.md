@@ -35,7 +35,7 @@ The following values are extracted from the webapi API.
 Sample configuration, add these settings under the [interfacers] tag.   
 
 ```
-### This interfacer manages communication to Fronius Inverter APi for inverter monitoring
+### This interfacer manages communication to Fronius Inverter APi for inverter/smart power meter monitoring
 [[FroniusWebAPI]]
     Type = EmonHubFroniusAPIInterfacer
     [[[init_settings]]]
@@ -60,4 +60,4 @@ The emonHub/emonCMS nodeId to use. any number as long as it is not already used 
 ip address of the fronius inverter on the network
 
 ### webAPI_port ###
-non standard port if configured on the inverter reservered for futer use. not currently implemented. 
+Non standard port if configured on the inverter reservered for future use. Not currently implemented. 
