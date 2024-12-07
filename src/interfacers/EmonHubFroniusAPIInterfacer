@@ -28,21 +28,21 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
         # self._defaults.update({'batchsize': 100,'interval': 30})
 
         # This line will stop the default values printing to logfile at start-up
-        #self._settings.update(self._defaults)
+        # self._settings.update(self._defaults)
 
         # Interfacer specific settings
         # (settings not included in the inherited EmonHubInterfacer)
         # The set method below is called from emonhub.py on
         # initialisation and settings change and copies the
         # interfacer specific settings over to _settings
-        #self._template_settings = {'read_interval': 10.0}
-       # self._template_settings = {'webAPI_IP': '192.168.1.13'}
-       # #self._template_settings = ('webAPI_port': 69}
-       # try:
-       #     webAPI_IP =  self.init_settings['webAPI_IP']
-       #     webAPI_port =  self.init_settings['webAPI_port']
-       # except Exception as err:
-       #     print("Other error occurred: " + str(err))
+        # self._template_settings = {'read_interval': 10.0}
+        # self._template_settings = {'webAPI_IP': '192.168.1.13'}
+        # self._template_settings = ('webAPI_port': 69}
+        # try:
+        #     webAPI_IP =  self.init_settings['webAPI_IP']
+        #     webAPI_port =  self.init_settings['webAPI_port']
+        # except Exception as err:
+        #     print("Other error occurred: " + str(err))
         self._NodeName = name
         self._webAPI_IP = webAPI_IP
         self._webAPI_port = webAPI_port
