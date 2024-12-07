@@ -1,12 +1,12 @@
 # Fronius WebAPI Interface #
 
 This is an interface for Fronius Inverter and power meters.
-This interfacer extracts data using the Fronius Webapi published on there website.
+This interfacer extracts data using the Fronius Webapi published on thier website.
 It utilises three api calls to extract 3 sets of data
 from the URL's  /solar_api/v1/GetPowerFlowRealtimeData.fcgi
                 /solar_api/v1/GetInverterRealtimeData.cgi
                 /solar_api/v1/GetInverterInfo.cgi
-The webapi returns data in json format adn the readings are extracted from those responses.
+The webapi returns data in json format and the readings are extracted from those responses.
 
 Tested with Fronius Symo 5.0-3-M inverter & Fronous smart meter 63A .
 
