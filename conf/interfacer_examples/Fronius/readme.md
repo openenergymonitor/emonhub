@@ -16,13 +16,15 @@ Tested with Fronius Symo 5.0-3-M inverter & Fronous smart meter 63A .
 
 The following values are extracted from the webapi API.
 webAPI		/solar_api/v1/GetPowerFlowRealtimeData.fcgi
-         "E_Day"   		# Eneergy produced for current day
-         "E_Total" 		# Lifetime energy produced
-         "E_Year" 		# energy produced for current year
-         "P"		# Current power output
-         "StatusCode"	# inverter status (7 = online, anything else offline)
+
+	"E_Day"   		# Eneergy produced for current day
+	"E_Total" 		# Lifetime energy produced
+	"E_Year" 		# energy produced for current year
+	"P"		# Current power output
+	"StatusCode"	# inverter status (7 = online, anything else offline)
 	 
 webAPI		/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceID=1&DataCollection=3PInverterData&DeviceId=1
+
          "IAC_L1" 		# current on phase A
          "IAC_L2" 		# current on phase B
          "IAC_L3" 		# current on phase C
@@ -31,28 +33,7 @@ webAPI		/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceID=1&DataCo
          "UAC_L3" 		# Voltage on phase c
 	 
 webAPI	/solar_api/v1/GetMeterRealtimeData.cgi?Scope=Device&DeviceId=0
-	Current_AC_Phase_1
-	Current_AC_Phase_2
-	Current_AC_Phase_3
-	EnergyReactive_VArAC_Sum_Consumed
-	EnergyReal_WAC_Minus_Absolute
-    	EnergyReal_WAC_Plus_Absolute
-	EnergyReal_WAC_Sum_Consumed
-	EnergyReal_WAC_Sum_Produced
-	Frequency_Phase_Average
-	Meter_Location_Current
-	PowerApparent_S_Phase_1
-	PowerApparent_S_Phase_2
-	PowerApparent_S_Phase_3
-	PowerApparent_S_Sum",
-    	PowerFactor_Phase_1
-	PowerFactor_Phase_2
-	PowerFactor_Phase_3
-	PowerFactor_Sum
-	PowerReactive_Q_Phase_1
-	PowerReactive_Q_Phase_2
- 
-webAPI	/solar_api/v1/GetMeterRealtimeData.cgi?Scope=System&DeviceId=1
+
 	Current_AC_Phase_1
 	Current_AC_Phase_2
 	Current_AC_Phase_3
