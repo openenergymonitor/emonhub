@@ -120,18 +120,6 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
              if key in attributesMap:
                     names.append(key)
                     values.append(float(attributesMap[key]["Value"]))
-
-        self._log.info("Get meter realtime data")
-        attributesMap = self.call( self._webAPI_IP , "/solar_api/v1/GetMeterRealtimeData.cgi?Scope=System&DeviceId=1")["Body"]["0"]
-        for key in ["Current_AC_Phase_1", "Current_AC_Phase_2", "Current_AC_Phase_3", "EnergyReactive_VArAC_Sum_Consumed", "EnergyReactive_VArAC_Sum_Produced",
-            "EnergyReal_WAC_Minus_Absolute", "EnergyReal_WAC_Plus_Absolute", "EnergyReal_WAC_Sum_Consumed", "EnergyReal_WAC_Sum_Produced", "Frequency_Phase_Average",
-            "Meter_Location_Current", "PowerApparent_S_Phase_1", "PowerApparent_S_Phase_2", "PowerApparent_S_Phase_3", "PowerApparent_S_Sum", "PowerFactor_Phase_1",
-            "PowerFactor_Phase_2", "PowerFactor_Phase_3", "PowerFactor_Sum", "PowerReactive_Q_Phase_1", "PowerReactive_Q_Phase_2", "PowerReactive_Q_Phase_3",
-            "PowerReactive_Q_Sum", "PowerReal_P_Phase_1", "PowerReal_P_Phase_2", "PowerReal_P_Phase_3", "PowerReal_P_Sum", "TimeStamp", "Visible", "Voltage_AC_PhaseToPhase_12",
-            "Voltage_AC_PhaseToPhase_23", "Voltage_AC_PhaseToPhase_31", "Voltage_AC_Phase_1", "Voltage_AC_Phase_2", "Voltage_AC_Phase_3"]:
-             if key in attributesMap:
-                    names.append(key)
-                    values.append(float(attributesMap[key]["Value"]))
    
 
         self._log.debug("Nodename: " + str(self._NodeName))
