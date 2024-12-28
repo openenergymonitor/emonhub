@@ -65,7 +65,7 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
         f = []
         c = Cargo.new_cargo(rawdata="")
 
-      #get inverter data
+      #get inverter status
         url = "http://" +self.init_settings["webAPI_IP"] + "/solar_api/v1/GetInverterInfo.cgi"
         try:
             self._log.debug("Status URL: " + url)
@@ -86,7 +86,8 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
             t = emonhub_coder.encode('H',Inverter_status)
             f = f + list(t)
 
-          # get power meter data
+          # get local grid power data
+            
             url = "http://"+self.init_settings["webAPI_IP"]+"/solar_api/v1/GetPowerFlowRealtimeData.fcgi"
             try:
                 self._log.debug("Status URL: " + url)
@@ -117,7 +118,8 @@ class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
             PhVphB = 0
             PhVphC = 0
 
-            if Inverter_status == 7 :
+            if Inverter_status == 7 : # 7 = Inverter running
+                
               # get inverter 3phase data phase amps and phase voltage
                 url = "http://"+self.init_settings["webAPI_IP"]+"/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceID=1&DataCollection=3PInverterData&DeviceId=1"
                 try:
