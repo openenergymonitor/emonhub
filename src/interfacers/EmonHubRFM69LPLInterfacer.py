@@ -29,8 +29,10 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         except ModuleNotFoundError as err:      
             self._log.error(err)
 
+        self.Radio = False
         try:            
             from RFM69 import Radio
+            self.Radio = Radio
         except ModuleNotFoundError as err:      
             self._log.error(err)
             
@@ -38,28 +40,42 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
 
         # Initialization
         super().__init__(name)
+
+        # Watchdog variables
+        self.last_received = False
+        self.watchdog_period = 300
         
-        node_id = int(nodeid)
-        network_id = int(networkID)
-        interruptPin = int(interruptPin)
-        selPin = int(selPin)
+        self.node_id = int(nodeid)
+        self.network_id = int(networkID)
+        self.interruptPin = int(interruptPin)
+        self.selPin = int(selPin)
         
         if resetPin != None and resetPin != 'None':
             resetPin = int(resetPin)
         else:
             resetPin = None
+
+        self.resetPin = resetPin
         
         self._log.info("Creating RFM69 LowPowerLabs interfacer")
-        self._log.info("RFM69 node_id = "+str(node_id))
-        self._log.info("RFM69 network_id = "+str(network_id))  
-        self._log.info("RFM69 interruptPin = "+str(interruptPin))
-        self._log.info("RFM69 resetPin = "+str(resetPin))
-        self._log.info("RFM69 selPin = "+str(selPin))
+        self._log.info("RFM69 node_id = "+str(self.node_id))
+        self._log.info("RFM69 network_id = "+str(self.network_id))  
+        self._log.info("RFM69 interruptPin = "+str(self.interruptPin))
+        self._log.info("RFM69 resetPin = "+str(self.resetPin))
+        self._log.info("RFM69 selPin = "+str(self.selPin))
         
         self._log.info("Starting radio setup")
-        
-        board = {'isHighPower': False, 'interruptPin': interruptPin, 'resetPin': resetPin, 'selPin':selPin, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
-        self.radio = Radio(43, node_id, network_id, verbose=False, **board)
+        self.connect()
+
+    def connect(self):
+        """Connect to RFM69
+
+        """
+        self._log.info("Connecting to RFM69")
+        self.last_received = False
+
+        board = {'isHighPower': False, 'interruptPin': self.interruptPin, 'resetPin': self.resetPin, 'selPin':self.selPin, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
+        self.radio = self.Radio(43, self.node_id, self.network_id, verbose=False, **board)
         
         if not self.radio.init_success:
             self._log.error("Could not connect to RFM69 module") 
@@ -69,6 +85,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             self.last_packet_data = []
             self.last_packet_time = 0
             self.radio.__enter__()
+
 
     def shutdown(self):
         self.radio.__exit__()
@@ -97,7 +114,16 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             c.nodeid = packet.sender
             c.realdata = packet.data
             c.rssi = packet.RSSI
+
+            # Set watchdog timer
+            self.last_received = time.time()
             return c
+
+        if self.last_received and (time.time()-self.last_received) > self.watchdog_period:
+            self._log.warning("No radio packets received in last "+str(self.watchdog_period)+" seconds, restarting radio")
+            self.connect()
+
+        return False
 
     def set(self, **kwargs):
         """
