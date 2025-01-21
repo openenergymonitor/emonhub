@@ -99,6 +99,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         self.next_interval = True
         
         # Only load module if it is installed
+        self._rs485 = False
         try:
             import minimalmodbus
             self.minimalmodbus = minimalmodbus
