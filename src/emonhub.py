@@ -236,6 +236,11 @@ class EmonHub:
                     interfacer = getattr(ehi, I['Type'])(name, **I['init_settings'])
                     interfacer.set(**I['runtimesettings'])
                     interfacer.init_settings = I['init_settings']
+
+                    # If interfacer is EmonHubMqttConfigInterfacer set config file path
+                    if I['Type'] == 'EmonHubMqttConfigInterfacer':
+                        interfacer.set_config_path(self._setup._filename)
+
                     interfacer.start()
                 except ehi.EmonHubInterfacerInitError as e:
                     # If interfacer can't be created, log error and skip to next
