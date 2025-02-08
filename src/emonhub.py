@@ -9,6 +9,7 @@
 
 """
 
+
 import sys
 import time
 import logging
@@ -18,12 +19,14 @@ import argparse
 import pprint
 import glob
 import os
+import getpass
 from collections import defaultdict
 
 import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
 import emonhub_http_api as ehapi
+import emonhub_auto_conf as eha
 from interfacers import *
 
 # this namespace and path
@@ -62,7 +65,6 @@ class EmonHub:
         Interface (EmonHubSetup): User interface to the hub.
 
         """
-
         # Initialize exit request flag
         self._exit = False
 
@@ -75,7 +77,8 @@ class EmonHub:
         self._set_logging_level('INFO', False)
         self._log.info("EmonHub %s", self.__version__)
         self._log.info("Opening hub...")
-
+        self._log.info("Running as user: "+str(getpass.getuser()))
+        
         # Initialize Interfacers
         self._interfacers = {}
         
@@ -83,7 +86,16 @@ class EmonHub:
 
         # Update settings
         self._update_settings(settings)
-
+        
+        # Load available
+        try:
+            self.autoconf = eha.EmonHubAutoConf(settings)
+            eha.available = self.autoconf.available
+            eha.auto_conf_enabled = self.autoconf.enabled
+        except eha.EmonHubAutoConfError as e:
+            logger.error(e)
+            sys.exit("Unable to load available.conf")
+        
     def run(self):
         """Launch the hub.
 
@@ -112,6 +124,12 @@ class EmonHub:
             self._setup.run()
             if self._setup.check_settings():
                 self._update_settings(self._setup.settings)
+
+            # Auto conf populate nodelist 
+            if eha.auto_conf_enabled and ehc.nodelist != self._setup.settings['nodes']:
+                self._log.info("Nodelist has been updated by an interfacer, updating config file");
+                self._setup.settings['nodes'] = ehc.nodelist
+                self._setup.settings.write()
 
             # For all Interfacers
             kill_list = []
@@ -336,7 +354,7 @@ if __name__ == "__main__":
             syslogger.setFormatter(logging.Formatter(
                 'emonHub[%(process)d]: %(levelname)-8s %(threadName)-10s %(message)s'))
             logger.addHandler(syslogger)
-
+    
     # If in "Show settings" mode, print settings and exit
     if args.show_settings:
         setup.check_settings()

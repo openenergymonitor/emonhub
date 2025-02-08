@@ -2,8 +2,11 @@ import time
 import json
 import Cargo
 import os
+import serial.tools.list_ports
+
 import glob
 from emonhub_interfacer import EmonHubInterfacer
+
 
 """
 [[SDM120]]
@@ -39,16 +42,17 @@ from emonhub_interfacer import EmonHubInterfacer
         datatype = int
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
-        read_interval = 10
+        read_interval = 20
         nodename = samsung-ashp
         # prefix = sdm_
         [[[[meters]]]]
             [[[[[ashp]]]]]
+                device_type = samsung
                 address = 1
-                registers = 75,74,72,65,66,68,52,59,58,2,79
-                names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status, away_status
-                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1
-                precision = 2,2,1,2,2,2,1,2,2,1,1
+                registers = 75,74,72,65,66,68,52,59,58,2,79,87,5,89
+                names = dhw_temp,dhw_target,dhw_status,return_temp,flow_temp,flow_target,heating_status,indoor_temp,indoor_target, defrost_status,away_status,flow_rate,outdoor_temp,3_way_valve
+                scales = 0.1,0.1,1,0.1,0.1,0.1,1,0.1,0.1,1,1,0.1,0.1,1
+                precision = 2,2,1,2,2,2,1,2,2,1,1,2,2,1
    
 [[SDM630]]
     Type = EmonHubMinimalModbusInterfacer
@@ -74,7 +78,7 @@ SDM120 interfacer for use in development
 
 class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device="/dev/modbus", baud=2400, parity="none", datatype="float"):
+    def __init__(self, name, device="/dev/modbus", device_vid=False, device_pid=False, baud=2400, parity="none", datatype="float"):
         """Initialize Interfacer
 
         """
@@ -95,6 +99,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         self.next_interval = True
         
         # Only load module if it is installed
+        self._rs485 = False
         try:
             import minimalmodbus
             self.minimalmodbus = minimalmodbus
@@ -104,16 +109,59 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             self._rs485 = False
         
         self.device = device
+        self.device_vid = device_vid
+        self.device_pid = device_pid
+
         self.baud = baud
         self.parity = parity
         self.datatype = datatype
-        self.rs485_connect()
+        self.rs485_connect()  
                     
     def rs485_connect(self):
+
+        device = False
+
+        # List available ports
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+
+            # if self.device ends with * then filter devices by matching self.device up to the *
+            if self.device[-1] == "*":
+                if not port.device.startswith(self.device[:-1]):
+                    continue
+            else:
+                if port.device != self.device:
+                    continue
+
+            # if device_vid filter by vid
+            if self.device_vid:
+                if port.vid != int(self.device_vid):
+                    continue
+
+            # if device_pid filter by pid
+            if self.device_pid:
+                if port.pid != int(self.device_pid):
+                    continue
+
+            # print port details
+            self._log.info("Modbus device found: %s, vid:%s, pid:%s" % (port.device, port.vid, port.pid))
+            device = port.device
+
+        # check for valid symbolic link
+        if not device:
+            if os.path.islink(self.device):
+                device = self.device
+
+        # if device is still False, log error and return False
+        if not device:
+            self._log.error("Could not find Modbus device")
+            self.ser = False
+            return False
+
         try:
-            self._log.info("Connecting to Modbus device="+str(self.device)+" baud="+str(self.baud)+" parity="+str(self.parity)+" datatype="+str(self.datatype))
+            self._log.info("Connecting to Modbus device="+str(device)+" baud="+str(self.baud)+" parity="+str(self.parity)+" datatype="+str(self.datatype))
             
-            self._rs485 = self.minimalmodbus.Instrument(self.device, 1)
+            self._rs485 = self.minimalmodbus.Instrument(device, 1)
             self._rs485.serial.baudrate = self.baud
             self._rs485.serial.bytesize = 8
             if self.parity == 'even':
@@ -140,7 +188,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         Return data as a list: [NodeID, val1, val2]
 
         """
-        
+
         if int(time.time())%self._settings['read_interval']==0:
             if self.next_interval:
                 self.next_interval = False
@@ -156,17 +204,27 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     
                     # Support for multiple MBUS meters on a single bus
                     for meter in self._settings['meters']:
+                        
                         self._rs485.address = self._settings['meters'][meter]['address']
                         
+                        if self._settings['meters'][meter]['device_type'] == 'samsung':
+                            self._log.debug("Samsung device active")
+                            # map Flow rate (l/min), OutdoorT, 3-way valve 0=CH 1=DHW, Compressor controll %, Compressor freq (Hz), Immersion heater status
+                            self._rs485.write_registers(7005,[0x42E9, 0x8204, 0x4067, 0x42F1, 0x8238, 0x4087])
+                            
                         for i in range(0,len(self._settings['meters'][meter]['registers'])):
                             register_count += 1
                             valid = True
                             try:
                                 if self.datatype == 'int':
-                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3)
+                                    time.sleep(0.1)
+                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3, signed=True)
+                                        
                                 elif self.datatype == 'float':
+                                    time.sleep(0.1)
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                                 else:
+                                    time.sleep(0.1)
                                     value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
                             
                                     
@@ -236,12 +294,17 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                 self._settings['meters'] = {}
                 for meter in setting:
                     # default
+                    device_type = []
                     address = 1
                     registers = []
                     names = []
                     precision = []
                     scales = []
                     # address
+                    if 'device_type' in setting[meter]:
+                        device_type = setting[meter]['device_type']
+                        self._log.info("Setting %s meters %s device_type %s", self.name, meter, device_type)
+                        
                     if 'address' in setting[meter]:
                         address = int(setting[meter]['address'])
                         self._log.info("Setting %s meters %s address %s", self.name, meter, address)
@@ -268,6 +331,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                              
                     #assign
                     self._settings['meters'][meter] = {
+                        'device_type':device_type,
                         'address':address,
                         'registers':registers,
                         'names':names,
@@ -281,3 +345,4 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super().set(**kwargs)
+

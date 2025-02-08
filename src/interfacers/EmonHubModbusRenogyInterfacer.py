@@ -63,11 +63,11 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
             client = ModbusClient(method = 'rtu', port = com_port, baudrate = int(com_baud), stopbits = 1, bytesize = 8, parity = 'N')
             client.connect()
 
-            Model = client.read_holding_registers(12, 8, unit=1)
+            Model = client.read_holding_registers(12, 8, slave=1)
             self._log.info("Connected to Renogy Model: " + str(Model.registers[0]))
 
-            BatteryType = client.read_holding_registers(57348, 1, unit=1).registers[0]
-            BatteryCapacity = client.read_holding_registers(57346, 1, unit=1).registers[0]
+            BatteryType = client.read_holding_registers(57348, 1, slave=1).registers[0]
+            BatteryCapacity = client.read_holding_registers(57346, 1, slave=1).registers[0]
             self._log.info("Battery Type: " + BATTERY_TYPE[BatteryType] + " " + str(BatteryCapacity) + "ah") 
             
             self._modcon = True
@@ -103,12 +103,12 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
             if self._modcon :
                                       
                 # read battery registers
-                BatteryPercent = self._con.read_holding_registers(256, 1, unit=1).registers[0]
-                Charging_Stage = self._con.read_holding_registers(288, 1, unit=1).registers[0]
+                BatteryPercent = self._con.read_holding_registers(256, 1, slave=1).registers[0]
+                Charging_Stage = self._con.read_holding_registers(288, 1, slave=1).registers[0]
                 self._log.debug("Battery Percent " + str(BatteryPercent) + "%")
                 self._log.debug("Charging Stage " + str(CHARGING_STATE[Charging_Stage]))
 
-                Temp_raw = self._con.read_holding_registers(259, 2, unit=1)
+                Temp_raw = self._con.read_holding_registers(259, 2, slave=1)
                 temp_value = Temp_raw.registers[0] & 0x0ff
                 sign = Temp_raw.registers[0] >> 7
                 BatteryTemp_C = -(temp_value - 128) if sign == 1 else temp_value
@@ -117,14 +117,14 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
                 self._log.debug("BatteryTemp_F " +str(BatteryTemp_F))
 
                 # read Solar registers
-                SolarVoltage = self._con.read_holding_registers(263, 1, unit=1).registers[0]
-                SolarCurrent = self._con.read_holding_registers(264, 1, unit=1).registers[0]
-                SolarPower = self._con.read_holding_registers(265, 1, unit=1).registers[0]
+                SolarVoltage = self._con.read_holding_registers(263, 1, slave=1).registers[0]
+                SolarCurrent = self._con.read_holding_registers(264, 1, slave=1).registers[0]
+                SolarPower = self._con.read_holding_registers(265, 1, slave=1).registers[0]
                 self._log.debug("SolarVoltage " + str(SolarVoltage) + "v")
                 self._log.debug("SolarCurrent " + str(SolarCurrent) + "a")
                 self._log.debug("SolarPower " + str(SolarPower) + "w")
 
-                PowerGenToday = self._con.read_holding_registers(275, 1, unit=1).registers[0]
+                PowerGenToday = self._con.read_holding_registers(275, 1, slave=1).registers[0]
                 self._log.debug("PowerGenToday " + str(PowerGenToday) + "kWh")
 
                 # Create a Payload object

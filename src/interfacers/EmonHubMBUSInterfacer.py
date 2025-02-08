@@ -2,7 +2,9 @@ import time
 import json
 import Cargo
 import serial
+import serial.tools.list_ports
 import struct
+import os
 from emonhub_interfacer import EmonHubInterfacer
 
 """
@@ -33,7 +35,7 @@ MBUS interfacer for use in development
 
 class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device="/dev/ttyUSB0", baud=2400, use_meterbus_lib=False):
+    def __init__(self, name, device="/dev/ttyUSB0", device_vid=False, device_pid=False, baud=2400, use_meterbus_lib=False):
         """Initialize Interfacer
 
         """
@@ -52,15 +54,16 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         self.next_interval = True
         
         self.device = device
+        self.device_vid = device_vid
+        self.device_pid = device_pid
         self.baud = baud
+        
+        self.debug_data_frame = False
+        
+        self.invalid_count = 0
 
         # Only load module if it is installed
-        try:
-            self._log.debug("Connecting to MBUS serial: " + device + " " + str(baud))
-            self.ser = serial.Serial(device, baud, 8, 'E', 1, 0.5)
-        except ModuleNotFoundError as err:
-            self._log.error(err)
-            self.ser = False
+        self.connect()
             
         # If use_meterbus_lib is true, try to load module
         # pip3 install pyMeterBus
@@ -73,6 +76,57 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             except ModuleNotFoundError as err:
                 self._log.error(err)
                 self.use_meterbus_lib = False
+
+
+    def connect(self):
+        """Connect to MBUS
+
+        """
+        device = False
+
+        # List available ports
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+
+            # if self.device ends with * then filter devices by matching self.device up to the *
+            if self.device[-1] == "*":
+                if not port.device.startswith(self.device[:-1]):
+                    continue
+            else:
+                if port.device != self.device:
+                    continue
+
+            # if device_vid filter by vid
+            if self.device_vid:
+                if port.vid != int(self.device_vid):
+                    continue
+
+            # if device_pid filter by pid
+            if self.device_pid:
+                if port.pid != int(self.device_pid):
+                    continue
+
+            # print port details
+            self._log.info("MBUS device found: %s, vid:%s, pid:%s" % (port.device, port.vid, port.pid))
+            device = port.device
+
+        # check for valid symbolic link
+        if not device:
+            if os.path.islink(self.device):
+                device = self.device
+
+        # if device is still False, log error and return False
+        if not device:
+            self._log.error("Could not find MBUS device")
+            self.ser = False
+            return False
+
+        try:
+            self._log.debug("Connecting to MBUS serial: " + device + " " + str(self.baud))
+            self.ser = serial.Serial(device, self.baud, 8, 'E', 1, 0.5)
+        except Exception:
+            self._log.error("Could not connect to MBUS serial")
+            self.ser = False
 
     def mbus_serial_write(self,data):
         try:
@@ -182,6 +236,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x04: (0.01, "Energy", "kWh"),
             0x05: (0.1, "Energy", "kWh"),
             0x06: (1, "Energy", "kWh"),
+            0x07: (10, "Energy", "kWh"),
             0x13: (0.001, "Volume", "m3"),
             0x14: (0.01, "Volume", "m3"),
             0x15: (0.1, "Volume", "m3"),
@@ -195,6 +250,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             0x2c: (10, "Power", "W"),
             0x2d: (100, "Power", "W"),       
             0x2e: (1000, "Power", "W"),
+            
+            0x38: (0.000001, "FlowRate", "m3/h"), # mm3/h
+            0x39: (0.00001, "FlowRate", "m3/h"), # mm3/h
+            0x3a: (0.0001, "FlowRate", "m3/h"), # mm3/h
             0x3b: (0.001, "FlowRate", "m3/h"), # mm3/h
             0x3c: (0.01, "FlowRate", "m3/h"), # mm3/h
             0x3d: (0.1, "FlowRate", "m3/h"), # mm3/h
@@ -244,7 +303,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         name_count = {}
         record = 0
         
-        debug = False
+        debug = self.debug_data_frame
 
         for bid in range(0,len(data)):
             this = next
@@ -464,7 +523,9 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                             
                     if bid == bid_end and val == 0x16:
                         time_elapsed = time.time()-start_time
-                        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))
+
+                        self.invalid_count += 1
+                        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms, count: %d" % (bid,time_elapsed*1000,self.invalid_count))
                                 
                         if valid: # Parse frame if still valid
                             if self.use_meterbus_lib:
@@ -479,8 +540,15 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             self._log.error("read_data_frame could not read from serial port")         
         # If we are here data response is corrupt
         time_elapsed = time.time()-start_time
-        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms" % (bid,time_elapsed*1000))       
+        self.invalid_count += 1
+        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms, count: %d" % (bid,time_elapsed*1000,self.invalid_count))
         # end of read_data_frame
+        
+        if self.invalid_count>=10:
+            # Reset invalid count
+            self.invalid_count = 0
+            self._log.debug("Invalid count = 10. Restarting MBUS serial connection on next read")
+            self.ser = False
 
     def add_result_to_cargo(self,meter,c,result):
         if result != None:
@@ -508,12 +576,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 self.next_interval = False
                 
                 if not self.ser:
-                    try:
-                        self._log.debug("Connecting to MBUS serial: " + self.device + " " + str(self.baud))
-                        self.ser = serial.Serial(self.device, self.baud, 8, 'E', 1, 0.5)
-                    except Exception:
-                        self._log.error("Could not connect to MBUS serial")
-                        self.ser = False
+                    self.connect()
                         
                 c = Cargo.new_cargo()
                 c.names = []
@@ -557,7 +620,10 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         # 2. Get instantaneous data
                         result = self.request_data_sdm120(address,[1,7,11,23])
                         self.add_result_to_cargo(meter,c,result)
-                    # ------------------------------------------------------
+                    elif meter_type=="kamstrup403":
+                        result = self.request_data(address,[1,4,7,8,9,10,11,12,14])
+                        self.add_result_to_cargo(meter,c,result)
+                        # ------------------------------------------------------
                             
 
                             
@@ -620,3 +686,5 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super().set(**kwargs)
+
+

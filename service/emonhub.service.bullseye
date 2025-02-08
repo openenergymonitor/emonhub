@@ -2,8 +2,7 @@
 Description=emonHub data multiplexer
 # The config file lives in /etc/emonhub/emonhub.conf
 # The log file lives in /var/log/emonhub/emonhub.log
-Requires=var-log.mount
-After=var-log.mount network.target
+After= network.target
 
 [Service]
 Type=exec
