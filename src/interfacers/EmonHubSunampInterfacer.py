@@ -83,7 +83,7 @@ class EmonHubSunampInterfacer(ehi.EmonHubSerialInterfacer):
         c.names = []
         c.realdata = []
 
-        print()
+        # print()
 
         # Fetch default nodename from settings
         if self._settings["nodename"] != "":
