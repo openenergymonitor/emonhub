@@ -64,11 +64,11 @@ class EmonHubSunampInterfacer(ehi.EmonHubSerialInterfacer):
             self._ser = False
 
         # If line incomplete, exit
-        if '\r\n' not in self._rx_buf:
+        if '\n' not in self._rx_buf:
             return
 
         # Remove CR,LF.
-        f = self._rx_buf[:-2].strip()
+        f = self._rx_buf[:-1].strip()
 
         # Reset buffer
         self._rx_buf = ''
