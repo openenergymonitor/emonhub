@@ -182,6 +182,20 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             self._log.error("Could not connect to Modbus device")
             self._rs485 = False
 
+    def _read_register(self, instrument, register, datatype, functioncode):
+        """
+        Helper to read a register with the correct method based on datatype.
+        """
+        time.sleep(0.1)
+        if datatype == 'int':
+            return instrument.read_register(int(register), functioncode=functioncode, signed=True)
+        elif datatype == 'float':
+            return instrument.read_float(int(register), functioncode=functioncode, number_of_registers=2)
+        # Add more datatypes as needed
+        else:
+            # Default to float if unknown
+            return instrument.read_float(int(register), functioncode=functioncode, number_of_registers=2)
+
     def read(self):
         """Read data and process
 
@@ -211,8 +225,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                             self._log.debug("Samsung device active")
                             # map Flow rate (l/min), OutdoorT, 3-way valve 0=CH 1=DHW, Compressor controll %, Compressor freq (Hz), Immersion heater status
                             self._rs485.write_registers(7005,[0x42E9, 0x8204, 0x4067, 0x42F1, 0x8238, 0x4087])
-                            
-                        for i in range(0,len(self._settings['meters'][meter]['registers'])):
+                        
+                        for i in range(0, len(self._settings['meters'][meter]['registers'])):
                             register_count += 1
                             valid = True
                             try:
@@ -221,33 +235,22 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 if i < len(functioncodes):
                                     functioncode = int(functioncodes[i])
                                 else:
-                                    if self.datatype == 'int':
-                                        functioncode = 3
-                                    else:
-                                        functioncode = 4
+                                    meter_datatype = self._settings['meters'][meter].get('datatype', self.datatype)
+                                    functioncode = 3 if meter_datatype == 'int' else 4
 
-                                if self.datatype == 'int':
-                                    time.sleep(0.1)
-                                    value = self._rs485.read_register(
-                                        int(self._settings['meters'][meter]['registers'][i]),
-                                        functioncode=functioncode, signed=True)
-                                elif self.datatype == 'float':
-                                    time.sleep(0.1)
-                                    value = self._rs485.read_float(
-                                        int(self._settings['meters'][meter]['registers'][i]),
-                                        functioncode=functioncode, number_of_registers=2)
-                                else:
-                                    time.sleep(0.1)
-                                    value = self._rs485.read_float(
-                                        int(self._settings['meters'][meter]['registers'][i]),
-                                        functioncode=functioncode, number_of_registers=2)
-                            
-                                    
+                                # Use per-meter datatype, fallback to global
+                                meter_datatype = self._settings['meters'][meter].get('datatype', self.datatype)
+                                value = self._read_register(
+                                    self._rs485,
+                                    self._settings['meters'][meter]['registers'][i],
+                                    meter_datatype,
+                                    functioncode
+                                )
                             except Exception as e:
                                 valid = False
                                 invalid_count += 1
-                                self._log.error("Could not read register @ "+str(self._settings['meters'][meter]['registers'][i])+": " + str(e))
-                            
+                                self._log.error("Could not read register @ %s: %s", str(self._settings['meters'][meter]['registers'][i]), str(e))
+
                             if valid:
                                 # replace datafield name with custom name
                                 if i<len(self._settings['meters'][meter]['names']):
@@ -316,39 +319,46 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     precision = []
                     scales = []
                     functioncodes = []
+                    datatype = None  # Add this line
+
                     # address
                     if 'device_type' in setting[meter]:
                         device_type = setting[meter]['device_type']
                         self._log.info("Setting %s meters %s device_type %s", self.name, meter, device_type)
-                        
+
                     if 'address' in setting[meter]:
                         address = int(setting[meter]['address'])
                         self._log.info("Setting %s meters %s address %s", self.name, meter, address)
-                        
+
                     if 'registers' in setting[meter]:
                         for reg in setting[meter]['registers']:
                             registers.append(int(reg))
                         self._log.info("Setting %s meters %s registers %s", self.name, meter, json.dumps(registers))
-                                                   
+
                     if 'names' in setting[meter]:
                         for name in setting[meter]['names']:
                             names.append(str(name))
                         self._log.info("Setting %s meters %s names %s", self.name, meter, json.dumps(names))
-                        
+
                     if 'precision' in setting[meter]:
                         for dp in setting[meter]['precision']:
                             precision.append(int(dp))
                         self._log.info("Setting %s meters %s precision %s", self.name, meter, json.dumps(precision))
-                        
+
                     if 'scales' in setting[meter]:
                         for scale in setting[meter]['scales']:
                             scales.append(float(scale))
                         self._log.info("Setting %s meters %s scales %s", self.name, meter, json.dumps(scales))
-                        
+
                     if 'functioncodes' in setting[meter]:
                         for fc in setting[meter]['functioncodes']:
                             functioncodes.append(int(fc))
                         self._log.info("Setting %s meters %s functioncodes %s", self.name, meter, json.dumps(functioncodes))
+
+                    if 'datatype' in setting[meter]:  # Add this block
+                        datatype = setting[meter]['datatype']
+                        self._log.info("Setting %s meters %s datatype %s", self.name, meter, datatype)
+
                     #assign
                     self._settings['meters'][meter] = {
                         'device_type':device_type,
@@ -357,9 +367,9 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         'names':names,
                         'precision':precision,
                         'scales':scales,
-                        'functioncodes':functioncodes
+                        'functioncodes':functioncodes,
+                        'datatype':datatype  # Add this line
                     }
-                    
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
