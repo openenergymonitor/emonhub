@@ -182,16 +182,31 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             self._log.error("Could not connect to Modbus device")
             self._rs485 = False
 
+    
     def _read_register(self, instrument, register, datatype, functioncode):
         """
         Helper to read a register with the correct method based on datatype.
+        Args:
+            instrument: The minimalmodbus instrument instance.
+            register: The register address to read.
+            datatype: The type of data to read (int, uint, float, int32, uint32).
+            functioncode: The function code to use for reading the register.
+                          - 3: Read Holding Registers
+                          - 4: Read Input Registers
+        Returns:
+            The value read from the register, converted to the specified datatype.
         """
         time.sleep(0.1)
         if datatype == 'int':
             return instrument.read_register(int(register), functioncode=functioncode, signed=True)
-        elif datatype == 'float':
+        elif datatype == 'uint':
+            return instrument.read_register(int(register), functioncode=functioncode, signed=False)
+        elif datatype in ('float', 'float32'):
             return instrument.read_float(int(register), functioncode=functioncode, number_of_registers=2)
-        # Add more datatypes as needed
+        elif datatype in ('int32', 'long'):
+            return instrument.read_long(int(register), functioncode=functioncode, signed=True)
+        elif datatype in ('uint32', 'ulong'):
+            return instrument.read_long(int(register), functioncode=functioncode, signed=False)
         else:
             # Default to float if unknown
             return instrument.read_float(int(register), functioncode=functioncode, number_of_registers=2)
