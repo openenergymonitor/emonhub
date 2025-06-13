@@ -216,16 +216,31 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                             register_count += 1
                             valid = True
                             try:
+                                # Get functioncode if provided, else default
+                                functioncodes = self._settings['meters'][meter].get('functioncodes', [])
+                                if i < len(functioncodes):
+                                    functioncode = int(functioncodes[i])
+                                else:
+                                    if self.datatype == 'int':
+                                        functioncode = 3
+                                    else:
+                                        functioncode = 4
+
                                 if self.datatype == 'int':
                                     time.sleep(0.1)
-                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=3, signed=True)
-                                        
+                                    value = self._rs485.read_register(
+                                        int(self._settings['meters'][meter]['registers'][i]),
+                                        functioncode=functioncode, signed=True)
                                 elif self.datatype == 'float':
                                     time.sleep(0.1)
-                                    value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                    value = self._rs485.read_float(
+                                        int(self._settings['meters'][meter]['registers'][i]),
+                                        functioncode=functioncode, number_of_registers=2)
                                 else:
                                     time.sleep(0.1)
-                                    value = self._rs485.read_float(int(self._settings['meters'][meter]['registers'][i]), functioncode=4, number_of_registers=2)
+                                    value = self._rs485.read_float(
+                                        int(self._settings['meters'][meter]['registers'][i]),
+                                        functioncode=functioncode, number_of_registers=2)
                             
                                     
                             except Exception as e:
@@ -300,6 +315,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                     names = []
                     precision = []
                     scales = []
+                    functioncodes = []
                     # address
                     if 'device_type' in setting[meter]:
                         device_type = setting[meter]['device_type']
@@ -328,7 +344,11 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         for scale in setting[meter]['scales']:
                             scales.append(float(scale))
                         self._log.info("Setting %s meters %s scales %s", self.name, meter, json.dumps(scales))
-                                             
+                        
+                    if 'functioncodes' in setting[meter]:
+                        for fc in setting[meter]['functioncodes']:
+                            functioncodes.append(int(fc))
+                        self._log.info("Setting %s meters %s functioncodes %s", self.name, meter, json.dumps(functioncodes))
                     #assign
                     self._settings['meters'][meter] = {
                         'device_type':device_type,
@@ -336,7 +356,8 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                         'registers':registers,
                         'names':names,
                         'precision':precision,
-                        'scales':scales
+                        'scales':scales,
+                        'functioncodes':functioncodes
                     }
                     
                 continue
