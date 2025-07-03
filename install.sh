@@ -72,7 +72,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
     # pip3 install RPi.GPIO
     
     echo "\nRemoving python3-rpi-gpio"
-    sudo apt remove python3-rpi.gpio
+    sudo apt remove -y python3-rpi.gpio
 
     echo "\nInstalling python3-rpi-lgpio"
     sudo apt install -y python3-rpi-lgpio
