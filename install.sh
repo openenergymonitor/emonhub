@@ -75,7 +75,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
     sudo apt remove python3-rpi.gpio
 
     echo "\nInstalling python3-rpi-lgpio"
-    sudo apt install python3-rpi-lgpio
+    sudo apt install -y python3-rpi-lgpio
     pip3 install rpi-lgpio
 
     # RaspberryPi Serial configuration
