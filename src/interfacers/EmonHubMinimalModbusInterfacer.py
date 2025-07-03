@@ -2,6 +2,8 @@ import time
 import json
 import Cargo
 import os
+import serial.tools.list_ports
+
 import glob
 from emonhub_interfacer import EmonHubInterfacer
 
@@ -76,7 +78,7 @@ SDM120 interfacer for use in development
 
 class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, device="/dev/modbus", baud=2400, parity="none", datatype="float"):
+    def __init__(self, name, device="/dev/modbus", device_vid=False, device_pid=False, baud=2400, parity="none", datatype="float"):
         """Initialize Interfacer
 
         """
@@ -97,6 +99,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         self.next_interval = True
         
         # Only load module if it is installed
+        self._rs485 = False
         try:
             import minimalmodbus
             self.minimalmodbus = minimalmodbus
@@ -106,16 +109,59 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             self._rs485 = False
         
         self.device = device
+        self.device_vid = device_vid
+        self.device_pid = device_pid
+
         self.baud = baud
         self.parity = parity
         self.datatype = datatype
         self.rs485_connect()  
                     
     def rs485_connect(self):
+
+        device = False
+
+        # List available ports
+        ports = serial.tools.list_ports.comports()
+        for port in ports:
+
+            # if self.device ends with * then filter devices by matching self.device up to the *
+            if self.device[-1] == "*":
+                if not port.device.startswith(self.device[:-1]):
+                    continue
+            else:
+                if port.device != self.device:
+                    continue
+
+            # if device_vid filter by vid
+            if self.device_vid:
+                if port.vid != int(self.device_vid):
+                    continue
+
+            # if device_pid filter by pid
+            if self.device_pid:
+                if port.pid != int(self.device_pid):
+                    continue
+
+            # print port details
+            self._log.info("Modbus device found: %s, vid:%s, pid:%s" % (port.device, port.vid, port.pid))
+            device = port.device
+
+        # check for valid symbolic link
+        if not device:
+            if os.path.islink(self.device):
+                device = self.device
+
+        # if device is still False, log error and return False
+        if not device:
+            self._log.error("Could not find Modbus device")
+            self.ser = False
+            return False
+
         try:
-            self._log.info("Connecting to Modbus device="+str(self.device)+" baud="+str(self.baud)+" parity="+str(self.parity)+" datatype="+str(self.datatype))
+            self._log.info("Connecting to Modbus device="+str(device)+" baud="+str(self.baud)+" parity="+str(self.parity)+" datatype="+str(self.datatype))
             
-            self._rs485 = self.minimalmodbus.Instrument(self.device, 1)
+            self._rs485 = self.minimalmodbus.Instrument(device, 1)
             self._rs485.serial.baudrate = self.baud
             self._rs485.serial.bytesize = 8
             if self.parity == 'even':
@@ -299,3 +345,4 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
 
         # include kwargs from parent
         super().set(**kwargs)
+
