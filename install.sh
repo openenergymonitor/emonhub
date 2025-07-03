@@ -69,7 +69,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
     echo "installing or updating raspberry pi related dependencies"
     
     # Only install the GPIO library if on a Pi. Used by Pulse interfacer
-    # pip3 install RPi.GPIO
+    pip3 install RPi.GPIO
     
     # echo "\nRemoving python3-rpi-gpio"
     # sudo apt remove -y python3-rpi.gpio
