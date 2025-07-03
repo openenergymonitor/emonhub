@@ -43,6 +43,15 @@ echo "installing or updating emonhub dependencies"
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth python3-spidev
 # removed libbluetooth-dev as this was causing a kernel update
 
+if [ -e /usr/lib/python3.11/EXTERNALLY-MANAGED ]; then
+    sudo rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED
+    echo "Removed pip3 external management warning."
+fi
+if [ -e /usr/lib/python3.11/EXTERNALLY-MANAGED.orig ]; then
+    sudo rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED.orig
+    echo "Removed pip3 external management warning."
+fi
+
 # FIXME paho-mqtt V2 has new API. stick to V1.x for now
 pip install --upgrade paho-mqtt==1.6.1
 pip install requests py-sds011 sdm_modbus minimalmodbus
@@ -64,9 +73,10 @@ if [ "$emonSD_pi_env" = 1 ]; then
     
     echo "\nRemoving python3-rpi-gpio"
     sudo apt remove python3-rpi.gpio
-    
+
     echo "\nInstalling python3-rpi-lgpio"
     sudo apt install python3-rpi-lgpio
+    pip3 install rpi-lgpio
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
