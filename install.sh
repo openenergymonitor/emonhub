@@ -77,22 +77,46 @@ if [ "$emonSD_pi_env" = 1 ]; then
         rpi_gpio_installed=1
     fi
 
+    # Check if python3-rpi-lgpio package is available
+    rpi_lgpio_available=0
+    if apt-cache show python3-rpi-lgpio > /dev/null 2>&1; then
+        rpi_lgpio_available=1
+    fi
+
     rpi_lgpio_installed=0
     if dpkg -l | grep -q python3-rpi-lgpio; then
         rpi_lgpio_installed=1
     fi
 
     # Remove RPi.GPIO if it is installed, as it conflicts with rpi-lgpio
-    if [ "$rpi_gpio_installed" -eq 1 ]; then
-        echo "- Removing python3-rpi-gpio"
-        sudo apt remove -y python3-rpi.gpio
-    fi
+    if [ "$rpi_lgpio_available" -eq 1 ]; then
+        if [ "$rpi_gpio_installed" -eq 1 ]; then
+            echo "- Removing python3-rpi-gpio"
+            sudo apt remove -y python3-rpi.gpio
+        fi
 
-    # Install rpi-lgpio if it is not already installed
-    if [ "$rpi_lgpio_installed" -eq 0 ]; then
-        echo "- Installing rpi-lgpio"
-        sudo apt install -y python3-rpi-lgpio
-        pip3 install rpi-lgpio
+        # Install rpi-lgpio if it is not already installed
+        if [ "$rpi_lgpio_installed" -eq 0 ]; then
+            echo "- Installing rpi-lgpio"
+            sudo apt install -y python3-rpi-lgpio
+            pip3 install rpi-lgpio
+        fi
+
+        # Move CS0 to GPIO26
+        # add line if not present
+        if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
+            echo "- Moving SPI CS0 to GPIO26"
+            echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
+            reboot_required=1
+        fi
+    else
+        echo "python3-rpi-lgpio not available, using python3-rpi.gpio instead"
+        if [ "$rpi_gpio_installed" -eq 0 ]; then
+            echo "- Installing python3-rpi.gpio"
+            sudo apt install -y python3-rpi.gpio
+            # Ensure RPi.GPIO is installed via pip3
+            pip3 install RPi.GPIO
+        fi
     fi
 
     # RaspberryPi Serial configuration
@@ -109,14 +133,6 @@ if [ "$emonSD_pi_env" = 1 ]; then
     if grep -q "^#dtparam=spi=on" $boot_config; then
         echo "- Enabling SPI in $boot_config"
         sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
-        reboot_required=1
-    fi
-
-    # Move CS0 to GPIO26
-    # add line if not present
-    if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
-        echo "- Moving SPI CS0 to GPIO26"
-        echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
         reboot_required=1
     fi
 
