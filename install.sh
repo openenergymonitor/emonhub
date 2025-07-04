@@ -71,16 +71,26 @@ if [ "$emonSD_pi_env" = 1 ]; then
 
     echo "installing or updating raspberry pi related dependencies"
     
-    # Remove RPi.GPIO if it is installed, as it conflicts with rpi-lgpio
+    rpi_gpio_installed=0
     if dpkg -l | grep -q python3-rpi.gpio; then
-        echo "\nRemoving python3-rpi-gpio"
-        sudo apt remove -y python3-rpi.gpio
+        rpi_gpio_installed=1
+    fi
+
+    rpi_lgpio_installed=0
+    if dpkg -l | grep -q python3-rpi-lgpio; then
+        rpi_lgpio_installed=1
+    fi
+
+    # Remove RPi.GPIO if it is installed, as it conflicts with rpi-lgpio
+    if [ "$rpi_gpio_installed" -eq 1 ]; then
+      echo "Removing python3-rpi-gpio"
+      sudo apt remove -y python3-rpi.gpio
     fi
 
     # Install rpi-lgpio if it is not already installed
-    if ! dpkg -l | grep -q python3-rpi-lgpio; then
-        echo "Installing rpi-lgpio"
-        pip3 install rpi-lgpio
+    if [ "$rpi_lgpio_installed" -eq 0 ]; then
+      echo "Installing rpi-lgpio"
+      pip3 install rpi-lgpio
     fi
 
     # RaspberryPi Serial configuration
