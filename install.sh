@@ -60,7 +60,10 @@ pip install --upgrade paho-mqtt==1.6.1
 pip install requests py-sds011 sdm_modbus minimalmodbus
 
 # Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
-pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
+if ! pip3 show rpi-rfm69 > /dev/null 2>&1; then
+    echo "- Installing rpi-rfm69 library"
+    pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
+fi
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
@@ -69,8 +72,6 @@ if [ "$emonSD_pi_env" = 1 ]; then
         boot_config=/boot/firmware/config.txt
     fi
 
-    echo "installing or updating raspberry pi related dependencies"
-    
     rpi_gpio_installed=0
     if dpkg -l | grep -q python3-rpi.gpio; then
         rpi_gpio_installed=1
@@ -120,8 +121,10 @@ if [ "$emonSD_pi_env" = 1 ]; then
     fi
 
     # We also need to stop the Bluetooth modem trying to use UART
-    echo "Stop Bluetooth modem"
-    sudo systemctl disable hciuart
+    if systemctl is-enabled --quiet hciuart; then
+        echo "- Stopping Bluetooth modem"
+        sudo systemctl disable hciuart
+    fi
 
     boot_cmdline=/boot/cmdline.txt
     if [ -f /boot/firmware/cmdline.txt ]; then
