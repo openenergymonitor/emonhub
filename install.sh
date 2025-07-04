@@ -15,31 +15,31 @@ reboot_required=0
 # User input: is this a raspberrypi environment that requires serial configuration
 emonSD_pi_env=0
 if [ -z "$1" ]; then
-  read -p 'Apply raspberrypi serial configuration? (y/n): ' input
-  if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
-    emonSD_pi_env=1
-  fi
+    read -p 'Apply raspberrypi serial configuration? (y/n): ' input
+    if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
+        emonSD_pi_env=1
+    fi
 else
-  openenergymonitor_dir=$1
-  cd $openenergymonitor_dir/EmonScripts/update
-  source load_config.sh
-  echo "emonSD_pi_env provided in arg = $emonSD_pi_env"
+    openenergymonitor_dir=$1
+    cd $openenergymonitor_dir/EmonScripts/update
+    source load_config.sh
+    echo "emonSD_pi_env provided in arg = $emonSD_pi_env"
 fi
 
 # User input: check username to install emonhub with
 if [ -z "$2" ]; then
-  user=$USER
-  read -p "Would you like to install emonhub under the $USER user? (y/n): " input
-  if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
-    echo "Please switch to the user that you wish emonhub to be installed under"
-    exit 0
-  fi
-  
-  echo "Running apt update"
-  sudo apt update
+    user=$USER
+    read -p "Would you like to install emonhub under the $USER user? (y/n): " input
+    if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
+        echo "Please switch to the user that you wish emonhub to be installed under"
+        exit 0
+    fi
+    
+    echo "Running apt update"
+    sudo apt update
 else
-  user=$2
-  echo "user provided as arg = $user"
+    user=$2
+    echo "user provided as arg = $user"
 fi
 
 echo "installing or updating emonhub dependencies"
@@ -83,29 +83,38 @@ if [ "$emonSD_pi_env" = 1 ]; then
 
     # Remove RPi.GPIO if it is installed, as it conflicts with rpi-lgpio
     if [ "$rpi_gpio_installed" -eq 1 ]; then
-      echo "Removing python3-rpi-gpio"
-      sudo apt remove -y python3-rpi.gpio
+        echo "- Removing python3-rpi-gpio"
+        sudo apt remove -y python3-rpi.gpio
     fi
 
     # Install rpi-lgpio if it is not already installed
     if [ "$rpi_lgpio_installed" -eq 0 ]; then
-      echo "Installing rpi-lgpio"
-      sudo apt install -y python3-rpi-lgpio
-      pip3 install rpi-lgpio
+        echo "- Installing rpi-lgpio"
+        sudo apt install -y python3-rpi-lgpio
+        pip3 install rpi-lgpio
     fi
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=miniuart-bt?
-    echo "Disabling Bluetooth"
-    sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
+
+    if ! grep -q "^dtoverlay=disable-bt" $boot_config; then
+        echo "- Disabling Bluetooth"
+        sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
+        reboot_required=1
+    fi
 
     # Enable SPI
-    sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
+    if grep -q "^#dtparam=spi=on" $boot_config; then
+        echo "- Enabling SPI in $boot_config"
+        sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
+        reboot_required=1
+    fi
 
     # Move CS0 to GPIO26
     # add line if not present
     if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
+        echo "- Moving SPI CS0 to GPIO26"
         echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
         reboot_required=1
     fi
@@ -181,14 +190,14 @@ sudo ln -sf $script_dir/src /usr/local/bin/emonhub
 # Install service
 # ---------------------------------------------------------
 if [ -d /lib/systemd/system ]; then
-  if [ ! -f /lib/systemd/system/emonhub.service ]; then
-    echo "Installing emonhub.service in /lib/systemd/system (creating symlink)"
-    sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
-    sudo systemctl enable emonhub.service
-    sudo systemctl restart emonhub.service
-  else 
-    echo "emonhub.service already installed"
-  fi
+    if [ ! -f /lib/systemd/system/emonhub.service ]; then
+        echo "Installing emonhub.service in /lib/systemd/system (creating symlink)"
+        sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
+        sudo systemctl enable emonhub.service
+        sudo systemctl restart emonhub.service
+    else 
+        echo "emonhub.service already installed"
+    fi
 fi
 
 if [ "$user" != "pi" ]; then
