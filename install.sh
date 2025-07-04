@@ -90,6 +90,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
     # Install rpi-lgpio if it is not already installed
     if [ "$rpi_lgpio_installed" -eq 0 ]; then
       echo "Installing rpi-lgpio"
+      sudo apt install -y python3-rpi-lgpio
       pip3 install rpi-lgpio
     fi
 
