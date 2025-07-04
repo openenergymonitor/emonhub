@@ -221,6 +221,11 @@ if [ $reboot_required -eq 1 ]; then
     echo "-------------------------------------------------------------"
     echo "Reboot required to apply changes. Please reboot your system."
     echo "-------------------------------------------------------------"
+
+    # create file /tmp/emon_reboot_required
+    if [ ! -f /tmp/emon_reboot_required ]; then
+        echo "Reboot required" > /tmp/emon_reboot_required
+    fi
 fi
 
 # ---------------------------------------------------------
