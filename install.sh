@@ -9,6 +9,9 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 echo "EmonHub directory: $script_dir"
 
+# Reboot flag
+reboot_required=0
+
 # User input: is this a raspberrypi environment that requires serial configuration
 emonSD_pi_env=0
 if [ -z "$1" ]; then
@@ -68,15 +71,17 @@ if [ "$emonSD_pi_env" = 1 ]; then
 
     echo "installing or updating raspberry pi related dependencies"
     
-    # Only install the GPIO library if on a Pi. Used by Pulse interfacer
-    # pip3 install RPi.GPIO
-    
-    echo "\nRemoving python3-rpi-gpio"
-    sudo apt remove -y python3-rpi.gpio
+    # Remove RPi.GPIO if it is installed, as it conflicts with rpi-lgpio
+    if dpkg -l | grep -q python3-rpi.gpio; then
+        echo "\nRemoving python3-rpi-gpio"
+        sudo apt remove -y python3-rpi.gpio
+    fi
 
-    echo "\nInstalling python3-rpi-lgpio"
-    sudo apt install -y python3-rpi-lgpio
-    pip3 install rpi-lgpio
+    # Install rpi-lgpio if it is not already installed
+    if ! dpkg -l | grep -q python3-rpi-lgpio; then
+        echo "Installing rpi-lgpio"
+        pip3 install rpi-lgpio
+    fi
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
@@ -91,6 +96,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
     # add line if not present
     if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
         echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
+        reboot_required=1
     fi
 
     # We also need to stop the Bluetooth modem trying to use UART
@@ -187,4 +193,11 @@ sudo systemctl restart emonhub.service
 
 state=$(systemctl show emonhub | grep ActiveState)
 echo "- Service $state"
+
+if [ $reboot_required -eq 1 ]; then
+    echo "-------------------------------------------------------------"
+    echo "Reboot required to apply changes. Please reboot your system."
+    echo "-------------------------------------------------------------"
+fi
+
 # ---------------------------------------------------------
