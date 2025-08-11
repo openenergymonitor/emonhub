@@ -245,6 +245,7 @@ EmonHub can read from a [Rayleigh RI-D35-100](https://www.rayleigh.com/ri-d35-10
 
 EmonHub can read from a [Eaton EPBMETER1](https://www.eaton.com/gb/en-gb/skuPage.EPBMETER1.html) three-phase panel-mount electricity meter via modbus using the following config:
 
+```
 [[EPBMETER1]]
         Type = EmonHubMinimalModbusInterfacer
         [[[init_settings]]]
@@ -260,6 +261,7 @@ EmonHub can read from a [Eaton EPBMETER1](https://www.eaton.com/gb/en-gb/skuPage
                     registers = 1,3,5,97,43
                     names = V1,V2,V3,total_energy_imported,total_power
                     precision = 1,1,1,1,1
+```
 
 Modbus settings should be: `parity = none` and `stopbit = 1`.
 
