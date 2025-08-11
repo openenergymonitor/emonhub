@@ -241,7 +241,29 @@ EmonHub can read from a [Rayleigh RI-D35-100](https://www.rayleigh.com/ri-d35-10
 [Rayleigh Modbus register documentaion](https://www.rayleigh.com/media/uploads/RI-D35-C-COMM-V01.pdf)
 
 
+#### Eaton EPBMETER1
 
+EmonHub can read from a [Eaton EPBMETER1](https://www.eaton.com/gb/en-gb/skuPage.EPBMETER1.html) three-phase panel-mount electricity meter via modbus using the following config:
+
+[[EPBMETER1]]
+        Type = EmonHubMinimalModbusInterfacer
+        [[[init_settings]]]
+            device = /dev/ttyACM*
+            baud = 9600
+        [[[runtimesettings]]]
+            pubchannels = ToEmonCMS,
+            read_interval = 10
+            nodename = heatpump
+            [[[[meters]]]]
+                [[[[[electric]]]]]
+                    address = 1
+                    registers = 1,3,5,97,43
+                    names = V1,V2,V3,total_energy_imported,total_power
+                    precision = 1,1,1,1,1
+
+Modbus settings should be: `parity = none` and `stopbit = 1`.
+
+[EPBMETER1 Modbus register documentaion](https://files.openenergymonitor.org/EPBMETER1.pdf), add one to the last part of the address to get the modbodbus register number to use in emonhub. e.g Total Power (kW) has address `30042` therefore emonhub register is `43`
 ---
 
 ### M-Bus Reader for Electric and Heat meters
