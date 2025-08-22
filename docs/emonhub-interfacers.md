@@ -258,14 +258,14 @@ EmonHub can read from a [Eaton EPBMETER1](https://www.eaton.com/gb/en-gb/skuPage
             [[[[meters]]]]
                 [[[[[electric]]]]]
                     address = 1
-                    registers = 1,3,5,97,43
-                    names = V1,V2,V3,total_energy_imported,total_power
-                    precision = 1,1,1,1,1
+                    registers = 1,3,5,97
+                    names = V1,V2,V3,total_energy_imported
+                    precision = 1,1,1,1
 ```
 
 Modbus settings should be: `parity = none` and `stopbit = 1`.
 
-[EPBMETER1 Modbus register documentaion](https://files.openenergymonitor.org/EPBMETER1.pdf), add one to the last part of the address to get the modbodbus register number to use in emonhub. e.g Total Power (kW) has address `30042` therefore emonhub register is `43`
+[EPBMETER1 Modbus register documentaion](https://files.openenergymonitor.org/EPBMETER1.pdf), add one to the last part of the address to get the modbodbus register number to use in emonhub. e.g `total_energy_imported (kWh)` has address `30096` therefore emonhub register is `97`
 
 
 
