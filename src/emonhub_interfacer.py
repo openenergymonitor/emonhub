@@ -52,9 +52,7 @@ class EmonHubInterfacer(threading.Thread):
                           'nodeoffset': '0',
                           'pubchannels': [],
                           'subchannels': [],
-                          'batchsize': '1',
-                          'nodelistonly': False
-                          }
+                          'batchsize': '1'}
 
         self.init_settings = {}
         self._settings = {}
@@ -90,6 +88,22 @@ class EmonHubInterfacer(threading.Thread):
         self.missed = {}
         self.rx_msg = {}
 
+    def processRxc(self, rxc):
+        if rxc:
+            rxc = self._process_rx(rxc)
+            if rxc:
+                for channel in self._settings["pubchannels"]:
+                    self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
+
+                    # Initialise channel if needed
+                    if channel not in self._pub_channels:
+                        self._pub_channels[channel] = []
+
+                    # Add cargo item to channel
+                    self._pub_channels[channel].append(rxc)
+
+                    self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
+
     @log_exceptions_from_class_method
     def run(self):
         """
@@ -97,27 +111,31 @@ class EmonHubInterfacer(threading.Thread):
         Any regularly performed tasks actioned here along with passing received values
 
         """
+        self._log.info("self: {}".format(self.name))
+        
+        self._log.info("subs:")
+        for item in self._settings["subchannels"]:
+            self._log.info("sub: {}".format(item))
+        
+        self._log.info("pubs:")
+        for item in self._settings["pubchannels"]:
+            self._log.info("pub: {}".format(item))
+                
         while not self.stop:
 
             # Only read if there is a pub channel defined for the interfacer
             if len(self._settings["pubchannels"]):
                 # Read the input and process data if available
-                rxc = self.read()
-                if rxc:
-                    rxc = self._process_rx(rxc)
-                    if rxc:
-                        for channel in self._settings["pubchannels"]:
-                            self._log.debug("%d Sent to channel(start)' : %s", rxc.uri, channel)
-
-                            # Initialise channel if needed
-                            if channel not in self._pub_channels:
-                                self._pub_channels[channel] = []
-
-                            # Add cargo item to channel
-                            self._pub_channels[channel].append(rxc)
-
-                            self._log.debug("%d Sent to channel(end)' : %s", rxc.uri, channel)
-
+                result = self.read()
+                if isinstance(result, list):
+                    for rxc in result:
+                        self.processRxc(rxc)
+                elif isinstance(result, dict):
+                    for rxc in result:
+                        self.processRxc(result[rxc]) 
+                else:
+                    self.processRxc(result)
+                
             # Subscriber channels
             for channel in self._settings["subchannels"]:
                 if channel in self._sub_channels:
@@ -289,13 +307,7 @@ class EmonHubInterfacer(threading.Thread):
                 if 'nodeids' in ehc.nodelist[node]:
                     del ehc.nodelist[node]['nodeids']
                 if 'datalength' in ehc.nodelist[node]:
-                    del ehc.nodelist[node]['datalength']      
-                    
-                    
-        # If not in nodelist and pass through disabled return false
-        if node not in ehc.nodelist and self._settings['nodelistonly']:
-            self._log.warning("%d Discarded RX frame not in nodelist, node:%s, length:%s bytes", cargo.uri, node, len(rxc.realdata))
-            return False
+                    del ehc.nodelist[node]['datalength']                    
             
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
@@ -636,8 +648,6 @@ class EmonHubInterfacer(threading.Thread):
                 setting = str(setting).lower() == "true"
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
                 setting = str(setting).lower() == "true"
-            elif key == 'nodelistonly' and str(setting).lower() in ['true', 'false','1','0']:
-                setting = str(setting).lower() == "true" or str(setting).lower() == "1"
             elif key == 'pubchannels':
                 pass
             elif key == 'subchannels':
