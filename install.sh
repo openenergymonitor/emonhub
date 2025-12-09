@@ -61,7 +61,7 @@ pip install requests py-sds011 sdm_modbus minimalmodbus
 
 # Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
 echo "- Installing rpi-rfm69 library"
-pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-6.zip
+pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-7.zip
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
