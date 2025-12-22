@@ -34,7 +34,7 @@ https://www.epluse.com/products/air-velocity-instrumentation/air-flow-transmitte
                     registers = 25,31
                     datatypes = float,float
                     functioncodes = 3,3
-                    precision = 1,1electric 
+                    precision = 1,1
                     names = temperature, velocity
                     units = C, m/s
 ```
