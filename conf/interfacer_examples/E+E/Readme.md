@@ -6,7 +6,7 @@ Pinout sensor cable (195271) HA010832:
 - Gray VCC (10-29V DC)
 - Green GND 
 
-- Brown Modbys D-
+- Brown Modbus D-
 - Yellow Modbus D+
 
 - White N/C 
