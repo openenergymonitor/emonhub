@@ -66,3 +66,38 @@ https://www.epluse.com/products/co2-measurement/co2-modules-and-probes/ee872/
                     names = temperature, temperature_dewpoint, co2_avr, co2_raw, pressure_mbar, pressure_psi, RH
                     units = C, C, ppm, ppm, mbar, psi, %                 
 ```
+
+## Both Together
+
+```
+  [[EE]]
+        Type = EmonHubMinimalModbusInterfacer
+        [[[init_settings]]]
+            device = /dev/serial/by-id/usb-1a86_USB_Single_Serial_5A7F002896-if00
+            #device = /dev/ttyACM*
+            baud = 9600
+            parity = even
+        [[[runtimesettings]]]
+            pubchannels = ToEmonCMS,
+            read_interval = 10
+            nodename = heatpump
+            [[[[meters]]]]
+                [[[[[EE872]]]]]
+                    address = 237
+                    byteorder = 3 #Endian.BIG
+                    registers = 1002, 1104, 1060, 1062, 1200, 1202, 1020
+                    datatypes = float, float, float, float, float, float, float
+                    functioncodes = 3,3,3,3,3,3,3
+                    precision = 1,1,1,1,1,1,1
+                    names = temperature, temperature_dewpoint, co2_avr, co2_raw, pressure_mbar, pressure_psi, RH
+                    units = C, C, ppm, ppm, mbar, psi, %
+                [[[[[EE671]]]]]
+                    address = 238
+                    byteorder = 3 #Endian.BIG
+                    registers = 25,31
+                    datatypes = float,float
+                    functioncodes = 3,3
+                    precision = 1,1
+                    names = temperature, velocity
+                    units = C, m/s
+```
