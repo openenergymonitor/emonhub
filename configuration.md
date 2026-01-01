@@ -307,8 +307,8 @@ It's possible to transmitt data to other nodes via RFM e.g. the following config
 
 ```
   [[[tx]]]
-     names=nodeid,hour,minute,second,utilityW,solarW,utilityKwh,solarKwh
-     datacodes =b,b,b,h,h,H,H
+     names = nodeid,hour,minute,second,utilityW,solarW,utilityKwh,solarKwh
+     datacodes = b,b,b,h,h,H,H
      units = h,min,sec,W,W,kwh,kwh
 ```
 
@@ -424,7 +424,7 @@ A comma-separated list of engineering units to describe the data. Common units a
            names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scales = 1,1,1,1,0.01,0.1,0.1,0.1,0.1,0.1,0.1,1
-           units =W,W,W,W,V,C,C,C,C,C,C,p
+           units = W,W,W,W,V,C,C,C,C,C,C,p
 ```
 
 ## Standard node decoders
@@ -433,7 +433,7 @@ The following lists the standard node decoders for recent versions of the EmonPi
 
 If you upload firmware to any of these nodes, and wish to have the data decoded with names, units, and scaled correctly, these are the decoders for the standard firmware. The node decoders are also included at the top of each firmware file for reference.
 
-### EmonPi:[Firmware location](https://github.com/openenergymonitor/emonpi/)
+### EmonPi: [Firmware location](https://github.com/openenergymonitor/emonpi/)
 
 Copied here for reference:
 
@@ -464,7 +464,7 @@ Copied here for reference:
            names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
            datacodes = h,h,h,h,h,h,h,h,h,h,h,L
            scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1
-           units =W,W,W,W,V,C,C,C,C,C,C,p
+           units = W,W,W,W,V,C,C,C,C,C,C,p
 ```
 
 ### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, v1.6+ [Firmware Location](https://github.com/openenergymonitor/emonTxFirmware)
@@ -479,7 +479,7 @@ Can be on either nodeid 10 or 9
            names = power1, power2, power3, power4, Vrms, temp1, temp2, temp3, temp4, temp5, temp6, pulse
            datacode = h
            scales = 1,1,1,1,0.01,0.1,0.1, 0.1,0.1,0.1,0.1,1 #Firmware V1.6
-           units =W,W,W,W,V,C,C,C,C,C,C,p
+           units = W,W,W,W,V,C,C,C,C,C,C,p
 
 ### EmonTx v3, emonTxV3_4_DiscreteSampling.ino, <v1.4:
 
@@ -491,7 +491,7 @@ Can be on either nodeid 10 or 9
            names = power1, power2, power3, power4, Vrms, temp
            datacode = h
            scales = 1,1,1,1,0.01,0.1
-           units =W,W,W,W,V,C
+           units = W,W,W,W,V,C
 
 ### EmonTH V2: [Firmware location](https://github.com/openenergymonitor/emonTH2/)
 
@@ -523,17 +523,17 @@ Standard nodeid's: 19, 20, 21 & 22 depending on DIP switch positions:
            scales = 0.1,0.1,0.1,0.1
            units = C,C,%,V
 
-### EmonTx Shield [Firmware location]https://github.com/openenergymonitor/emontx-shield)
+### EmonTx Shield [Firmware location](https://github.com/openenergymonitor/emontx-shield)
 
     [[6]]
         nodename = emonTxShield
-        firmware =emonTxShield
+        firmware = emonTxShield
         hardware = emonTxShield
         [[[rx]]]
            names = power1, power2, power3, power4, Vrms
            datacode = h
            scales = 1,1,1,1,0.01
-           units =W,W,W,W,V
+           units = W,W,W,W,V
 
 ***
 # 4. Troubleshooting
