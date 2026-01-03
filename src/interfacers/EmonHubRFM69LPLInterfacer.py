@@ -10,7 +10,7 @@ Read RFM69 radio data (LowPowerLabs format)
 """
 class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, nodeid = 5, networkID = 210, interruptPin = 22, resetPin = None, selPin = 26):
+    def __init__(self, name, nodeid = 5, networkID = 210, interruptPin = 22, resetPin = None, selPin = 26, freqBand = 43):
         """Initialize Interfacer
 
         nodeid (integer): radio nodeid 1-1023
@@ -49,6 +49,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         self.network_id = int(networkID)
         self.interruptPin = int(interruptPin)
         self.selPin = int(selPin)
+        self.freqBand = int(freqBand)
         
         if resetPin != None and resetPin != 'None':
             resetPin = int(resetPin)
@@ -75,7 +76,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         self.last_received = False
 
         board = {'isHighPower': False, 'interruptPin': self.interruptPin, 'resetPin': self.resetPin, 'selPin':self.selPin, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
-        self.radio = self.Radio(43, self.node_id, self.network_id, verbose=False, **board)
+        self.radio = self.Radio(self.freqBand, self.node_id, self.network_id, verbose=False, **board)
         
         if not self.radio.init_success:
             self._log.error("Could not connect to RFM69 module") 
