@@ -45,6 +45,7 @@ For a full list of interfacers, view GitHub source [https://github.com/openenerg
 - [Influx Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Influx)
 - [Jaguar Land Rover Interfacer (added by @dconlon)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/JaguarLandRover)
 - [RFM69 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/RF69)
+- [Plum ecoNET 300 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Econet300)
 
 ## Using emonHub
 
