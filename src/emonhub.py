@@ -19,8 +19,10 @@ import argparse
 import pprint
 import glob
 import os
+import os.path
 import getpass
 from collections import defaultdict
+import inotify.adapters
 
 import emonhub_setup as ehs
 import emonhub_coder as ehc
@@ -108,13 +110,36 @@ class EmonHub:
         # Initialise thread restart counters
         restart_count = defaultdict(int)
 
+        # Watch for config file changes
+        inotify_setup = inotify.adapters.Inotify()
+        inotify_setup.add_watch(os.path.dirname(self._setup.filename))
+        # config file could be a symlink, so watch that for writes too
+        inotify_setup.add_watch(os.path.realpath(self._setup.filename))
+
         # Until asked to stop
         while not self._exit:
 
             # Run setup and update settings if modified
-            self._setup.run()
-            if self._setup.check_settings():
-                self._update_settings(self._setup.settings)
+            events = list(inotify_setup.event_gen(yield_nones=False, timeout_s=0.2))
+            for (_, type_names, path, filename) in events:
+                self._log.debug('type_names=%s filename=%s', type_names, filename)
+                # If a symlink is created we have to watch that too
+                if 'IN_CREATE' in type_names:
+                    try:
+                        target = os.readlink(os.path.join(path, filename))
+                        inotify_setup.add_watch(target)
+                    except OSError:
+                        pass
+
+                # We'll reload for any file changes in this directory. There is probably only one anyway.
+                if 'IN_CLOSE_WRITE' not in type_names and 'IN_MOVED_TO' not in type_names and 'IN_CREATE' not in type_names:
+                    continue
+
+                self._log.info('Reloading setup because type_names=%s for filename=%s', type_names, filename)
+                self._setup.run()
+                if self._setup.check_settings():
+                    self._update_settings(self._setup.settings)
+                self._log.info('Reload complete')
 
             # Auto conf populate nodelist 
             if eha.auto_conf_enabled and ehc.nodelist != self._setup.settings['nodes']:
@@ -157,9 +182,6 @@ class EmonHub:
                 self._log.warning("Attempting to restart thread %s (thread has been restarted %d times...)", name, restart_count[name])
                 restart_count[name] += 1
                 self._update_settings(self._setup.settings)
-
-            # Sleep until next iteration
-            time.sleep(0.2)
 
     def close(self):
         """Close hub. Do some cleanup before leaving."""
