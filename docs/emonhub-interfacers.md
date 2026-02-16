@@ -273,7 +273,7 @@ Modbus settings should be: `parity = none` and `stopbit = 1`.
 
 #### ZPmeter Heat Meter 223F
 
-EmonHub can read from a [ZPmeter Heat Meter 223F](https://www.zpmeter.com/ultrasonic-heat-meter-223f) using the following config. 
+EmonHub can read from a [ZPmeter Heat Meter 223F](https://www.zpmeter.com/ultrasonic-heat-meter-223f) made by Hangzhou Zhongpei using the following config. 
 
 *Note: The ZPmeter modbus interface requires 5V, this can be taken from RaspberryPi GPIO pin 2 or pin 4.*
 
