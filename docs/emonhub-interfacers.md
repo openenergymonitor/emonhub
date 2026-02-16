@@ -299,6 +299,10 @@ EmonHub can read from a [ZPmeter Heat Meter 223F](https://www.zpmeter.com/ultras
                       units = kWh,kWh,C,C,C,W,m3/hr,m3
 ```
 
+The default modbus ID for the Zpmeter we tested was 7. It's unknown how to set the ID and it's unknown if the ID is always 7.
+
+The modbus ID was found using using this scan tool, this will scan from ID 1-247: `mbpoll -a 1:247 -b 9600 -d 8 -P none -s 1 -m rtu /dev/ttyACM0`
+
 ### M-Bus Reader for Heat meters
 
 Many electricity and heat meters are available with meter bus (M-Bus) outputs. Using an [M-Bus to USB converter](https://shop.openenergymonitor.com/m-bus-to-usb-converter/), these can be read from an emonPi or emonBase. For heat pumps, this provides a convenient way of monitoring the heat output, flow temperature, return temperature, flow rate and cumulative heat energy provided by the system.
