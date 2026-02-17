@@ -8,7 +8,7 @@ __author__ = 'Dan Conlon'
 import sys
 import time
 import traceback
-import requestse
+import requests
 import Cargo
 from emonhub_interfacer import EmonHubInterfacer
 from requests.auth import HTTPBasicAuth
