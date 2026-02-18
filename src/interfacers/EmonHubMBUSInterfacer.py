@@ -94,7 +94,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             self._log.info(self.ser)
 
         except ModuleNotFoundError as err:
-            self._log.error("================================");
             self._log.error(err)
             self.ser = False
             
@@ -137,7 +136,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
         # if device is still False, log error and return False
         if not device:
-            self._log.error("================================");
             self._log.error("Could not find MBUS device")
             self.ser = False
             return False
@@ -146,7 +144,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             self._log.debug("Connecting to MBUS serial: " + device + " " + str(self.baud))
             self.ser = serial.Serial(device, self.baud, 8, 'E', 1, 0.5)
         except Exception:
-            self._log.error("================================");
             self._log.error("Could not connect to MBUS serial")
             self.ser = False
         
@@ -169,7 +166,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         try:
             self.ser.write(data)
         except Exception:
-            self._log.error("================================");
             self.ser = False
             self._log.error("Could not write to MBUS serial port")
 
@@ -237,7 +233,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 else:
                     time.sleep(0.2)
             except Exception:
-                self._log.error("================================");
                 self.ser = False
                 self._log.error("set_page could not read from serial port")
                    
@@ -583,7 +578,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                     bid += 1
                 time.sleep(0.1)
         except Exception:
-            self._log.error("================================");
             self.ser = False
             self._log.error("read_data_frame could not read from serial port")         
         # If we are here data response is corrupt
@@ -595,7 +589,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         if self.invalid_count>=10:
             # Reset invalid count
             self.invalid_count = 0
-            self._log.error("================================");
             self._log.debug("Invalid count = 10. Restarting MBUS serial connection on next read")
             self.ser = False
 
@@ -644,7 +637,6 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         else:
                             self.connect()
                     except Exception:
-                        self._log.error("================================");
                         self._log.error("Could not connect to MBUS serial")
                         self.ser = False
                 
