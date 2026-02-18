@@ -601,25 +601,20 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
 
     def add_result_to_cargo(self,meter,nodesName,c,result):
         if result != None:
-            self._log.info("Decoded MBUS data: " + json.dumps(result))
-
-            self._log.error("nodesName:" + ",".join(nodesName));
+            self._log.debug("Decoded MBUS data: " + json.dumps(result))
             nodesNameHash = {}
             for nameTranslator in nodesName:
-                self._log.error("nameTranslator:" + nameTranslator);
+                self._log.debug("nameTranslator:" + nameTranslator);
                 nameTranslatorPart = nameTranslator.split(':')
                 nodesNameHash[nameTranslatorPart[0]]=nameTranslatorPart[1]
-                self._log.error(nameTranslatorPart[0] + " <> " + nameTranslatorPart[1]);
+                self._log.debug(nameTranslatorPart[0] + " <> " + nameTranslatorPart[1]);
                 
              
             
             for key in result:
-                self._log.error("key1:" + key);
                 key1=key
                 if key in nodesNameHash:
                     key1 = nodesNameHash[key]
-                
-                self._log.error("key2:" + key);
                 
                 c.names.append(key1+"_"+meter)
                 c.realdata.append(result[key][0])
