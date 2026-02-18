@@ -1,5 +1,8 @@
 ### KNX Reader to read value from knx group using a knx Gateway
 
+KNX Reader is base on the use of the xknkx library:
+https://pypi.org/project/xknx/
+
 KNX is a international standard for home automation.
 KNX is based on a bus, where each device can communicate using knx group.
 A Knx group is address using a knx address group notation of the form x/y/z.
