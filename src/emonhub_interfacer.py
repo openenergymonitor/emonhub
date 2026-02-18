@@ -112,7 +112,6 @@ class EmonHubInterfacer(threading.Thread):
         Any regularly performed tasks actioned here along with passing received values
 
         """
-
         while not self.stop:
 
             # Only read if there is a pub channel defined for the interfacer
@@ -306,7 +305,7 @@ class EmonHubInterfacer(threading.Thread):
         if node not in ehc.nodelist and self._settings['nodelistonly']:
             self._log.warning("%d Discarded RX frame not in nodelist, node:%s, length:%s bytes", cargo.uri, node, len(rxc.realdata))
             return False
-        
+
         # Data whitening uses for ensuring rfm sync
         if node in ehc.nodelist and 'rx' in ehc.nodelist[node] and 'whitening' in ehc.nodelist[node]['rx']:
             whitening = ehc.nodelist[node]['rx']['whitening']
@@ -647,7 +646,7 @@ class EmonHubInterfacer(threading.Thread):
             elif key == 'targeted' and str(setting).lower() in ['true', 'false']:
                 setting = str(setting).lower() == "true"
             elif key == 'nodelistonly' and str(setting).lower() in ['true', 'false','1','0']:
-                setting = str(setting).lower() == "true" or str(setting).lower() == "1"                
+                setting = str(setting).lower() == "true" or str(setting).lower() == "1"
             elif key == 'pubchannels':
                 pass
             elif key == 'subchannels':

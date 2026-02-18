@@ -88,10 +88,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             if self.ping_address(self.ser, 1, 3):
                 self._log.info("ok ping")
             else:
-                print("no reply")
-
-            self._log.info("set")
-            self._log.info(self.ser)
+                self._log.info("no reply ping")
 
         except ModuleNotFoundError as err:
             self._log.error(err)
