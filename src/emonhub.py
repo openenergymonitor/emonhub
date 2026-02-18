@@ -92,7 +92,7 @@ class EmonHub:
         except eha.EmonHubAutoConfError as e:
             logger.error(e)
             sys.exit("Unable to load available.conf")
-
+        
     def run(self):
         """Launch the hub.
 
