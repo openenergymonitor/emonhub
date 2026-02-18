@@ -8,7 +8,8 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
   - [Using emonHub](#using-emonhub)
     - [SDS011 Air-Quality sensor](#sds011-air-quality-sensor)
     - [Modbus Reader for Electric Meters](#modbus-electric-meters)
-    - [M-Bus Reader for Heat meters](#m-bus-reader-for-electric-and-heat-meters)
+    - [Modbus Reader for Heat Meters](#modbus-heat-meters)
+    - [M-Bus Reader for Heat meters](#m-bus-reader-for-heat-meters)
     - [Direct DS18B20 temperature sensing](#direct-ds18b20-temperature-sensing)
     - [Direct Pulse counting](#direct-pulse-counting)
     - [Read State of charge of a Tesla Power Wall](#read-state-of-charge-of-a-tesla-power-wall)
@@ -269,8 +270,41 @@ Modbus settings should be: `parity = none` and `stopbit = 1`.
 [EPBMETER1 Modbus register documentaion](https://files.openenergymonitor.org/EPBMETER1.pdf), add one to the last part of the address to get the modbodbus register number to use in emonhub. e.g `total_energy_imported (kWh)` has address `30096` therefore emonhub register is `97`
 
 
+### Modbus Heat Meters
 
-### M-Bus Reader for Electric and Heat meters
+#### ZPmeter Heat Meter 223F
+
+EmonHub can read from a [ZPmeter Heat Meter 223F](https://www.zpmeter.com/ultrasonic-heat-meter-223f) made by Hangzhou Zhongpei using the following config. 
+
+*Note: The ZPmeter modbus interface requires 5V, this can be taken from RaspberryPi GPIO pin 2 or pin 4.*
+
+```
+    [[ZPMETER]]
+        Type = EmonHubMinimalModbusInterfacer
+        [[[init_settings]]]
+            #device = /dev/serial/by-id/usb-1a86_USB_Single_Serial_56D1092300-if00
+            device = /dev/ttyACM*
+            baud = 9600
+            datatype = int
+            parity = none
+        [[[runtimesettings]]]
+            pubchannels = ToEmonCMS,
+            read_interval = 10
+            nodename = zpmeter
+            [[[[meters]]]]
+                [[[[[heatmeter]]]]]
+                     address = 7     
+                      registers = 1,3, 5, 7, 9, 15, 13,11,16,17,21
+                      names = Energy, CoolEnergy, FlowT, ReturnT, dT, Power, FlowRate, Volume, 16unknown, runtime, Error
+                      scales = 0.01,0.01,0.01,0.01,0.01,10,0.0001,0.01,1,1,1
+                      units = kWh,kWh,C,C,C,W,m3/hr,m3
+```
+
+The default modbus ID for the Zpmeter we tested was 7. It's unknown how to set the ID and it's unknown if the ID is always 7.
+
+The modbus ID was found using using this scan tool, this will scan from ID 1-247: `mbpoll -a 1:247 -b 9600 -d 8 -P none -s 1 -m rtu /dev/ttyACM0`
+
+### M-Bus Reader for Heat meters
 
 Many electricity and heat meters are available with meter bus (M-Bus) outputs. Using an [M-Bus to USB converter](https://shop.openenergymonitor.com/m-bus-to-usb-converter/), these can be read from an emonPi or emonBase. For heat pumps, this provides a convenient way of monitoring the heat output, flow temperature, return temperature, flow rate and cumulative heat energy provided by the system.
 
