@@ -1,12 +1,12 @@
 ### Plum ecoNET 300
 
-This interfacer polls a Plum ecoNET 300 bridge (as used by some Grant Aerona heat pumps) to retrieve telemetry and expose it to emonhub channels.
+This interfacer polls a Plum ecoNET 300 bridge (as used by some Grant Aerona HP290 heat pumps) to retrieve telemetry and expose it to emonhub channels.
 
 Only Grant Aerona R290 heat pumps are supported at present; the interfacer assumes that the connected bridge is an ecoNET 300.
 
 Example configuration:
 
-    [[MyHeatPump]]
+    [[Econet300HTTP]]
         Type = EmonHubEconet300Interfacer
 
         [[[init_settings]]]
@@ -17,3 +17,5 @@ Example configuration:
             password = admin
             # Poll interval in seconds (time between successful polls)
             pollinterval = 60
+        [[[runtimesettings]]]
+            pubchannels = ToEmonCMS,
