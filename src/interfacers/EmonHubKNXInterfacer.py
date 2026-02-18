@@ -84,10 +84,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         asyncio.set_event_loop(self.loop)
         self.loop.run_forever()
     
-    def action(self):
-        super().action()
-
-
     async def initKnx(self, gateway_ip, local_ip):
         connection_config = ConnectionConfig(
                                         connection_type=ConnectionType.TUNNELING,
@@ -145,7 +141,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
 
     def add_result_to_cargo(self, cargo, result):
         if result != None:
-
             for key in result:
                 cargo.names.append(key)
                 cargo.realdata.append(result[key][0])
@@ -157,29 +152,17 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         metters = self._settings['meters']
 
         self.sensor={}
-        for metter in metters:
-            dpPoint = metters[metter]
 
-            for dpKey in dpPoint:
-                dpConfig = dpPoint[dpKey]
+ 
 
-                group = dpConfig["group"]
-                eis = dpConfig["eis"]
+        for meter_key, metter in metters.items():
+            for conf_key, config in metter.items():
+                group = config["group"]
+                eis = config["eis"]
 
-                self._log.debug("add Sensors:" + metter+"_"+dpKey + ' <> ' + group)
-                self.sensor[metter+"_"+dpKey] = Sensor(self.xknx, metter + "_" + dpKey, value_type=eis, group_address_state=group, always_callback=True)
-                self.xknx.devices.async_add(self.sensor[metter+"_"+dpKey])
-
-
-
-
-    def add(self, cargo):
-        self.buffer.storeItem(cargo)
-
-
-    async def waitSensor(self):
-        pass
-
+                self._log.info("add Sensors:" + meter_key +"_"+ conf_key + ' <> ' + group)
+                self.sensor[meter_key + "_" + conf_key] = Sensor(self.xknx, meter_key + "_" + conf_key, value_type=eis, group_address_state=group, always_callback=True)
+                self.xknx.devices.async_add(self.sensor[meter_key + "_" + conf_key])
 
     def read(self):
         """Read data and process
@@ -258,15 +241,4 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
 
 
 
-    class Updater(threading.Thread):
-        def __init__(self,  knxIntf):
-            super().__init__()
-            self.loop = asyncio.get_event_loop()
-            self.knxIntf = knxIntf
-
-            pass
-
-        def run(self):
-            while not self.knxIntf.stop:
-                self.loop.run_until_complete(asyncio.sleep(1))
-            pass
+    
