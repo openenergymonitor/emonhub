@@ -9,46 +9,59 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 
 echo "EmonHub directory: $script_dir"
 
+# Reboot flag
+reboot_required=0
+
 # User input: is this a raspberrypi environment that requires serial configuration
 emonSD_pi_env=0
 if [ -z "$1" ]; then
-  read -p 'Apply raspberrypi serial configuration? (y/n): ' input
-  if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
-    emonSD_pi_env=1
-  fi
+    read -p 'Apply raspberrypi serial configuration? (y/n): ' input
+    if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
+        emonSD_pi_env=1
+    fi
 else
-  openenergymonitor_dir=$1
-  cd $openenergymonitor_dir/EmonScripts/update
-  source load_config.sh
-  echo "emonSD_pi_env provided in arg = $emonSD_pi_env"
+    openenergymonitor_dir=$1
+    cd $openenergymonitor_dir/EmonScripts/update
+    source load_config.sh
+    echo "emonSD_pi_env provided in arg = $emonSD_pi_env"
 fi
 
 # User input: check username to install emonhub with
 if [ -z "$2" ]; then
-  user=$USER
-  read -p "Would you like to install emonhub under the $USER user? (y/n): " input
-  if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
-    echo "Please switch to the user that you wish emonhub to be installed under"
-    exit 0
-  fi
-  
-  echo "Running apt update"
-  sudo apt update
+    user=$USER
+    read -p "Would you like to install emonhub under the $USER user? (y/n): " input
+    if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
+        echo "Please switch to the user that you wish emonhub to be installed under"
+        exit 0
+    fi
+    
+    echo "Running apt update"
+    sudo apt update
 else
-  user=$2
-  echo "user provided as arg = $user"
+    user=$2
+    echo "user provided as arg = $user"
 fi
 
 echo "installing or updating emonhub dependencies"
 sudo apt-get install -y python3-serial python3-configobj python3-pip python3-pymodbus bluetooth python3-spidev
 # removed libbluetooth-dev as this was causing a kernel update
 
+if [ -e /usr/lib/python3.11/EXTERNALLY-MANAGED ]; then
+    sudo rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED
+    echo "Removed pip3 external management warning."
+fi
+if [ -e /usr/lib/python3.11/EXTERNALLY-MANAGED.orig ]; then
+    sudo rm -rf /usr/lib/python3.11/EXTERNALLY-MANAGED.orig
+    echo "Removed pip3 external management warning."
+fi
+
 # FIXME paho-mqtt V2 has new API. stick to V1.x for now
 pip install --upgrade paho-mqtt==1.6.1
 pip install requests py-sds011 sdm_modbus minimalmodbus
 
 # Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
-pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-4.zip
+echo "- Installing rpi-rfm69 library"
+pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/v0.3.0-oem-7.zip
 
 if [ "$emonSD_pi_env" = 1 ]; then
 
@@ -57,23 +70,75 @@ if [ "$emonSD_pi_env" = 1 ]; then
         boot_config=/boot/firmware/config.txt
     fi
 
-    echo "installing or updating raspberry pi related dependencies"
-    
-    # Only install the GPIO library if on a Pi. Used by Pulse interfacer
-    pip3 install RPi.GPIO
+    rpi_gpio_installed=0
+    if dpkg -l | grep -q python3-rpi.gpio; then
+        rpi_gpio_installed=1
+    fi
+
+    # Check if python3-rpi-lgpio package is available
+    rpi_lgpio_available=0
+    if apt-cache show python3-rpi-lgpio > /dev/null 2>&1; then
+        rpi_lgpio_available=1
+    fi
+
+    rpi_lgpio_installed=0
+    if dpkg -l | grep -q python3-rpi-lgpio; then
+        rpi_lgpio_installed=1
+    fi
+
+    # Remove RPi.GPIO if it is installed, as it conflicts with rpi-lgpio
+    if [ "$rpi_lgpio_available" -eq 1 ]; then
+        if [ "$rpi_gpio_installed" -eq 1 ]; then
+            echo "- Removing python3-rpi-gpio"
+            sudo apt remove -y python3-rpi.gpio
+        fi
+
+        # Install rpi-lgpio if it is not already installed
+        if [ "$rpi_lgpio_installed" -eq 0 ]; then
+            echo "- Installing rpi-lgpio"
+            sudo apt install -y python3-rpi-lgpio
+            pip3 install rpi-lgpio
+        fi
+
+        # Move CS0 to GPIO26
+        # add line if not present
+        if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
+            echo "- Moving SPI CS0 to GPIO26"
+            echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
+            reboot_required=1
+        fi
+    else
+        echo "python3-rpi-lgpio not available, using python3-rpi.gpio instead"
+        if [ "$rpi_gpio_installed" -eq 0 ]; then
+            echo "- Installing python3-rpi.gpio"
+            sudo apt install -y python3-rpi.gpio
+            # Ensure RPi.GPIO is installed via pip3
+            pip3 install RPi.GPIO
+        fi
+    fi
 
     # RaspberryPi Serial configuration
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=miniuart-bt?
-    echo "Disabling Bluetooth"
-    sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
+
+    if ! grep -q "^dtoverlay=disable-bt" $boot_config; then
+        echo "- Disabling Bluetooth"
+        sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
+        reboot_required=1
+    fi
 
     # Enable SPI
-    sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
+    if grep -q "^#dtparam=spi=on" $boot_config; then
+        echo "- Enabling SPI in $boot_config"
+        sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
+        reboot_required=1
+    fi
 
     # We also need to stop the Bluetooth modem trying to use UART
-    echo "Stop Bluetooth modem"
-    sudo systemctl disable hciuart
+    if systemctl is-enabled --quiet hciuart; then
+        echo "- Stopping Bluetooth modem"
+        sudo systemctl disable hciuart
+    fi
 
     boot_cmdline=/boot/cmdline.txt
     if [ -f /boot/firmware/cmdline.txt ]; then
@@ -142,14 +207,14 @@ sudo ln -sf $script_dir/src /usr/local/bin/emonhub
 # Install service
 # ---------------------------------------------------------
 if [ -d /lib/systemd/system ]; then
-  if [ ! -f /lib/systemd/system/emonhub.service ]; then
-    echo "Installing emonhub.service in /lib/systemd/system (creating symlink)"
-    sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
-    sudo systemctl enable emonhub.service
-    sudo systemctl restart emonhub.service
-  else 
-    echo "emonhub.service already installed"
-  fi
+    if [ ! -f /lib/systemd/system/emonhub.service ]; then
+        echo "Installing emonhub.service in /lib/systemd/system (creating symlink)"
+        sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
+        sudo systemctl enable emonhub.service
+        sudo systemctl restart emonhub.service
+    else 
+        echo "emonhub.service already installed"
+    fi
 fi
 
 if [ "$user" != "pi" ]; then
@@ -165,4 +230,16 @@ sudo systemctl restart emonhub.service
 
 state=$(systemctl show emonhub | grep ActiveState)
 echo "- Service $state"
+
+if [ $reboot_required -eq 1 ]; then
+    echo "-------------------------------------------------------------"
+    echo "Reboot required to apply changes. Please reboot your system."
+    echo "-------------------------------------------------------------"
+
+    # create file /tmp/emon_reboot_required
+    if [ ! -f /tmp/emon_reboot_required ]; then
+        echo "Reboot required" > /tmp/emon_reboot_required
+    fi
+fi
+
 # ---------------------------------------------------------
