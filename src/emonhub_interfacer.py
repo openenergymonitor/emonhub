@@ -85,6 +85,30 @@ class EmonHubInterfacer(threading.Thread):
         # create a stop
         self.stop = False
         
+        # Read RaspberryPi serial number if applicable     
+        pi_serial = False
+        try:
+          f = open('/proc/cpuinfo','r')
+          for line in f:
+            if line[0:6]=='Serial':
+              length=len(line)
+              pi_serial = line[11:length-1]
+          f.close()
+        except:
+          pi_serial = False
+
+        if pi_serial:
+          pi_serial_short = ""
+          zero_flag = 1
+          for i in range(0,len(pi_serial)):
+            if pi_serial[i]!='0':
+              zero_flag = 0
+            if not zero_flag:
+              pi_serial_short += pi_serial[i]
+          self._settings['serial_num'] = pi_serial_short.upper()+"_"
+        else:
+          self._settings['serial_num'] = ""
+
         self.first_msg = {}
         self.last_msg = {}
         self.missed = {}
@@ -143,7 +167,7 @@ class EmonHubInterfacer(threading.Thread):
         f = []
         try:
             f.append(cargo.timestamp)
-            f.append(cargo.nodeid)
+            f.append(str(self._settings['serial_num'])+str(cargo.nodeid))
             # FIXME replace with f.extend(cargo.realdata)
             for i in cargo.realdata:
                 f.append(i)
@@ -448,7 +472,7 @@ class EmonHubInterfacer(threading.Thread):
         nodename = False
         if node in ehc.nodelist and 'nodename' in ehc.nodelist[node]:
             nodename = ehc.nodelist[node]['nodename']
-        rxc.nodename = nodename
+        rxc.nodename = str(self._settings['serial_num'])+str(nodename)
 
         if not rxc:
             return False
