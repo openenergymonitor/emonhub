@@ -69,10 +69,16 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         self._last_read_time = 0
 
         try:
-            self.loop = asyncio.get_event_loop()
+            #self.loop = asyncio.get_event_loop()
+            self.loop = asyncio.new_event_loop()
+            self._loop_thread = threading.Thread(target=self._run_loop, name=f"{name}-asyncio", daemon=True)
+            self._loop_thread.start()
 
-            task = self.loop.create_task(self.initKnx(gateway_ip, local_ip))
-            self.loop.run_until_complete(task)
+            fut = asyncio.run_coroutine_threadsafe(self.initKnx(gateway_ip, local_ip), self.loop)
+            fut.result()  # raise si erreur
+
+            #task = self.loop.create_task(self.initKnx(gateway_ip, local_ip))
+            #self.loop.run_until_complete(task)
 
             self.cargoList = {}
 
@@ -81,6 +87,10 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
             self.ser = False
 
 
+    def _run_loop(self):
+        asyncio.set_event_loop(self.loop)
+        self.loop.run_forever()
+    
     def action(self):
         super().action()
 
@@ -112,7 +122,7 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         name = device.name
         unit = device.unit_of_measurement()
 
-        self._log.info("Device:" + name + ' <> ' + str(value))
+        #self._log.info("Device:" + name + ' <> ' + str(value))
 
         pos = name.index("_")
         meter = name[0:pos]
@@ -173,7 +183,8 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
 
 
     def add(self, cargo):
-        self.buffer.storeItem(f)
+        #self.buffer.storeItem(f)
+        self.buffer.storeItem(cargo)
 
 
     async def waitSensor(self):
@@ -203,18 +214,27 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
     def start(self):
         self._log.info("Start KNX interface")
 
-        task = self.loop.create_task(self.setupSensor())
-        self.loop.run_until_complete(task)
+        # Setup sensors + start KNX dans la loop
+        asyncio.run_coroutine_threadsafe(self.setupSensor(), self.loop).result()
+        asyncio.run_coroutine_threadsafe(self.startKnx(), self.loop).result()
 
-        task = self.loop.create_task(self.startKnx())
-        self.loop.run_until_complete(task)
+        #task = self.loop.create_task(self.setupSensor())
+        #self.loop.run_until_complete(task)
+
+        #task = self.loop.create_task(self.startKnx())
+        #self.loop.run_until_complete(task)
 
 
-        self.updater = self.Updater(self)
-        self.updater.start()
+        #self.updater = self.Updater(self)
+        #self.updater.start()
 
         super().start()
         
+    def close(self):
+        # si EmonHub appelle close/stop, tu peux stopper proprement
+        self._stop_evt.set()
+        if self.loop.is_running():
+            self.loop.call_soon_threadsafe(self.loop.stop)
 
     def set(self, **kwargs):
         for key, setting in self._KNX_settings.items():
