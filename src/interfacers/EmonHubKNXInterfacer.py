@@ -57,9 +57,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         # Initialization
         super(EmonHubKNXInterfacer, self).__init__(name)
 
-        # This line will stop the default values printing to logfile at start-up
-        # self._settings.update(self._defaults)
-
         # Interfacer specific settings
         self._KNX_settings = {'read_interval': 10.0,
                                'nodename':'KNX',
@@ -69,16 +66,12 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         self._last_read_time = 0
 
         try:
-            #self.loop = asyncio.get_event_loop()
             self.loop = asyncio.new_event_loop()
             self._loop_thread = threading.Thread(target=self._run_loop, name=f"{name}-asyncio", daemon=True)
             self._loop_thread.start()
 
             fut = asyncio.run_coroutine_threadsafe(self.initKnx(gateway_ip, local_ip), self.loop)
             fut.result()  # raise si erreur
-
-            #task = self.loop.create_task(self.initKnx(gateway_ip, local_ip))
-            #self.loop.run_until_complete(task)
 
             self.cargoList = {}
 
@@ -121,8 +114,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         value = device.resolve_state()
         name = device.name
         unit = device.unit_of_measurement()
-
-        #self._log.info("Device:" + name + ' <> ' + str(value))
 
         pos = name.index("_")
         meter = name[0:pos]
@@ -183,7 +174,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
 
 
     def add(self, cargo):
-        #self.buffer.storeItem(f)
         self.buffer.storeItem(cargo)
 
 
@@ -205,7 +195,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         
         self._last_read_time = time.time()
 
-        #self.displayCargo("read")
         result = self.cargoList;
         self.cargoList ={};
 
@@ -217,16 +206,6 @@ class EmonHubKNXInterfacer(EmonHubInterfacer):
         # Setup sensors + start KNX dans la loop
         asyncio.run_coroutine_threadsafe(self.setupSensor(), self.loop).result()
         asyncio.run_coroutine_threadsafe(self.startKnx(), self.loop).result()
-
-        #task = self.loop.create_task(self.setupSensor())
-        #self.loop.run_until_complete(task)
-
-        #task = self.loop.create_task(self.startKnx())
-        #self.loop.run_until_complete(task)
-
-
-        #self.updater = self.Updater(self)
-        #self.updater.start()
 
         super().start()
         
