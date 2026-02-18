@@ -55,9 +55,9 @@ PARAMS_GRANT_AERONA_R290 = {
     'dhw_setpoint':                 ('data', '103'),
     'dhw_hysteresis':               ('data', '104'),
     'dhw_boost':                    ('data', '115'),
-    'dhw_legionella_setpoint':      ('data', '136'),              # Legionella protection temperature (60-80°C)
-    'dhw_legionella_day':           ('data', '137'),              # Legionella protection day of week (0-6)
-    'dhw_legionella_hour':          ('data', '138'),              # Legionella protection hour (0-23)
+    #'dhw_legionella_setpoint':      ('data', '136'),              # Legionella protection temperature (60-80°C)
+    #'dhw_legionella_day':           ('data', '137'),              # Legionella protection day of week (0-6)
+    #'dhw_legionella_hour':          ('data', '138'),              # Legionella protection hour (0-23)
     'circuit1_work_mode':           ('data', '236'),              # 0 is off, 1 is day, 2 is night, 3 is scheduled
     'circuit1_day_setpoint':        ('data', '238'),
     'circuit1_night_setpoint':      ('data', '239'),
