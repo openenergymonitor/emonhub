@@ -58,7 +58,8 @@ class EmonHubAutoConf:
                 self.enabled = True
             else: 
                 self.enabled = False
-                
+
+        self.available = {}    
         if self.enabled:
             self._log.debug("Automatic configuration of nodes enabled")
             # Initialize attribute settings as a ConfigObj instance
@@ -71,7 +72,6 @@ class EmonHubAutoConf:
         else:
             self._log.debug("Automatic configuration of nodes disabled")    
                    
-        self.available = False
 
     def prepare_available(self,nodes):
         for n in nodes:
