@@ -10,8 +10,8 @@ Example configuration:
         Type = EmonHubEconet300Interfacer
 
         [[[init_settings]]]
-            # Hostname or IP address of the ecoNET 300 bridge
-            host = 192.168.1.100
+            # Hostname or IP address of the ecoNET 300 bridge, if hostname doesnt work use local IP
+            host = econet300.local
             # HTTP basic auth credentials for the ecoNET 300 bridge
             username = admin
             password = admin
