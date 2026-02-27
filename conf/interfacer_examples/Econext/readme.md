@@ -6,18 +6,18 @@ Example configuration:
 
     [[EconextGateway]]
         Type = EmonHubEconextInterfacer
-
         [[[init_settings]]]
             # Hostname or IP address of the econext-gateway
             host = localhost
             # Gateway API port
             port = 8000
-
         [[[runtimesettings]]]
             pubchannels = ToEmonCMS,
             # Poll interval in seconds
             pollinterval = 60
             nodeid = 30
+            parameters = TempOutlet, TempReturn, ElectricPower, HeatingPower, Circuit1CalcTemp, Circuit1thermostat, flapValveStates
+            # Full list of parameters: https://github.com/LeeNuss/econext-gateway/blob/main/docs/PARAMETERS.md
 
 Default parameters fetched from the gateway:
 
@@ -35,6 +35,8 @@ Default parameters fetched from the gateway:
 | flapValveStates | DHWStatus / CHStatus | Computed: DHW and CH status booleans |
 
 Additional parameters can be added or default names overridden via the `parameters` runtime setting. Each entry is `GatewayName` (uses the gateway name as-is) or `GatewayName:InputName` (renames the input):
+
+Full list of parameters: https://github.com/LeeNuss/econext-gateway/blob/main/docs/PARAMETERS.md
 
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
