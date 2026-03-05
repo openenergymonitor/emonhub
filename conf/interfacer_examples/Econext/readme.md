@@ -16,7 +16,7 @@ Example configuration:
             # Poll interval in seconds
             pollinterval = 60
             nodeid = 30
-            parameters = TempOutlet, TempReturn, ElectricPower, HeatingPower, Circuit1CalcTemp, Circuit1thermostat, flapValveStates
+            parameters = TempOutlet, TempReturn, ElectricPower, HeatingPower, Circuit1CalcTemp, Circuit1thermostat, flapValveStates, AXEN_REGISTER_61:SystemPressure
             # Full list of parameters: https://github.com/LeeNuss/econext-gateway/blob/main/docs/PARAMETERS.md
 
 Default parameters fetched from the gateway:
