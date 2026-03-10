@@ -1,4 +1,3 @@
-
 from emonhub_interfacer import EmonHubInterfacer
 import Cargo
 import time
@@ -32,6 +31,14 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         self.Radio = False
         try:            
             from RFM69 import Radio
+            
+            # --- TRIXIE COMPATIBILITY PATCH START ---
+            # Monkey patch the RFM69 library to skip the failing interrupt setup
+            def patched_init_interrupt(self):
+                return True
+            Radio._init_interrupt = patched_init_interrupt
+            # --- TRIXIE COMPATIBILITY PATCH END ---
+            
             self.Radio = Radio
         except ModuleNotFoundError as err:      
             self._log.error(err)
@@ -85,6 +92,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             self.last_packet_nodeid = 0
             self.last_packet_data = []
             self.last_packet_time = 0
+            # Note: __enter__ is called to set up radio resources
             self.radio.__enter__()
 
 
@@ -99,6 +107,11 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         if not self.radio.init_success:
             return False
             
+        # --- TRIXIE COMPATIBILITY PATCH START ---
+        # Manually trigger the interrupt handler since we bypassed the hardware edge detection
+        self.radio._interruptHandler(self.interruptPin)
+        # --- TRIXIE COMPATIBILITY PATCH END ---
+
         packet = self.radio.get_packet()
         if packet:
             self._log.info("Packet received "+str(len(packet.data))+" bytes")
