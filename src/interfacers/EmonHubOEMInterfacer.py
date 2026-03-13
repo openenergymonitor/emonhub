@@ -271,7 +271,10 @@ class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
 
     def check_config_format(self):
         self._config_format = "new"
-        if self.send_cmd("4v"):
+        # On older firmware 4v is recognised as a valid command and will return firmware version.
+        # On newer firmware 4v should return blank or just mirrored back as 4v.
+        reply = self.send_cmd("4v")
+        if reply and reply != "4v":
             self._config_format = "old"
         self._log.debug("Config format: " + self._config_format)
         if self._config_format == "new":
