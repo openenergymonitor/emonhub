@@ -208,8 +208,15 @@ sudo ln -sf $script_dir/src /usr/local/bin/emonhub
 # ---------------------------------------------------------
 if [ -d /lib/systemd/system ]; then
     if [ ! -f /lib/systemd/system/emonhub.service ]; then
-        echo "Installing emonhub.service in /lib/systemd/system (creating symlink)"
-        sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
+        # LogsDirectory/RuntimeDirectory require systemd >= 235 (Debian Buster / Ubuntu 18.04+)
+        systemd_version=$(systemctl --version | awk 'NR==1{print $2}')
+        if [ "$systemd_version" -ge 235 ] 2>/dev/null; then
+            echo "Installing emonhub.service.modern in /lib/systemd/system (systemd $systemd_version >= 235)"
+            sudo ln -sf $script_dir/service/emonhub.service.modern /lib/systemd/system/emonhub.service
+        else
+            echo "Installing emonhub.service in /lib/systemd/system (systemd $systemd_version < 235)"
+            sudo ln -sf $script_dir/service/emonhub.service /lib/systemd/system
+        fi
         sudo systemctl enable emonhub.service
         sudo systemctl restart emonhub.service
     else 

@@ -1,0 +1,23 @@
+[Unit]
+Description=emonHub data multiplexer
+After=network.target
+
+[Service]
+Type=exec
+# Sets the working directory back to home just in case
+WorkingDirectory=/home/pi/
+ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
+User=pi
+Group=pi
+
+# MODERN REPLACEMENT FOR ExecStartPre & PermissionsStartOnly:
+# This creates /var/log/emonhub, sets owner to 'pi', and handles permissions
+LogsDirectory=emonhub
+RuntimeDirectory=emonhub
+
+Restart=always
+RestartSec=5
+SyslogIdentifier=emonhub
+
+[Install]
+WantedBy=multi-user.target
