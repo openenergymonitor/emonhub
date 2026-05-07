@@ -243,7 +243,7 @@ EmonHub can read from a [Rayleigh RI-D35-100](https://www.rayleigh.com/ri-d35-10
 
 [Rayleigh Modbus register documentaion](https://www.rayleigh.com/media/uploads/RI-D35-C-COMM-V01.pdf)
 
-#### Rayleigh RI-D140
+#### Rayleigh RI-D150
 
 EmonHub can read from a [Rayleigh RI-D150](https://www.rayleigh.com/ri-d150-multifunction-energy-meter-mid-certified-din-rail-three-phase-or-single-phase.html) three-phase electricity meter via modbus using the following config:
 
