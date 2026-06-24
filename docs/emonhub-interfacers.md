@@ -308,7 +308,7 @@ EmonHub can read from a [Voltaris VDT45M](https://www.spwales.com/voltaris-vdt45
     [[[init_settings]]]
         device = /dev/ttyUSB0
         baud = 9600
-    [[[runtime_settings]]]
+    [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
         nodename = VDT45M
