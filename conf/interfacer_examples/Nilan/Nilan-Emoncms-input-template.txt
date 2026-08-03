@@ -2,10 +2,10 @@
   "name": "Nilan-template",
   "category": "Custom",
   "group": "Custom",
-  "description": "Nilan Template mapping all Temps, Status, and Outputs to PHPFINA feeds (30s interval)",
+  "description": "Nilan CTS602 Template mapping all Temps, Status, and Outputs to PHPFINA feeds (30s interval)",
   "inputs": [
     {
-      "name": "Temps_T0_Controller",
+      "name": "CTS602_Temps_T0_Controller",
       "description": "Controller board temperature",
       "processList": [
         {
@@ -18,7 +18,7 @@
       ]
     },
     {
-      "name": "Temps_T1_Intake",
+      "name": "CTS602_Temps_T1_Intake",
       "description": "Fresh air intake temperature",
       "processList": [
         {
@@ -31,7 +31,7 @@
       ]
     },
     {
-      "name": "Temps_T2_Inlet",
+      "name": "CTS602_Temps_T2_Inlet",
       "description": "Inlet temperature (before heater)",
       "processList": [
         {
@@ -44,7 +44,7 @@
       ]
     },
     {
-      "name": "Temps_T3_Exhaust",
+      "name": "CTS602_Temps_T3_Exhaust",
       "description": "Room exhaust temperature",
       "processList": [
         {
@@ -57,7 +57,7 @@
       ]
     },
     {
-      "name": "Temps_T4_Outlet",
+      "name": "CTS602_Temps_T4_Outlet",
       "description": "Outlet temperature",
       "processList": [
         {
@@ -70,7 +70,7 @@
       ]
     },
     {
-      "name": "Temps_T5_Cond",
+      "name": "CTS602_Temps_T5_Cond",
       "description": "Condenser temperature",
       "processList": [
         {
@@ -83,7 +83,7 @@
       ]
     },
     {
-      "name": "Temps_T6_Evap",
+      "name": "CTS602_Temps_T6_Evap",
       "description": "Evaporator temperature",
       "processList": [
         {
@@ -96,7 +96,7 @@
       ]
     },
     {
-      "name": "Temps_T7_Inlet",
+      "name": "CTS602_Temps_T7_Inlet",
       "description": "Inlet temperature (after heater)",
       "processList": [
         {
@@ -109,7 +109,7 @@
       ]
     },
     {
-      "name": "Temps_T8_Outdoor",
+      "name": "CTS602_Temps_T8_Outdoor",
       "description": "Outdoor temperature",
       "processList": [
         {
@@ -122,7 +122,7 @@
       ]
     },
     {
-      "name": "Temps_T9_Heater",
+      "name": "CTS602_Temps_T9_Heater",
       "description": "Heating surface temperature",
       "processList": [
         {
@@ -135,7 +135,7 @@
       ]
     },
     {
-      "name": "Temps_T10_Extern",
+      "name": "CTS602_Temps_T10_Extern",
       "description": "External room temperature",
       "processList": [
         {
@@ -148,7 +148,7 @@
       ]
     },
     {
-      "name": "Temps_T11_Top",
+      "name": "CTS602_Temps_T11_Top",
       "description": "Hot water top temperature",
       "processList": [
         {
@@ -161,7 +161,7 @@
       ]
     },
     {
-      "name": "Temps_T12_Bottom",
+      "name": "CTS602_Temps_T12_Bottom",
       "description": "Hot water bottom temperature",
       "processList": [
         {
@@ -174,7 +174,7 @@
       ]
     },
     {
-      "name": "Temps_T13_Return",
+      "name": "CTS602_Temps_T13_Return",
       "description": "EK return temperature",
       "processList": [
         {
@@ -187,7 +187,7 @@
       ]
     },
     {
-      "name": "Temps_T14_Supply",
+      "name": "CTS602_Temps_T14_Supply",
       "description": "EK supply temperature",
       "processList": [
         {
@@ -200,7 +200,7 @@
       ]
     },
     {
-      "name": "Temps_T15_Room",
+      "name": "CTS602_Temps_T15_Room",
       "description": "User panel room temperature",
       "processList": [
         {
@@ -213,7 +213,7 @@
       ]
     },
     {
-      "name": "Temps_T16_AUX",
+      "name": "CTS602_Temps_T16_AUX",
       "description": "AUX temperature (Hotwater anode)",
       "processList": [
         {
@@ -226,7 +226,7 @@
       ]
     },
     {
-      "name": "Temps_T17_PreHeat",
+      "name": "CTS602_Temps_T17_PreHeat",
       "description": "Preheater or earth tube air intake temperature",
       "processList": [
         {
@@ -239,7 +239,7 @@
       ]
     },
     {
-      "name": "Temps_T18_PresPibe",
+      "name": "CTS602_Temps_T18_PresPibe",
       "description": "Pressure pibe temperature",
       "processList": [
         {
@@ -252,7 +252,7 @@
       ]
     },
     {
-      "name": "Temps_Humidity",
+      "name": "CTS602_Temps_Humidity",
       "description": "Humidity sensor value",
       "processList": [
         {
@@ -265,7 +265,7 @@
       ]
     },
     {
-      "name": "Status_UserFunc",
+      "name": "CTS602_Status_UserFunc",
       "description": "User function",
       "processList": [
         {
@@ -278,7 +278,7 @@
       ]
     },
     {
-      "name": "Status_FilterAlarm",
+      "name": "CTS602_Status_FilterAlarm",
       "description": "Air filter alarm",
       "processList": [
         {
@@ -291,7 +291,7 @@
       ]
     },
     {
-      "name": "Status_AirFlowMon",
+      "name": "CTS602_Status_AirFlowMon",
       "description": "Airflow monitor",
       "processList": [
         {
@@ -304,7 +304,7 @@
       ]
     },
     {
-      "name": "Status_pSuc_bar",
+      "name": "CTS602_Status_pSuc_bar",
       "description": "Suction pressure",
       "processList": [
         {
@@ -317,7 +317,7 @@
       ]
     },
     {
-      "name": "Status_pDis_bar",
+      "name": "CTS602_Status_pDis_bar",
       "description": "Dischage pressure",
       "processList": [
         {
@@ -330,7 +330,7 @@
       ]
     },
     {
-      "name": "Status_CO2_ppm",
+      "name": "CTS602_Status_CO2_ppm",
       "description": "Carbon dioxide sensor value",
       "processList": [
         {
@@ -343,7 +343,7 @@
       ]
     },
     {
-      "name": "Status_RunAct",
+      "name": "CTS602_Status_RunAct",
       "description": "Actual on/off state",
       "processList": [
         {
@@ -356,20 +356,20 @@
       ]
     },
     {
-      "name": "Status_ModeAct",
+      "name": "CTS602_Status_ModeAct",
       "description": "Actual operation mode",
       "processList": [
         {
           "process": "log_to_feed",
           "arguments": {
             "type": "ProcessArg::FEEDID",
-            "value": "Status_ModeAct"
+            "value": "tatus_ModeAct"
           }
         }
       ]
     },
     {
-      "name": "Status_StateDisplay",
+      "name": "CTS602_Status_StateDisplay",
       "description": "Actual control state",
       "processList": [
         {
@@ -382,7 +382,7 @@
       ]
     },
     {
-      "name": "Status_SecInState",
+      "name": "CTS602_Status_SecInState",
       "description": "Actual time in state",
       "processList": [
         {
@@ -395,7 +395,7 @@
       ]
     },
     {
-      "name": "Status_VentSet",
+      "name": "CTS602_Status_VentSet",
       "description": "Actual ventilation step set point",
       "processList": [
         {
@@ -408,7 +408,7 @@
       ]
     },
     {
-      "name": "Status_InletAct",
+      "name": "CTS602_Status_InletAct",
       "description": "Actual inlet fan speed step",
       "processList": [
         {
@@ -421,7 +421,7 @@
       ]
     },
     {
-      "name": "Status_ExhaustAct",
+      "name": "CTS602_Status_ExhaustAct",
       "description": "Actual exhaust fan speed step",
       "processList": [
         {
@@ -434,7 +434,7 @@
       ]
     },
     {
-      "name": "Status_CapSet",
+      "name": "CTS602_Status_CapSet",
       "description": "Requested capacity",
       "processList": [
         {
@@ -447,7 +447,7 @@
       ]
     },
     {
-      "name": "Status_CapAct",
+      "name": "CTS602_Status_CapAct",
       "description": "Actual capacity",
       "processList": [
         {
@@ -460,7 +460,7 @@
       ]
     },
     {
-      "name": "Status_AirFlow1_m3h",
+      "name": "CTS602_Status_AirFlow1_m3h",
       "description": "Calculated air flow 1",
       "processList": [
         {
@@ -473,7 +473,7 @@
       ]
     },
     {
-      "name": "Status_AirFlow2_m3h",
+      "name": "CTS602_Status_AirFlow2_m3h",
       "description": "Calculated air flow 2",
       "processList": [
         {
@@ -486,7 +486,7 @@
       ]
     },
     {
-      "name": "Status_Pressure1_Pa",
+      "name": "CTS602_Status_Pressure1_Pa",
       "description": "Calculated air pressure 1",
       "processList": [
         {
@@ -499,7 +499,7 @@
       ]
     },
     {
-      "name": "Status_Pressure2_Pa",
+      "name": "CTS602_Status_Pressure2_Pa",
       "description": "Calculated air pressure 2",
       "processList": [
         {
@@ -512,7 +512,7 @@
       ]
     },
     {
-      "name": "Outputs_AirFlap",
+      "name": "CTS602_Outputs_AirFlap",
       "description": "Air flap",
       "processList": [
         {
@@ -525,7 +525,7 @@
       ]
     },
     {
-      "name": "Outputs_BypassOpen",
+      "name": "CTS602_Outputs_BypassOpen",
       "description": "Bypass flap open",
       "processList": [
         {
@@ -538,7 +538,7 @@
       ]
     },
     {
-      "name": "Outputs_Compressor",
+      "name": "CTS602_Outputs_Compressor",
       "description": "Compressor",
       "processList": [
         {
@@ -551,7 +551,7 @@
       ]
     },
     {
-      "name": "Outputs_CondOpen",
+      "name": "CTS602_Outputs_CondOpen",
       "description": "Air condenser active",
       "processList": [
         {
@@ -564,7 +564,7 @@
       ]
     },
     {
-      "name": "Outputs_WaterHeat",
+      "name": "CTS602_Outputs_WaterHeat",
       "description": "Hot water heater",
       "processList": [
         {
@@ -577,7 +577,7 @@
       ]
     },
     {
-      "name": "Outputs_PreHeat",
+      "name": "CTS602_Outputs_PreHeat",
       "description": "Preheater or earth tube activation",
       "processList": [
         {
@@ -590,7 +590,7 @@
       ]
     },
     {
-      "name": "Outputs_ExhaustSpeed",
+      "name": "CTS602_Outputs_ExhaustSpeed",
       "description": "Exhaust fan speed",
       "processList": [
         {
@@ -603,7 +603,7 @@
       ]
     },
     {
-      "name": "Outputs_InletSpeed",
+      "name": "CTS602_Outputs_InletSpeed",
       "description": "Inlet fan speed",
       "processList": [
         {
@@ -616,7 +616,7 @@
       ]
     },
     {
-      "name": "Outputs_AirHeatCap",
+      "name": "CTS602_Outputs_AirHeatCap",
       "description": "Air heater capacity",
       "processList": [
         {
@@ -629,7 +629,7 @@
       ]
     },
     {
-      "name": "Outputs_CprCap",
+      "name": "CTS602_Outputs_CprCap",
       "description": "Compresor capacity",
       "processList": [
         {
@@ -642,7 +642,7 @@
       ]
     },
     {
-      "name": "Outputs_PreHeatCap",
+      "name": "CTS602_Outputs_PreHeatCap",
       "description": "Preheater capacity or earth tube air intake fan speed",
       "processList": [
         {
@@ -655,7 +655,7 @@
       ]
     },
     {
-      "name": "Outputs_RotorVeksler",
+      "name": "CTS602_Outputs_RotorVeksler",
       "description": "Rotor veksler",
       "processList": [
         {
@@ -668,7 +668,7 @@
       ]
     },
     {
-      "name": "Outputs_RunSet_User",
+      "name": "CTS602_Outputs_RunSet_User",
       "description": "User on/off select",
       "processList": [
         {
@@ -681,7 +681,7 @@
       ]
     },
     {
-      "name": "Outputs_ModeSet_User",
+      "name": "CTS602_Outputs_ModeSet_User",
       "description": "User operation mode select",
       "processList": [
         {
@@ -694,7 +694,7 @@
       ]
     },
     {
-      "name": "Outputs_VentSet_User",
+      "name": "CTS602_Outputs_VentSet_User",
       "description": "User ventilation step select",
       "processList": [
         {
@@ -707,7 +707,7 @@
       ]
     },
     {
-      "name": "Outputs_TempSet_User",
+      "name": "CTS602_Outputs_TempSet_User",
       "description": "User temperature setpoint",
       "processList": [
         {
