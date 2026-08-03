@@ -1,0 +1,1055 @@
+{
+  "name": "Nilan-template",
+  "category": "Custom",
+  "group": "Custom",
+  "description": "Nilan CTS602 Template mapping all Temps, Status, and Outputs to PHPFINA feeds (30s interval)",
+  "inputs": [
+    {
+      "name": "CTS602_Temps_T0_Controller",
+      "description": "Controller board temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T0_Controller"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T1_Intake",
+      "description": "Fresh air intake temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T1_Intake"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T2_Inlet",
+      "description": "Inlet temperature (before heater)",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T2_Inlet"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T3_Exhaust",
+      "description": "Room exhaust temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T3_Exhaust"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T4_Outlet",
+      "description": "Outlet temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T4_Outlet"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T5_Cond",
+      "description": "Condenser temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T5_Cond"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T6_Evap",
+      "description": "Evaporator temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T6_Evap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T7_Inlet",
+      "description": "Inlet temperature (after heater)",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T7_Inlet"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T8_Outdoor",
+      "description": "Outdoor temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T8_Outdoor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T9_Heater",
+      "description": "Heating surface temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T9_Heater"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T10_Extern",
+      "description": "External room temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T10_Extern"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T11_Top",
+      "description": "Hot water top temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T11_Top"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T12_Bottom",
+      "description": "Hot water bottom temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T12_Bottom"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T13_Return",
+      "description": "EK return temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T13_Return"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T14_Supply",
+      "description": "EK supply temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T14_Supply"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T15_Room",
+      "description": "User panel room temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T15_Room"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T16_AUX",
+      "description": "AUX temperature (Hotwater anode)",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T16_AUX"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T17_PreHeat",
+      "description": "Preheater or earth tube air intake temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T17_PreHeat"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_T18_PresPibe",
+      "description": "Pressure pibe temperature",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_T18_PresPibe"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Temps_Humidity",
+      "description": "Humidity sensor value",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Temps_Humidity"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_UserFunc",
+      "description": "User function",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_UserFunc"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_FilterAlarm",
+      "description": "Air filter alarm",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_FilterAlarm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_AirFlowMon",
+      "description": "Airflow monitor",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_AirFlowMon"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_pSuc_bar",
+      "description": "Suction pressure",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_pSuc_bar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_pDis_bar",
+      "description": "Dischage pressure",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_pDis_bar"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_CO2_ppm",
+      "description": "Carbon dioxide sensor value",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_CO2_ppm"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_RunAct",
+      "description": "Actual on/off state",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_RunAct"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_ModeAct",
+      "description": "Actual operation mode",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_ModeAct"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_StateDisplay",
+      "description": "Actual control state",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_StateDisplay"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_SecInState",
+      "description": "Actual time in state",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_SecInState"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_VentSet",
+      "description": "Actual ventilation step set point",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_VentSet"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_InletAct",
+      "description": "Actual inlet fan speed step",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_InletAct"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_ExhaustAct",
+      "description": "Actual exhaust fan speed step",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_ExhaustAct"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_CapSet",
+      "description": "Requested capacity",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_CapSet"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_CapAct",
+      "description": "Actual capacity",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_CapAct"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_AirFlow1_m3h",
+      "description": "Calculated air flow 1",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_AirFlow1_m3h"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_AirFlow2_m3h",
+      "description": "Calculated air flow 2",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_AirFlow2_m3h"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_Pressure1_Pa",
+      "description": "Calculated air pressure 1",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_Pressure1_Pa"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Status_Pressure2_Pa",
+      "description": "Calculated air pressure 2",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Status_Pressure2_Pa"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_AirFlap",
+      "description": "Air flap",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_AirFlap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_BypassOpen",
+      "description": "Bypass flap open",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_BypassOpen"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_Compressor",
+      "description": "Compressor",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_Compressor"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_CondOpen",
+      "description": "Air condenser active",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_CondOpen"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_WaterHeat",
+      "description": "Hot water heater",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_WaterHeat"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_PreHeat",
+      "description": "Preheater or earth tube activation",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_PreHeat"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_ExhaustSpeed",
+      "description": "Exhaust fan speed",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_ExhaustSpeed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_InletSpeed",
+      "description": "Inlet fan speed",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_InletSpeed"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_AirHeatCap",
+      "description": "Air heater capacity",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_AirHeatCap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_CprCap",
+      "description": "Compresor capacity",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_CprCap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_PreHeatCap",
+      "description": "Preheater capacity or earth tube air intake fan speed",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_PreHeatCap"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_RotorVeksler",
+      "description": "Rotor veksler",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_RotorVeksler"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_RunSet_User",
+      "description": "User on/off select",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_RunSet_User"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_ModeSet_User",
+      "description": "User operation mode select",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_ModeSet_User"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_VentSet_User",
+      "description": "User ventilation step select",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_VentSet_User"
+          }
+        }
+      ]
+    },
+    {
+      "name": "CTS602_Outputs_TempSet_User",
+      "description": "User temperature setpoint",
+      "processList": [
+        {
+          "process": "log_to_feed",
+          "arguments": {
+            "type": "ProcessArg::FEEDID",
+            "value": "CTS602_Outputs_TempSet_User"
+          }
+        }
+      ]
+    }
+  ],
+  "feeds": [
+    {
+      "name": "CTS602_Temps_T0_Controller",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T1_Intake",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T2_Inlet",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T3_Exhaust",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T4_Outlet",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T5_Cond",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T6_Evap",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T7_Inlet",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T8_Outdoor",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T9_Heater",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T10_Extern",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T11_Top",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T12_Bottom",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T13_Return",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T14_Supply",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T15_Room",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T16_AUX",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T17_PreHeat",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_T18_PresPibe",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    },
+    {
+      "name": "CTS602_Temps_Humidity",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Status_UserFunc",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Status_FilterAlarm",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Status_AirFlowMon",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Status_pSuc_bar",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "bar"
+    },
+    {
+      "name": "CTS602_Status_pDis_bar",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "bar"
+    },
+    {
+      "name": "CTS602_Status_CO2_ppm",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "ppm"
+    },
+    {
+      "name": "CTS602_Status_RunAct",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Status_ModeAct",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Status_StateDisplay",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Status_SecInState",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Sec"
+    },
+    {
+      "name": "CTS602_Status_VentSet",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Step"
+    },
+    {
+      "name": "CTS602_Status_InletAct",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Step"
+    },
+    {
+      "name": "CTS602_Status_ExhaustAct",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Step"
+    },
+    {
+      "name": "CTS602_Status_CapSet",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Status_CapAct",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Status_AirFlow1_m3h",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "m3/h"
+    },
+    {
+      "name": "CTS602_Status_AirFlow2_m3h",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "m3/h"
+    },
+    {
+      "name": "CTS602_Status_Pressure1_Pa",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Pa"
+    },
+    {
+      "name": "CTS602_Status_Pressure2_Pa",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Pa"
+    },
+    {
+      "name": "CTS602_Outputs_AirFlap",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_BypassOpen",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_Compressor",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_CondOpen",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_WaterHeat",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_PreHeat",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_ExhaustSpeed",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Outputs_InletSpeed",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Outputs_AirHeatCap",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Outputs_CprCap",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Outputs_PreHeatCap",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Outputs_RotorVeksler",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "%"
+    },
+    {
+      "name": "CTS602_Outputs_RunSet_User",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_ModeSet_User",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": ""
+    },
+    {
+      "name": "CTS602_Outputs_VentSet_User",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "Step"
+    },
+    {
+      "name": "CTS602_Outputs_TempSet_User",
+      "engine": "Engine::PHPFINA",
+      "interval": 30,
+      "unit": "°C"
+    }
+  ]
+}
