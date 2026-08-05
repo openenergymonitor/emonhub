@@ -229,9 +229,7 @@ Here's a cut downn version of the SDM630 with just Power and Energy
         read_interval = 10
         nodename = SDM630
         [[[[meters]]]]
-            [[[[[electric]]]]]
-                address = 1
-                [[[[[SDM630_1]]]]]
+                [[[[[electric]]]]]
                     address = 1
                     registers = 52,72
                     names = Power,Energy
