@@ -216,6 +216,27 @@ Default config to read from SDM630 and SDM72D Modbus three-phase 100A meter, see
                 precision = 2,2,2,1,1,1,1,3,3,3,3,3,3,3,3,3,3,3
 ```
 
+Here's a cut downn version of the SDM630 with just Power and Energy
+
+```
+[[SDM630]]
+    Type = EmonHubMinimalModbusInterfacer
+    [[[init_settings]]]
+        device = /dev/ttyUSB0
+        baud = 9600
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 10
+        nodename = SDM630
+        [[[[meters]]]]
+            [[[[[electric]]]]]
+                address = 1
+                [[[[[SDM630_1]]]]]
+                    address = 1
+                    registers = 52,72
+                    names = Power,Energy
+                    precision = 1,3
+```
 
 #### Rayleigh RI-D35-100
 
