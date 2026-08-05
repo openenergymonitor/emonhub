@@ -135,7 +135,22 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
         self.datatype = datatype
         self.rs485_connect()  
                     
+    def close(self):
+        """Close serial connection"""
+        if self._rs485 and hasattr(self._rs485, 'serial') and self._rs485.serial:
+            self._log.info("Closing Modbus serial connection")
+            try:
+                self._rs485.serial.close()
+            except Exception as e:
+                self._log.error("Error closing serial port: %s" % e)
+        self._rs485 = False
+
+    def __del__(self):
+        self.close()
+
     def rs485_connect(self):
+        # Close any existing connection first
+        self.close()
 
         device = False
 
@@ -165,15 +180,15 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             self._log.info("Modbus device found: %s, vid:%s, pid:%s" % (port.device, port.vid, port.pid))
             device = port.device
 
-        # check for valid symbolic link
+        # check for valid symbolic link or direct device path
         if not device:
-            if os.path.islink(self.device):
+            if os.path.exists(self.device):
                 device = self.device
 
         # if device is still False, log error and return False
         if not device:
             self._log.error("Could not find Modbus device")
-            self.ser = False
+            self._rs485 = False
             return False
 
         try:
