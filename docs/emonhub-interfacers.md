@@ -128,7 +128,7 @@ Example single SDM120 / SDM230 EmonHub (V2.3.4+) configuration:
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
-        baud = 2400
+        baud = 9600
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
@@ -149,7 +149,7 @@ EmonHub (V2.3.4+) can also possible to read data from multiple SDM120 modbus met
     Type = EmonHubMinimalModbusInterfacer
     [[[init_settings]]]
         device = /dev/ttyUSB0
-        baud = 2400
+        baud = 9600
     [[[runtimesettings]]]
         pubchannels = ToEmonCMS,
         read_interval = 10
@@ -175,7 +175,7 @@ Here's a cut down interfacer which just reads Power and Energy imported:
         Type = EmonHubMinimalModbusInterfacer
         [[[init_settings]]]
             device = /dev/ttyUSB0
-            baud = 2400
+            baud = 9600
         [[[runtimesettings]]]
             pubchannels = ToEmonCMS,
             read_interval = 10
