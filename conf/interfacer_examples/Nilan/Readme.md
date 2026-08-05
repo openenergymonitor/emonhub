@@ -1,4 +1,4 @@
-EmonHub Interfacer for Nilan exhaust air & heat recovery heat pumps https://nilanuk.com/nilan-compact-p-range/
+<img width="993" height="242" alt="image" src="https://github.com/user-attachments/assets/b02d860c-b349-4360-9a16-c20de91230b6" />EmonHub Interfacer for Nilan exhaust air & heat recovery heat pumps https://nilanuk.com/nilan-compact-p-range/
 
 Modbus Docs: https://nilan.fr/docs/nilandocs/residentiels/CTS602_w_HMI350T_Modbus.pdf 
 
@@ -52,4 +52,16 @@ Modbus Docs: https://nilan.fr/docs/nilandocs/residentiels/CTS602_w_HMI350T_Modbu
                 # Speeds, capacities, and TempSet are scaled by 100
                 scales = 1, 1, 1, 1, 1, 1, 0.01, 0.01, 0.01, 0.01, 0.01, 0.01, 1, 1, 1, 0.01
                 precision = 0, 0, 0, 0, 0, 0, 2, 2, 2, 2, 2, 2, 0, 0, 0, 2
+            # ---------------------------------------------------------
+            # NODE 4: Alarms (Input Registers, FC4)
+            # ---------------------------------------------------------
+            [[[[[CTS602_Alarms]]]]]
+                address = 30
+                functioncodes = 4, 4, 4, 4, 4, 4, 4, 4, 4, 4
+                # Registers 400 through 409 cover the Status and the 3 Alarm Logs
+                registers = 400, 401, 402, 403, 404, 405, 406, 407, 408, 409
+                names = Alarm_Status, Alarm1_ID, Alarm1_Date, Alarm1_Time, Alarm2_ID, Alarm2_Date, Alarm2_Time, Alarm3_ID, Alarm3_Date, Alarm3_Time
+                # All values are raw integers/bitmasks/DOS dates, so scale is 1
+                scales = 1, 1, 1, 1, 1, 1, 1, 1, 1, 1
+                precision = 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
 ```
