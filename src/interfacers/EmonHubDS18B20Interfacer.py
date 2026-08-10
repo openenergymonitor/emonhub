@@ -65,6 +65,8 @@ DS18B20 interfacer for use in development
 """
 
 class EmonHubDS18B20Interfacer(EmonHubInterfacer):
+    _SENSOR_FAILURE_THRESHOLD = 3
+    _SENSOR_FAILURE_BACKOFF_SECONDS = 300
 
     def __init__(self, name):
         """Initialize Interfacer
@@ -83,7 +85,6 @@ class EmonHubDS18B20Interfacer(EmonHubInterfacer):
 
         self.next_interval = True
         self._sensor_failures = {}
-        self._sensor_failure_retry = 300
 
 
     def read(self):
@@ -131,12 +132,13 @@ class EmonHubDS18B20Interfacer(EmonHubInterfacer):
                         value = self.ds.tempC(sensor)
 
                         if value is False:
+                            read_interval = self._settings.get('read_interval', self._DS18B20_settings['read_interval'])
                             fail_count = 1
                             if failure:
                                 fail_count = failure['count'] + 1
-                            retry_at = now + self._settings['read_interval']
-                            if fail_count >= 3:
-                                retry_at = now + self._sensor_failure_retry
+                            retry_at = now + read_interval
+                            if fail_count >= self._SENSOR_FAILURE_THRESHOLD:
+                                retry_at = now + self._SENSOR_FAILURE_BACKOFF_SECONDS
 
                             self._sensor_failures[sensor] = {'count': fail_count, 'retry_at': retry_at}
                             self._log.debug(sensor + ": " + name + " read failed, skipping")
