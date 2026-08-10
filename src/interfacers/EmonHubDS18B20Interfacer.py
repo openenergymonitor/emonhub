@@ -82,6 +82,8 @@ class EmonHubDS18B20Interfacer(EmonHubInterfacer):
         self.ds = DS18B20()
 
         self.next_interval = True
+        self._sensor_failures = {}
+        self._sensor_failure_retry = 300
 
 
     def read(self):
@@ -101,7 +103,17 @@ class EmonHubDS18B20Interfacer(EmonHubInterfacer):
                 c.nodeid = self._settings['nodename']
 
                 if self.ds:
-                    for sensor in self.ds.scan():
+                    sensors = self.ds.scan()
+                    sensor_set = set(sensors)
+
+                    # Remove stale failure state for sensors no longer listed by kernel
+                    for sensor in list(self._sensor_failures.keys()):
+                        if sensor not in sensor_set:
+                            del self._sensor_failures[sensor]
+
+                    now = time.time()
+
+                    for sensor in sensors:
                         # Check if user has set a name for given sensor id
                         name = sensor
                         try:
@@ -111,12 +123,27 @@ class EmonHubDS18B20Interfacer(EmonHubInterfacer):
                         except ValueError:
                             pass
 
+                        failure = self._sensor_failures.get(sensor)
+                        if failure and now < failure['retry_at']:
+                            continue
+
                         # Read sensor value
                         value = self.ds.tempC(sensor)
 
                         if value is False:
+                            fail_count = 1
+                            if failure:
+                                fail_count = failure['count'] + 1
+                            retry_at = now + self._settings['read_interval']
+                            if fail_count >= 3:
+                                retry_at = now + self._sensor_failure_retry
+
+                            self._sensor_failures[sensor] = {'count': fail_count, 'retry_at': retry_at}
                             self._log.debug(sensor + ": " + name + " read failed, skipping")
                             continue
+
+                        if sensor in self._sensor_failures:
+                            del self._sensor_failures[sensor]
 
                         # Add sensor to arrays
                         c.names.append(name)
