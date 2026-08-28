@@ -2,6 +2,7 @@
 """
 import time
 import json
+import math
 import requests
 import zlib
 from binascii import hexlify
@@ -82,6 +83,62 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         self.buffer.storeItem(f)
 
+    def _is_encodable(self, value):
+        """Check a single value can be sent to emoncms as valid JSON.
+
+        A NaN or Inf from a misbehaving node is the usual cause of a value
+        failing here.
+        """
+
+        if isinstance(value, float) and not math.isfinite(value):
+            return False
+        try:
+            json.dumps(value, allow_nan=False)
+        except (ValueError, TypeError):
+            return False
+        return True
+
+    def _sanitise_frame(self, frame):
+        """Replace the values in a frame that cannot be encoded as JSON.
+
+        Frames are [timestamp, nodeid, value, ...] or, with sendnames enabled,
+        [timestamp, nodename, {name: value, ...}].
+
+        A positional value is replaced with None rather than removed, so that
+        the index of every value after it is unchanged: emoncms names the
+        inputs in a bulk frame by position, and skips a null instead of
+        storing it, so [100, null, 200] still arrives as input 1 = 100 and
+        input 3 = 200. A named value is dropped from the dict instead, as
+        there is no index to preserve and emoncms casts a null in the
+        key/value form to 0.
+
+        Returns (frame, values dropped), or (None, 0) if the frame as a whole
+        cannot be used.
+        """
+
+        # A frame needs a timestamp, a node id and at least one value; emoncms
+        # ignores anything shorter. Neither of the first two fields can be
+        # replaced with a null without changing what the frame means, so give
+        # up on the whole frame if either of them is unusable.
+        if len(frame) < 3 or not all(self._is_encodable(v) for v in frame[:2]):
+            return None, 0
+
+        sanitised = list(frame[:2])
+        dropped = 0
+
+        for value in frame[2:]:
+            if isinstance(value, dict):
+                keep = {k: v for k, v in value.items() if self._is_encodable(v)}
+                dropped += len(value) - len(keep)
+                sanitised.append(keep)
+            elif self._is_encodable(value):
+                sanitised.append(value)
+            else:
+                sanitised.append(None)
+                dropped += 1
+
+        return sanitised, dropped
+
     def _process_post(self, databuffer):
         """Send data to server."""
 
@@ -97,13 +154,50 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         if self._settings['senddata']:
             number_of_frames = len(databuffer)
             
-            # Set allow_nan=False as NaN would be rejected by emoncms.  NaN now
-            # causes ValueError exception which is unhandled, causing emonhub to
-            # exit and be restarted by supervisord which is preferable to a NaN
-            # from LeChacal RPICT7V1 blocking emonhub buffer and no data getting to
-            # EmonCMS.
-            data_string = json.dumps(databuffer, separators=(',', ':'), allow_nan=False)
-            
+            # Set allow_nan=False as the NaN literal json produces by default is
+            # not valid JSON and would be rejected by emoncms, blocking the head
+            # of the buffer so that no data gets through at all.
+            #
+            # Encoding failures must not be allowed to escape this method. They
+            # would propagate up through flush() and action() to run(), killing
+            # the interfacer thread; emonhub then rebuilds a dead interfacer from
+            # its settings, which silently discards the whole buffered backlog -
+            # exactly the data we are trying to protect during an outage.
+            # Instead, null out just the offending values and send the rest.
+            try:
+                data_string = json.dumps(databuffer, separators=(',', ':'), allow_nan=False)
+            except (ValueError, TypeError) as ex:
+                sanitised = []
+                dropped_values = 0
+                dropped_frames = 0
+                affected = set()
+                for frame in databuffer:
+                    clean, dropped = self._sanitise_frame(frame)
+                    dropped_values += dropped
+                    if clean is None:
+                        dropped_frames += 1
+                    else:
+                        sanitised.append(clean)
+                    if dropped or clean is None:
+                        # frame[1] is the node id, absent from a truncated frame
+                        affected.add(str(frame[1]) if len(frame) > 1 else "unknown")
+                self._log.warning("%s dropped %d value(s) and %d frame(s) that could not be "
+                                  "encoded as JSON, node(s) %s: %s",
+                                  self.name, dropped_values, dropped_frames,
+                                  ",".join(sorted(affected)), ex)
+                databuffer = sanitised
+                # Return True so that flush() clears the dropped frames from the
+                # buffer rather than retrying a batch that can never succeed.
+                if not databuffer:
+                    return True
+                number_of_frames = len(databuffer)
+                try:
+                    data_string = json.dumps(databuffer, separators=(',', ':'), allow_nan=False)
+                except (ValueError, TypeError) as ex:
+                    self._log.warning("%s discarding batch of %d frame(s), unable to encode as JSON: %s",
+                                      self.name, number_of_frames, ex)
+                    return True
+
             # Prepare URL string of the form
             # http://domain.tld/emoncms/input/bulk.json?apikey=12345
             # &data=[[0,10,82,23],[5,10,82,23],[10,10,82,23]]
