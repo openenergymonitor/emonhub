@@ -6,6 +6,7 @@ import requests
 import zlib
 from binascii import hexlify
 from emonhub_interfacer import EmonHubInterfacer
+import emonhub_version
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
@@ -38,6 +39,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         self.buffer._maximumEntriesInBuffer = 100000
 
         self.session = requests.Session()
+        # Identify ourselves so that server operators can tell emonhub traffic
+        # apart from everything else, and see the version distribution of the
+        # fleet. The requests default is appended rather than replaced so that
+        # the previous 'python-requests/x.y.z' signature still matches.
+        self.session.headers.update({
+            'User-Agent': 'emonhub/%s %s' % (
+                emonhub_version.version, requests.utils.default_user_agent())
+        })
 
     def add(self, cargo):
         """Append data to buffer.

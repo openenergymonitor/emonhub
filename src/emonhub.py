@@ -26,6 +26,7 @@ import emonhub_setup as ehs
 import emonhub_coder as ehc
 import emonhub_interfacer as ehi
 import emonhub_auto_conf as eha
+import emonhub_version
 from interfacers import *
 
 # this namespace and path
@@ -52,11 +53,7 @@ Controlled by the user via EmonHubSetup
 
 class EmonHub:
 
-    __version__ = "v? missing version file"
-    vpath = path.replace("/src","");
-    if os.path.exists(vpath+"/version.txt"):
-        f = open(vpath+"/version.txt", "r")
-        __version__ = "v"+f.read().strip()
+    __version__ = emonhub_version.__version__
 
     def __init__(self, setup):
         """Setup an OpenEnergyMonitor emonHub.
