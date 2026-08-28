@@ -79,9 +79,12 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 if len(cargo.names) > 0 and self._settings['sendnames']:
                     self._log.warning("cargo.names and cargo.realdata have different lengths - " + str(len(cargo.names)) + " vs " + str(len(cargo.realdata)))
         except:
+            # Only buffer a frame that was built without error. A frame that
+            # failed partway is incomplete, and an empty one causes emoncms to
+            # reject the whole batch it is sent in.
             self._log.warning("Failed to create emonCMS frame %s", f)
-
-        self.buffer.storeItem(f)
+        else:
+            self.buffer.storeItem(f)
 
     def _is_encodable(self, value):
         """Check a single value can be sent to emoncms as valid JSON.

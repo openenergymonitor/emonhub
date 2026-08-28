@@ -153,20 +153,23 @@ class EmonHubInterfacer(threading.Thread):
             # self._log.debug("%d adding frame to buffer => %s", rxc.uri, str)
 
         except:
+            # Only buffer a frame that was built without error. A frame that
+            # failed partway is incomplete, and an empty one causes emoncms to
+            # reject the whole batch it is sent in.
             self._log.warning("Failed to create emonCMS frame %s", f)
+        else:
+            # self._log.debug(str(carg.ref) + " added to buffer =>"
+            #                 + " time: " + str(carg.timestamp)
+            #                 + ", node: " + str(carg.node)
+            #                 + ", data: " + str(carg.data))
 
-        # self._log.debug(str(carg.ref) + " added to buffer =>"
-        #                 + " time: " + str(carg.timestamp)
-        #                 + ", node: " + str(carg.node)
-        #                 + ", data: " + str(carg.data))
+            # databuffer is of format:
+            # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+            # [[1399980731, 10, 150, 3450 ...]]
 
-        # databuffer is of format:
-        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
-        # [[1399980731, 10, 150, 3450 ...]]
+            # databuffer format can be overwritten by interfacer
 
-        # databuffer format can be overwritten by interfacer
-
-        self.buffer.storeItem(f)
+            self.buffer.storeItem(f)
 
     def read(self):
         """Read raw data from interface and pass for processing.
