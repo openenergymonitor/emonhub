@@ -39,6 +39,9 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # maximum buffer size
         self.buffer._maximumEntriesInBuffer = 100000
 
+        # Set when the server asks us to back off, see _process_reply
+        self._retry_not_before = 0
+
         self.session = requests.Session()
         # Identify ourselves so that server operators can tell emonhub traffic
         # apart from everything else, and see the version distribution of the
@@ -142,6 +145,89 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
 
         return sanitised, dropped
 
+    def _process_reply(self, reply, dt, number_of_frames):
+        """Decide what to do with the batch just posted, from the server's reply.
+
+        Returns True to discard the batch and False to keep it for a retry.
+
+        The distinction that matters is between data emoncms will never accept
+        and a problem that will clear on its own or once someone fixes it. The
+        first has to be discarded: retrying it forever blocks the head of the
+        buffer, so nothing behind it gets through either and the backlog grows
+        until the oldest data is dropped. The second has to be kept, since that
+        is the whole point of buffering.
+
+        Anything unrecognised keeps the data. The buffer exists to ride out
+        problems we did not anticipate, so retrying is the safe default.
+        """
+
+        body = reply.text.strip() if reply.text else ''
+
+        if reply.status_code == 200 and body == 'ok':
+            self._log.debug("acknowledged receipt with 'ok' from %s (%d ms)",
+                            self._settings['url'], dt)
+            return True
+
+        # Data emoncms will never accept, so discard it rather than block the
+        # buffer behind it. Current emoncms reports this as 400; older versions
+        # reply 200 with the message in the body, bare on emoncms.org and
+        # wrapped in JSON when self hosted, hence matching on the text too.
+        if reply.status_code == 400 or (reply.status_code == 200 and 'Format error' in body):
+            self._log.warning("%s discarding %d frame(s) rejected as invalid by %s: %s",
+                              self.name, number_of_frames, self._settings['url'], body[:200])
+            return True
+
+        # Problems someone can fix, where the data itself is fine. Keep it so it
+        # goes through once the cause is put right, but say so plainly: without
+        # this the buffer just fills and starts discarding the oldest data with
+        # nothing in the log to explain why.
+        if reply.status_code in (401, 403):
+            self._log.warning("%s not authorised by %s, check apikey. Data is being "
+                              "kept and will be sent once this is fixed",
+                              self.name, self._settings['url'])
+            return False
+
+        if reply.status_code == 413:
+            self._log.warning("%s batch of %d frames rejected as too large by %s, "
+                              "reduce batchsize. Data is being kept",
+                              self.name, number_of_frames, self._settings['url'])
+            return False
+
+        if reply.status_code == 429:
+            # Wait as asked before posting again, rather than spending the
+            # backlog retrying into a server that is telling us to slow down.
+            delay = self._retry_after_seconds(reply)
+            self._retry_not_before = time.time() + delay
+            self._log.warning("%s rate limited by %s, not retrying for %d seconds. "
+                              "Data is being kept",
+                              self.name, self._settings['url'], delay)
+            return False
+
+        if reply.status_code >= 500:
+            self._log.warning("%s server error %d from %s, data is being kept",
+                              self.name, reply.status_code, self._settings['url'])
+            return False
+
+        # Anything else, including a 200 whose body is not 'ok', which is far
+        # more likely to be a captive portal or proxy page than emoncms.
+        self._log.warning("%s unexpected reply from %s (HTTP %d), data is being kept: %s",
+                          self.name, self._settings['url'], reply.status_code, body[:200])
+        return False
+
+    def _retry_after_seconds(self, reply):
+        """Seconds to wait from a Retry-After header, clamped to something sane."""
+
+        header = reply.headers.get('Retry-After', '') if reply.headers else ''
+        try:
+            delay = int(float(header.strip()))
+        except (AttributeError, ValueError):
+            # Absent, or an HTTP date rather than a number, which is rare enough
+            # not to be worth parsing. Fall back to a sensible pause.
+            delay = 300
+        # Never wait less than the posting interval, and never so long that a
+        # bad header effectively stops the interfacer.
+        return max(int(self._settings['interval']), min(delay, 3600))
+
     def _process_post(self, databuffer):
         """Send data to server."""
 
@@ -153,6 +239,11 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 or str(self._settings['apikey']).lower() == 'x' * 32:
             # Return true to clear buffer if the apikey is not set
             return True
+
+        # The server asked us to back off. Keep the data and say nothing until
+        # the wait is up, rather than posting into a server we know will refuse.
+        if time.time() < self._retry_not_before:
+            return False
 
         if self._settings['senddata']:
             number_of_frames = len(databuffer)
@@ -237,23 +328,18 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 post_body = {'data': data_string}
                 self._log.info("sending: %s (%d bytes of data, %d frames, uncompressed)", post_url, len(data_string),number_of_frames)
             
-            result = False
             try:
                 st = time.time()
                 reply = self.session.post(post_url, post_body, timeout=60, headers={'Authorization': 'Bearer '+self._settings['apikey']})
                 dt = (time.time()-st)*1000
-                reply.raise_for_status()  # Raise an exception if status code isn't 200
-                result = reply.text
             except requests.exceptions.RequestException as ex:
+                # No usable reply at all: server down, DNS failure, connection
+                # refused, timeout, TLS error. Always keep the data, this is
+                # precisely what the buffer is for.
                 self._log.warning("%s couldn't send to server: %s", self.name, ex)
                 return False
 
-            if result == 'ok':
-                self._log.debug("acknowledged receipt with '%s' from %s (%d ms)", result, self._settings['url'], dt)
-                return True
-            else:
-                self._log.warning("send failure: wanted 'ok' but got '%s'", result)
-                return False
+            return self._process_reply(reply, dt, number_of_frames)
         
         # Sends status to myip module if enabled
         if self._settings['sendstatus']:
