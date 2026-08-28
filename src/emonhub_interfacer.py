@@ -225,9 +225,11 @@ class EmonHubInterfacer(threading.Thread):
             if self._process_post(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItems(retrievedlength)
-            # log the time of last successful post
-            # slow down retry rate in the case where the last attempt failed
-            # stops continuous retry attempts filling up the log
+            # Timestamp the attempt, successful or not, so that a failing post
+            # is retried on the normal interval rather than continuously.
+            # This paces retries but does not back off: an interfacer that wants
+            # to wait longer the longer a server has been failing does so in its
+            # own _process_post, as the emoncms HTTP interfacer does.
             self._interval_timestamp = time.time()
 
 

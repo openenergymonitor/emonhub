@@ -3,6 +3,7 @@
 import time
 import json
 import math
+import random
 import requests
 import zlib
 from binascii import hexlify
@@ -39,8 +40,11 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # maximum buffer size
         self.buffer._maximumEntriesInBuffer = 100000
 
-        # Set when the server asks us to back off, see _process_reply
+        # Retry backoff state, see _schedule_retry
         self._retry_not_before = 0
+        self._consecutive_failures = 0
+        # Longest a failing post will wait before trying again
+        self._retry_backoff_max = 300
 
         self.session = requests.Session()
         # Identify ourselves so that server operators can tell emonhub traffic
@@ -166,6 +170,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         if reply.status_code == 200 and body == 'ok':
             self._log.debug("acknowledged receipt with 'ok' from %s (%d ms)",
                             self._settings['url'], dt)
+            self._retry_succeeded()
             return True
 
         # Data emoncms will never accept, so discard it rather than block the
@@ -175,6 +180,8 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         if reply.status_code == 400 or (reply.status_code == 200 and 'Format error' in body):
             self._log.warning("%s discarding %d frame(s) rejected as invalid by %s: %s",
                               self.name, number_of_frames, self._settings['url'], body[:200])
+            # A rejection still means emoncms answered us, so the link is fine.
+            self._retry_succeeded()
             return True
 
         # Problems someone can fix, where the data itself is fine. Keep it so it
@@ -185,12 +192,14 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.warning("%s not authorised by %s, check apikey. Data is being "
                               "kept and will be sent once this is fixed",
                               self.name, self._settings['url'])
+            self._schedule_retry()
             return False
 
         if reply.status_code == 413:
             self._log.warning("%s batch of %d frames rejected as too large by %s, "
                               "reduce batchsize. Data is being kept",
                               self.name, number_of_frames, self._settings['url'])
+            self._schedule_retry()
             return False
 
         if reply.status_code == 429:
@@ -201,18 +210,60 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             self._log.warning("%s rate limited by %s, not retrying for %d seconds. "
                               "Data is being kept",
                               self.name, self._settings['url'], delay)
+            # _schedule_retry never shortens a wait, so the Retry-After value
+            # stands unless repeated failures warrant an even longer pause.
+            self._schedule_retry()
             return False
 
         if reply.status_code >= 500:
             self._log.warning("%s server error %d from %s, data is being kept",
                               self.name, reply.status_code, self._settings['url'])
+            self._schedule_retry()
             return False
 
         # Anything else, including a 200 whose body is not 'ok', which is far
         # more likely to be a captive portal or proxy page than emoncms.
         self._log.warning("%s unexpected reply from %s (HTTP %d), data is being kept: %s",
                           self.name, self._settings['url'], reply.status_code, body[:200])
+        self._schedule_retry()
         return False
+
+    def _schedule_retry(self):
+        """Wait longer before trying again, the longer the server has been failing.
+
+        The first failure retries at the normal interval, since a single blip is
+        not worth slowing down for. After that the wait doubles, up to
+        _retry_backoff_max, so a long outage is not spent posting into a server
+        that is not there.
+
+        The wait is jittered because every hub posting to the same server would
+        otherwise back off in step and come back all at once the moment it
+        recovers, which is when it can least afford the traffic. Never shortens
+        a wait already set, so an explicit Retry-After still stands.
+        """
+
+        self._consecutive_failures += 1
+        if self._consecutive_failures < 2:
+            return
+
+        interval = max(int(self._settings['interval']), 1)
+        # Cap the exponent as well as the delay, so a long outage cannot build
+        # an absurdly large number before the cap is applied.
+        delay = min(interval * 2 ** min(self._consecutive_failures - 1, 16),
+                    self._retry_backoff_max)
+        delay *= random.uniform(0.5, 1.0)
+        self._retry_not_before = max(self._retry_not_before, time.time() + delay)
+        self._log.debug("%s waiting %d seconds before retrying, %d attempts have failed",
+                        self.name, delay, self._consecutive_failures)
+
+    def _retry_succeeded(self):
+        """Clear the backoff after the server answers properly again."""
+
+        if self._consecutive_failures >= 2:
+            self._log.info("%s posting to %s resumed after %d failed attempts",
+                           self.name, self._settings['url'], self._consecutive_failures)
+        self._consecutive_failures = 0
+        self._retry_not_before = 0
 
     def _retry_after_seconds(self, reply):
         """Seconds to wait from a Retry-After header, clamped to something sane."""
@@ -337,6 +388,7 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 # refused, timeout, TLS error. Always keep the data, this is
                 # precisely what the buffer is for.
                 self._log.warning("%s couldn't send to server: %s", self.name, ex)
+                self._schedule_retry()
                 return False
 
             return self._process_reply(reply, dt, number_of_frames)
