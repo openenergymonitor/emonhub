@@ -43,10 +43,10 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # Retry backoff state, see _schedule_retry
         self._retry_not_before = 0
         self._consecutive_failures = 0
-        # Longest a failing post will wait before trying again. Raised in
-        # _schedule_retry for a long posting interval, since a cap at or below
-        # the interval can never take effect.
-        self._retry_backoff_max = 300
+        # Longest a failing post will wait before trying again, and equally the
+        # posting interval at or above which backing off is not worth doing.
+        # See _schedule_retry.
+        self._retry_backoff_max = 600
 
         self.session = requests.Session()
         # Identify ourselves so that server operators can tell emonhub traffic
@@ -249,15 +249,18 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             return
 
         interval = max(int(self._settings['interval']), 1)
-        # The wait is only tested when the next attempt comes round, so a cap at
-        # or below the posting interval would always have expired by then and
-        # the backoff would do nothing. Keep the cap above the interval, with an
-        # absolute ceiling so recovery is never delayed by more than an hour.
-        # At the default 30s interval this is the plain 300s cap.
-        cap = min(max(self._retry_backoff_max, interval * 4), 3600)
+
+        # Backing off only earns anything when the interval is short enough for
+        # the attempts to add up. A hub already posting every ten minutes makes
+        # few enough of them that waiting longer would cost more in delayed
+        # recovery than it saves the server, so leave those alone entirely.
+        if interval >= self._retry_backoff_max:
+            return
+
         # Cap the exponent as well as the delay, so a long outage cannot build
         # an absurdly large number before the cap is applied.
-        delay = min(interval * 2 ** min(self._consecutive_failures - 1, 16), cap)
+        delay = min(interval * 2 ** min(self._consecutive_failures - 1, 16),
+                    self._retry_backoff_max)
         delay *= random.uniform(0.5, 1.0)
         self._retry_not_before = max(self._retry_not_before, time.time() + delay)
         self._log.debug("%s waiting %d seconds before retrying, %d attempts have failed",
