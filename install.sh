@@ -60,15 +60,92 @@ pip_has() {
     return 0
 }
 
+# Location of the boot configuration, moved in bookworm
+boot_config=/boot/config.txt
+if [ -f /boot/firmware/config.txt ]; then
+    boot_config=/boot/firmware/config.txt
+fi
+boot_cmdline=/boot/cmdline.txt
+if [ -f /boot/firmware/cmdline.txt ]; then
+    boot_cmdline=/boot/firmware/cmdline.txt
+fi
+
+# Overridable for testing
+device_tree_model=/proc/device-tree/model
+
+# Is this a raspberrypi?
+is_raspberrypi() {
+    grep -qi "raspberry pi" $device_tree_model 2>/dev/null || \
+    grep -qi "^Model.*Raspberry Pi" /proc/cpuinfo 2>/dev/null
+}
+
+# Is the rpi-lgpio package available to install?
+rpi_lgpio_available() {
+    apt-cache show python3-rpi-lgpio > /dev/null 2>&1
+}
+
+# List the raspberrypi configuration steps that have not been applied yet.
+# Used to decide whether there is any point asking the user, the steps
+# themselves are each guarded individually so this list does not have to be
+# exhaustive to be safe.
+pi_config_pending=()
+detect_pi_config_pending() {
+    pi_config_pending=()
+
+    if rpi_lgpio_available; then
+        if apt_installed python3-rpi.gpio; then
+            pi_config_pending+=("remove python3-rpi.gpio, it conflicts with rpi-lgpio")
+        fi
+        if ! apt_installed python3-rpi-lgpio; then
+            pi_config_pending+=("install python3-rpi-lgpio")
+        fi
+        if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config 2>/dev/null; then
+            pi_config_pending+=("move SPI CS0 to GPIO26 in $boot_config")
+        fi
+    elif ! apt_installed python3-rpi.gpio; then
+        pi_config_pending+=("install python3-rpi.gpio")
+    fi
+
+    if ! grep -q "^dtoverlay=disable-bt" $boot_config 2>/dev/null; then
+        pi_config_pending+=("disable bluetooth in $boot_config")
+    fi
+    if grep -q "^#dtparam=spi=on" $boot_config 2>/dev/null; then
+        pi_config_pending+=("enable SPI in $boot_config")
+    fi
+    if systemctl is-enabled --quiet hciuart; then
+        pi_config_pending+=("disable the hciuart bluetooth modem service")
+    fi
+    if grep -q "console=serial0,115200" $boot_cmdline 2>/dev/null; then
+        pi_config_pending+=("remove the serial console from $boot_cmdline")
+    fi
+    if ! systemctl is-enabled serial-getty@ttyAMA0.service 2>/dev/null | grep -q masked; then
+        pi_config_pending+=("stop and mask serial-getty@ttyAMA0.service")
+    fi
+}
+
 # User input: is this a raspberrypi environment that requires serial configuration
 emonSD_pi_env=0
 # Run interactively (rather than from the updater), always restart at the end
 interactive=0
 if [ -z "$1" ]; then
     interactive=1
-    read -p 'Apply raspberrypi serial configuration? (y/n): ' input
-    if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
-        emonSD_pi_env=1
+    if ! is_raspberrypi; then
+        echo "Not a raspberrypi, skipping raspberrypi serial configuration"
+    elif [ ! -f "$boot_config" ]; then
+        echo "RaspberryPi detected but $boot_config not found, skipping raspberrypi serial configuration"
+    else
+        detect_pi_config_pending
+        if [ ${#pi_config_pending[@]} -eq 0 ]; then
+            echo "RaspberryPi serial configuration already applied"
+            emonSD_pi_env=1
+        else
+            echo "RaspberryPi detected, the following has not been applied:"
+            printf '  - %s\n' "${pi_config_pending[@]}"
+            read -p 'Apply raspberrypi serial configuration? (y/n): ' input
+            if [ "$input" == "y" ] || [ "$input" == "Y" ]; then
+                emonSD_pi_env=1
+            fi
+        fi
     fi
 else
     openenergymonitor_dir=$1
@@ -159,20 +236,13 @@ fi
 # ---------------------------------------------------------
 if [ "$emonSD_pi_env" = 1 ]; then
 
-    boot_config=/boot/config.txt
-    if [ -f /boot/firmware/config.txt ]; then
-        boot_config=/boot/firmware/config.txt
-    fi
-
-    # Check if python3-rpi-lgpio package is available
-    rpi_lgpio_available=0
-    if apt-cache show python3-rpi-lgpio > /dev/null 2>&1; then
-        rpi_lgpio_available=1
+    if [ ! -f "$boot_config" ]; then
+        echo "- $boot_config not found, skipping boot configuration"
     fi
 
     # Migrate from RPi.GPIO to rpi-lgpio where available, RPi.GPIO must be
     # removed first as the two conflict.
-    if [ "$rpi_lgpio_available" -eq 1 ]; then
+    if rpi_lgpio_available; then
         if apt_installed python3-rpi.gpio; then
             echo "- Removing python3-rpi.gpio"
             sudo apt remove -y python3-rpi.gpio
@@ -189,7 +259,7 @@ if [ "$emonSD_pi_env" = 1 ]; then
 
         # Move CS0 to GPIO26
         # add line if not present
-        if ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
+        if [ -f "$boot_config" ] && ! grep -q "^dtoverlay=spi0-cs,cs0_pin=26" $boot_config; then
             echo "- Moving SPI CS0 to GPIO26"
             echo "dtoverlay=spi0-cs,cs0_pin=26" | sudo tee -a $boot_config
             reboot_required=1
@@ -209,14 +279,14 @@ if [ "$emonSD_pi_env" = 1 ]; then
     # disable Pi3 Bluetooth and restore UART0/ttyAMA0 over GPIOs 14 & 15;
     # Review should this be: dtoverlay=miniuart-bt?
 
-    if ! grep -q "^dtoverlay=disable-bt" $boot_config; then
+    if [ -f "$boot_config" ] && ! grep -q "^dtoverlay=disable-bt" $boot_config; then
         echo "- Disabling Bluetooth"
         sudo sed -i -n '/dtoverlay=disable-bt/!p;$a dtoverlay=disable-bt' $boot_config
         reboot_required=1
     fi
 
     # Enable SPI
-    if grep -q "^#dtparam=spi=on" $boot_config; then
+    if [ -f "$boot_config" ] && grep -q "^#dtparam=spi=on" $boot_config; then
         echo "- Enabling SPI in $boot_config"
         sudo sed -i 's/#dtparam=spi=on/dtparam=spi=on/' $boot_config
         reboot_required=1
@@ -228,13 +298,8 @@ if [ "$emonSD_pi_env" = 1 ]; then
         sudo systemctl disable hciuart
     fi
 
-    boot_cmdline=/boot/cmdline.txt
-    if [ -f /boot/firmware/cmdline.txt ]; then
-        boot_cmdline=/boot/firmware/cmdline.txt
-    fi
-
     # Remove console from cmdline.txt
-    if grep -q "console=serial0,115200" $boot_cmdline; then
+    if [ -f "$boot_cmdline" ] && grep -q "console=serial0,115200" $boot_cmdline; then
         echo "- Removing serial console from $boot_cmdline"
         sudo sed -i "s/console=serial0,115200 //" $boot_cmdline
         reboot_required=1
