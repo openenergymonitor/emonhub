@@ -31,7 +31,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         self.Radio = False
         self.polling_mode = False
         try:            
-            from RFM69 import Radio
+            from rfm69min import Radio
             self.Radio = Radio
         except ModuleNotFoundError as err:      
             self._log.error(err)
@@ -80,14 +80,14 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         self.radio = False
 
         try:
-            self.radio = self.Radio(self.freqBand, self.node_id, self.network_id, verbose=False, **board)
+            self.radio = self.Radio(self.freqBand, self.node_id, self.network_id, **board)
         except Exception as err:
             if str(err) == "Failed to add edge detection":
                 # == Fallback to polling mode if interrupt setup fails ==
                 # Override interrupt setup to allow polling mode
                 self.Radio._init_interrupt = lambda self: True
                 try:
-                    self.radio = self.Radio(self.freqBand, self.node_id, self.network_id, verbose=False, **board)
+                    self.radio = self.Radio(self.freqBand, self.node_id, self.network_id, **board)
                 except Exception as err:
                     self._log.error("Error initializing RFM69 in polling mode: "+str(err))
 

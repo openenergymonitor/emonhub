@@ -20,12 +20,6 @@ restart_required=0
 # Set when the service drop-in changed and a daemon-reload is needed
 daemon_reload_required=0
 
-# Custom rpi-rfm69 library used for SPI RFM69 Low Power Labs interfacer
-# rfm69_version must match the VERSION file at rfm69_tag, it is used to
-# detect whether the installed library is already the required version.
-rfm69_tag="v0.3.0-oem-7"
-rfm69_version="0.3.7"
-
 # -------------------------------------------------------------
 # Helpers
 # -------------------------------------------------------------
@@ -240,13 +234,9 @@ else
     echo "- Python dependencies already installed"
 fi
 
-if pip_has "rpi-rfm69==$rfm69_version"; then
-    echo "- rpi-rfm69 library $rfm69_version already installed"
-else
-    echo "- Installing rpi-rfm69 library $rfm69_tag ($rfm69_version)"
-    pip3 install https://github.com/openenergymonitor/rpi-rfm69/archive/refs/tags/$rfm69_tag.zip
-    restart_required=1
-fi
+# Note: there is no rpi-rfm69 install step, the RFM69 driver used by the SPI
+# RFM69 Low Power Labs interfacer is included in this repository (src/rfm69min).
+# An older pip installed rpi-rfm69 is unused but harmless, it is left in place.
 
 # ---------------------------------------------------------
 # RaspberryPi specific configuration
