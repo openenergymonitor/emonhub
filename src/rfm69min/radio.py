@@ -9,6 +9,7 @@ asyncio support have all been removed.
 Original library GPL v3, LowPowerLabs register definitions GPL v2 or later.
 """
 
+import threading
 import time
 from collections import deque
 
@@ -25,6 +26,14 @@ REG_POLL_TIMEOUT_S = 1.0
 # Received packets are dropped rather than queued indefinitely if nothing is
 # reading them, oldest first.
 MAX_QUEUED_PACKETS = 100
+
+# RPi.GPIO runs the DIO0 callback on its own thread, so the interrupt handler
+# and the interfacer thread both drive the radio. Chip select is a separate
+# GPIO write either side of every transfer, so without this lock the two can
+# interleave and corrupt both transactions. It is shared by all instances
+# because the SPI bus and the chip select line are, and because the interfacer
+# watchdog builds a second Radio while the first one's interrupt can still fire.
+_spi_lock = threading.RLock()
 
 
 class Packet(object):
@@ -142,13 +151,14 @@ class Radio(object):
             self.set_power_level(kwargs.get('power', 70))
 
     def _initialize(self, freqBand, nodeID, networkID):
-        if not self._reset_radio(): return False
+        with _spi_lock:
+            if not self._reset_radio(): return False
 
-        self._set_config(get_config(freqBand, networkID))
-        self._setHighPower(self.isRFM69HW)
-        # Wait for ModeReady
-        if not self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY):
-            return False
+            self._set_config(get_config(freqBand, networkID))
+            self._setHighPower(self.isRFM69HW)
+            # Wait for ModeReady
+            if not self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY):
+                return False
 
         self.address = nodeID
         self._init_interrupt()
@@ -231,7 +241,8 @@ class Radio(object):
         """
         assert type(percent) == int
         self.powerLevel = int( round(31 * (percent / 100)))
-        self._writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0xE0) | self.powerLevel)
+        with _spi_lock:
+            self._writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0xE0) | self.powerLevel)
 
     def read_temperature(self, calFactor=0):
         """Read the temperature of the radios CMOS chip.
@@ -242,13 +253,14 @@ class Radio(object):
         Returns:
             int: Temperature in centigrade, or None if the radio did not respond
         """
-        self._setMode(RF69_MODE_STANDBY)
-        self._writeReg(REG_TEMP1, RF_TEMP1_MEAS_START)
-        if not self._wait_reg(REG_TEMP1, RF_TEMP1_MEAS_RUNNING, until_set=False):
-            return None
-        # COURSE_TEMP_COEF puts reading in the ballpark, user can add additional correction
-        #'complement'corrects the slope, rising temp = rising val
-        return (int(~self._readReg(REG_TEMP2)) * -1) + COURSE_TEMP_COEF + calFactor
+        with _spi_lock:
+            self._setMode(RF69_MODE_STANDBY)
+            self._writeReg(REG_TEMP1, RF_TEMP1_MEAS_START)
+            if not self._wait_reg(REG_TEMP1, RF_TEMP1_MEAS_RUNNING, until_set=False):
+                return None
+            # COURSE_TEMP_COEF puts reading in the ballpark, user can add additional correction
+            #'complement'corrects the slope, rising temp = rising val
+            return (int(~self._readReg(REG_TEMP2)) * -1) + COURSE_TEMP_COEF + calFactor
 
     def calibrate_radio(self):
         """Calibrate the internal RC oscillator for use in wide temperature variations.
@@ -258,8 +270,9 @@ class Radio(object):
         Returns:
             bool: False if the radio did not respond
         """
-        self._writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
-        return self._wait_reg(REG_OSC1, RF_OSC1_RCCAL_DONE)
+        with _spi_lock:
+            self._writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
+            return self._wait_reg(REG_OSC1, RF_OSC1_RCCAL_DONE)
 
     def begin_receive(self):
         """Begin listening for packets"""
@@ -267,12 +280,13 @@ class Radio(object):
         while self.intLock and time.monotonic() - start < REG_POLL_TIMEOUT_S:
             time.sleep(.01)
 
-        if (self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
-            # avoid RX deadlocks
-            self._writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
-        #set DIO0 to "PAYLOADREADY" in receive mode
-        self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01)
-        self._setMode(RF69_MODE_RX)
+        with _spi_lock:
+            if (self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
+                # avoid RX deadlocks
+                self._writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
+            #set DIO0 to "PAYLOADREADY" in receive mode
+            self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_01)
+            self._setMode(RF69_MODE_RX)
 
     def has_received_packet(self):
         """Check if packet received
@@ -309,53 +323,55 @@ class Radio(object):
         while (not self._canSend()) and time.monotonic() - now < RF69_CSMA_LIMIT_S:
             time.sleep(0.01)
 
-        #turn off receiver to prevent reception while filling fifo
-        self._setMode(RF69_MODE_STANDBY)
-        #wait for modeReady
-        if not self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY):
+        with _spi_lock:
+            #turn off receiver to prevent reception while filling fifo
+            self._setMode(RF69_MODE_STANDBY)
+            #wait for modeReady
+            if not self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY):
+                self._setMode(RF69_MODE_RX)
+                return False
+            # DIO0 is "Packet Sent"
+            self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00)
+
+            # payload length 3 (target, sender, CTL), CTL byte 0x80 marks this as an ACK
+            self.select()
+            self.spi.xfer2([REG_FIFO | 0x80, 3, toAddress, self.address, 0x80])
+            self.unselect()
+
+            self._setMode(RF69_MODE_TX)
+            # make sure packet is sent before putting more into the FIFO
+            sent = self._wait_reg(REG_IRQFLAGS2, RF_IRQFLAGS2_PACKETSENT, interval=0.01)
+
             self._setMode(RF69_MODE_RX)
-            return False
-        # DIO0 is "Packet Sent"
-        self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00)
-
-        # payload length 3 (target, sender, CTL), CTL byte 0x80 marks this as an ACK
-        self.select()
-        self.spi.xfer2([REG_FIFO | 0x80, 3, toAddress, self.address, 0x80])
-        self.unselect()
-
-        self._setMode(RF69_MODE_TX)
-        # make sure packet is sent before putting more into the FIFO
-        sent = self._wait_reg(REG_IRQFLAGS2, RF_IRQFLAGS2_PACKETSENT, interval=0.01)
-
-        self._setMode(RF69_MODE_RX)
-        return sent
+            return sent
 
     #
     # Internal functions
     #
 
     def _setMode(self, newMode):
-        if newMode == self.mode:
-            return
-        if newMode == RF69_MODE_TX:
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER)
-            if self.isRFM69HW:
-                self._setHighPowerRegs(True)
-        elif newMode == RF69_MODE_RX:
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER)
-            if self.isRFM69HW:
-                self._setHighPowerRegs(False)
-        elif newMode == RF69_MODE_STANDBY:
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY)
-        elif newMode == RF69_MODE_SLEEP:
-            self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP)
-        else:
-            return
-        # we are using packet mode, so this check is not really needed
-        # but waiting for mode ready is necessary when going from sleep because the FIFO may not be immediately available from previous mode
-        if self.mode == RF69_MODE_SLEEP:
-            self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY)
-        self.mode = newMode
+        with _spi_lock:
+            if newMode == self.mode:
+                return
+            if newMode == RF69_MODE_TX:
+                self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_TRANSMITTER)
+                if self.isRFM69HW:
+                    self._setHighPowerRegs(True)
+            elif newMode == RF69_MODE_RX:
+                self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_RECEIVER)
+                if self.isRFM69HW:
+                    self._setHighPowerRegs(False)
+            elif newMode == RF69_MODE_STANDBY:
+                self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_STANDBY)
+            elif newMode == RF69_MODE_SLEEP:
+                self._writeReg(REG_OPMODE, (self._readReg(REG_OPMODE) & 0xE3) | RF_OPMODE_SLEEP)
+            else:
+                return
+            # we are using packet mode, so this check is not really needed
+            # but waiting for mode ready is necessary when going from sleep because the FIFO may not be immediately available from previous mode
+            if self.mode == RF69_MODE_SLEEP:
+                self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY)
+            self.mode = newMode
 
     def _canSend(self):
         if self.mode == RF69_MODE_STANDBY:
@@ -373,14 +389,15 @@ class Radio(object):
         return rssi
 
     def _encrypt(self, key):
-        self._setMode(RF69_MODE_STANDBY)
-        if key != 0 and len(key) == 16:
-            self.select()
-            self.spi.xfer([REG_AESKEY1 | 0x80] + [int(ord(i)) for i in list(key)])
-            self.unselect()
-            self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
-        else:
-            self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
+        with _spi_lock:
+            self._setMode(RF69_MODE_STANDBY)
+            if key != 0 and len(key) == 16:
+                self.select()
+                self.spi.xfer([REG_AESKEY1 | 0x80] + [int(ord(i)) for i in list(key)])
+                self.unselect()
+                self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
+            else:
+                self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
 
     def _wait_reg(self, addr, mask, until_set=True, timeout=REG_POLL_TIMEOUT_S, interval=0):
         """Wait for the masked bits of a register to be set, or cleared
@@ -398,33 +415,37 @@ class Radio(object):
         return True
 
     def _readReg(self, addr):
-        self.select()
-        regval = self.spi.xfer([addr & 0x7F, 0])[1]
-        self.unselect()
+        with _spi_lock:
+            self.select()
+            regval = self.spi.xfer([addr & 0x7F, 0])[1]
+            self.unselect()
         return regval
 
     def _writeReg(self, addr, value):
-        self.select()
-        self.spi.xfer([addr | 0x80, value])
-        self.unselect()
+        with _spi_lock:
+            self.select()
+            self.spi.xfer([addr | 0x80, value])
+            self.unselect()
 
     def _setHighPower(self, onOff):
-        if onOff:
-            self._writeReg(REG_OCP, RF_OCP_OFF)
-            #enable P1 & P2 amplifier stages
-            self._writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON)
-        else:
-            self._writeReg(REG_OCP, RF_OCP_ON)
-            #enable P0 only
-            self._writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | RF_PALEVEL_OUTPUTPOWER_11111)
+        with _spi_lock:
+            if onOff:
+                self._writeReg(REG_OCP, RF_OCP_OFF)
+                #enable P1 & P2 amplifier stages
+                self._writeReg(REG_PALEVEL, (self._readReg(REG_PALEVEL) & 0x1F) | RF_PALEVEL_PA1_ON | RF_PALEVEL_PA2_ON)
+            else:
+                self._writeReg(REG_OCP, RF_OCP_ON)
+                #enable P0 only
+                self._writeReg(REG_PALEVEL, RF_PALEVEL_PA0_ON | RF_PALEVEL_PA1_OFF | RF_PALEVEL_PA2_OFF | RF_PALEVEL_OUTPUTPOWER_11111)
 
     def _setHighPowerRegs(self, onOff):
-        if onOff:
-            self._writeReg(REG_TESTPA1, 0x5D)
-            self._writeReg(REG_TESTPA2, 0x7C)
-        else:
-            self._writeReg(REG_TESTPA1, 0x55)
-            self._writeReg(REG_TESTPA2, 0x70)
+        with _spi_lock:
+            if onOff:
+                self._writeReg(REG_TESTPA1, 0x5D)
+                self._writeReg(REG_TESTPA2, 0x7C)
+            else:
+                self._writeReg(REG_TESTPA1, 0x55)
+                self._writeReg(REG_TESTPA2, 0x70)
 
     def _shutdown(self):
         """Shutdown the radio.
@@ -458,42 +479,44 @@ class Radio(object):
 
     def _read_payload(self):
         """Read a received packet out of the FIFO, called with intLock held"""
-        if not (self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
-            return
+        with _spi_lock:
+            if not (self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
+                return
 
-        self._setMode(RF69_MODE_STANDBY)
+            self._setMode(RF69_MODE_STANDBY)
 
-        self.select()
-        payload_length, target_id, sender_id, CTLbyte = self.spi.xfer2([REG_FIFO & 0x7f,0,0,0,0])[1:]
-        self.unselect()
+            self.select()
+            payload_length, target_id, sender_id, CTLbyte = self.spi.xfer2([REG_FIFO & 0x7f,0,0,0,0])[1:]
+            self.unselect()
 
-        if payload_length > 66:
-            payload_length = 66
+            if payload_length > 66:
+                payload_length = 66
 
-        # The payload always carries the 3 byte target/sender/CTL header, a
-        # shorter one is a corrupt frame rather than an empty packet
-        if payload_length < 3:
-            return
+            # The payload always carries the 3 byte target/sender/CTL header, a
+            # shorter one is a corrupt frame rather than an empty packet
+            if payload_length < 3:
+                return
 
-        if not (self.promiscuousMode or target_id == self.address or target_id == RF69_BROADCAST_ADDR):
-            return
+            if not (self.promiscuousMode or target_id == self.address or target_id == RF69_BROADCAST_ADDR):
+                return
 
-        data_length = payload_length - 3
-        ack_received  = bool(CTLbyte & 0x80)
-        ack_requested = bool(CTLbyte & 0x40)
-        self.select()
-        data = self.spi.xfer2([REG_FIFO & 0x7f] + [0 for i in range(0, data_length)])[1:]
-        self.unselect()
-        rssi = self._readRSSI()
+            data_length = payload_length - 3
+            ack_received  = bool(CTLbyte & 0x80)
+            ack_requested = bool(CTLbyte & 0x40)
+            self.select()
+            data = self.spi.xfer2([REG_FIFO & 0x7f] + [0 for i in range(0, data_length)])[1:]
+            self.unselect()
+            rssi = self._readRSSI()
 
-        # When message received (acknowledgements are not data and are discarded,
-        # nothing here requests them)
-        if not ack_received:
-            self.packets.append(
-                Packet(int(target_id), int(sender_id), int(rssi), list(data))
-            )
+            # When message received (acknowledgements are not data and are discarded,
+            # nothing here requests them)
+            if not ack_received:
+                self.packets.append(
+                    Packet(int(target_id), int(sender_id), int(rssi), list(data))
+                )
 
-        # Send acknowledgement if needed
+        # Send acknowledgement if needed, outside the lock so the bus is not
+        # held for the length of a transmit
         if ack_requested and self.auto_acknowledge:
             self.intLock = False
             self.send_ack(sender_id)

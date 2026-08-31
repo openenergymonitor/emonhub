@@ -31,6 +31,8 @@ Changes on top of upstream, beyond the cut down:
 - timeouts use `time.monotonic`, as a Pi without an RTC steps its wall clock at
   boot
 - `send_ack` gives up after `RF69_CSMA_LIMIT_S` if the channel stays busy
+- SPI access is serialised with a lock, as the DIO0 interrupt handler runs on
+  its own thread alongside the interfacer thread
 
 Tests: `python3 src/rfm69min/test_radio.py`, which replaces spidev and RPi.GPIO
 with fakes so it runs anywhere, no Raspberry Pi and no radio module needed.

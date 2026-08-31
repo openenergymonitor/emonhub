@@ -13,6 +13,8 @@ in the middle of the interrupt handler.
 import os
 import signal
 import sys
+import threading
+import time
 import types
 
 # Register addresses the fake radio needs to answer for, kept separate from the
@@ -33,6 +35,10 @@ INT_PIN = 22
 # Register writes seen by the fake radio, as (address, value) or (address, [values])
 writes = []
 
+# Filled in when one thread asserts chip select while another still holds it,
+# which on real hardware means two interleaved SPI transactions
+cs_conflicts = []
+
 
 class FakeSpiDev:
     """Enough of an RFM69 to get the driver through init and a packet receive"""
@@ -42,6 +48,7 @@ class FakeSpiDev:
         self.fifo = []          # bytes the next FIFO read returns
         self.overrides = {}     # address -> value, to simulate a stuck register
         self.fail = False       # raise on every transfer, as a dead SPI bus would
+        self.slow = False       # pause mid transfer, to expose threading races
         self.rssi = 180         # REG_RSSIVALUE, 180 reads as -90 dBm
         self.max_speed_hz = None
         self.no_cs = None
@@ -66,9 +73,16 @@ class FakeSpiDev:
             return self.rssi
         return self.regs[addr]
 
+    def _transfer_delay(self):
+        # Real transfers take microseconds, sleeping here lets the interpreter
+        # switch threads mid transaction as it would on hardware
+        if self.slow:
+            time.sleep(0.0002)
+
     def xfer(self, data):
         if self.fail:
             raise OSError("SPI transfer failed")
+        self._transfer_delay()
         addr = data[0]
         if addr & 0x80:
             self.regs[addr & 0x7F] = data[1]
@@ -79,6 +93,7 @@ class FakeSpiDev:
     def xfer2(self, data):
         if self.fail:
             raise OSError("SPI transfer failed")
+        self._transfer_delay()
         addr = data[0]
         if addr & 0x80:                             # burst write, FIFO or AES key
             writes.append((addr & 0x7F, data[1:]))
@@ -99,6 +114,7 @@ class FakeGPIO:
     HIGH = 1
     RISING = 'RISING'
     callbacks = {}
+    cs_owner = None             # thread currently holding chip select low
 
     @staticmethod
     def setmode(mode):
@@ -112,9 +128,17 @@ class FakeGPIO:
     def setup(pin, mode):
         pass
 
-    @staticmethod
-    def output(pin, value):
-        pass
+    @classmethod
+    def output(cls, pin, value):
+        if pin != BOARD['selPin']:
+            return
+        if value == cls.LOW:
+            owner = cls.cs_owner
+            if owner is not None and owner is not threading.current_thread():
+                cs_conflicts.append((owner.name, threading.current_thread().name))
+            cls.cs_owner = threading.current_thread()
+        else:
+            cls.cs_owner = None
 
     @classmethod
     def remove_event_detect(cls, pin):
@@ -287,6 +311,46 @@ def test_packet_queue_is_bounded():
     for _ in range(radio_module.MAX_QUEUED_PACKETS + 50):
         send(7, 5, 19, 0x00, [1, 2, 3, 4])
     assert len(radio.packets) == radio_module.MAX_QUEUED_PACKETS, len(radio.packets)
+
+
+def test_concurrent_access_is_serialised():
+    """The interrupt thread and the interfacer thread share the SPI bus
+
+    RPi.GPIO runs the DIO0 callback on its own thread while emonhub's
+    interfacer thread is reading packets or restarting the radio. Chip select
+    is a separate GPIO write either side of each transfer, so without locking
+    the two can interleave and corrupt both transactions.
+    """
+    radio = new_radio()
+    del cs_conflicts[:]
+    FakeGPIO.cs_owner = None
+    spi.slow = True
+    stop = threading.Event()
+
+    def interrupts():
+        ctl = 0x00
+        while not stop.is_set():
+            # alternate plain frames with ones that ask for an acknowledgement,
+            # which makes the handler transmit as well as receive
+            ctl = 0x40 if ctl == 0x00 else 0x00
+            spi.fifo = [7, 5, 19, ctl, 1, 2, 3, 4]
+            FakeGPIO.callbacks[INT_PIN](INT_PIN)
+
+    thread = threading.Thread(target=interrupts, name="interrupt")
+    thread.start()
+    try:
+        deadline = time.monotonic() + 1.0
+        while time.monotonic() < deadline:
+            radio.begin_receive()
+            radio.read_temperature()
+            radio.get_packet()
+    finally:
+        stop.set()
+        thread.join()
+        spi.slow = False
+
+    assert not cs_conflicts, \
+        "%d interleaved SPI transactions, first %s" % (len(cs_conflicts), cs_conflicts[0])
 
 
 def test_shutdown():
