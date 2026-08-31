@@ -10,11 +10,21 @@ Original library GPL v3, LowPowerLabs register definitions GPL v2 or later.
 """
 
 import time
+from collections import deque
 
 import spidev
 import RPi.GPIO as GPIO
 
 from .registers import *
+
+# Register polls give up after this long rather than blocking the interfacer
+# thread forever if the radio stops responding, for example if it browns out
+# or works loose. The interfacer watchdog then restarts the radio.
+REG_POLL_TIMEOUT_S = 1.0
+
+# Received packets are dropped rather than queued indefinitely if nothing is
+# reading them, oldest first.
+MAX_QUEUED_PACKETS = 100
 
 
 class Packet(object):
@@ -122,7 +132,7 @@ class Radio(object):
         self.intLock = False
         self.mode = ""
 
-        self.packets = []
+        self.packets = deque(maxlen=MAX_QUEUED_PACKETS)
 
         self._init_spi()
         self._init_gpio()
@@ -137,10 +147,8 @@ class Radio(object):
         self._set_config(get_config(freqBand, networkID))
         self._setHighPower(self.isRFM69HW)
         # Wait for ModeReady
-        start = time.time()
-        while (self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
-            if time.time() - start > 1.0:
-                return False
+        if not self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY):
+            return False
 
         self.address = nodeID
         self._init_interrupt()
@@ -175,15 +183,15 @@ class Radio(object):
             GPIO.output(self.rstPin, GPIO.LOW)
             time.sleep(0.3)
         #verify chip is syncing?
-        start = time.time()
+        start = time.monotonic()
         while self._readReg(REG_SYNCVALUE1) != 0xAA:
             self._writeReg(REG_SYNCVALUE1, 0xAA)
-            if time.time() - start > 0.1:
+            if time.monotonic() - start > 0.1:
                 return False
-        start = time.time()
+        start = time.monotonic()
         while self._readReg(REG_SYNCVALUE1) != 0x55:
             self._writeReg(REG_SYNCVALUE1, 0x55)
-            if time.time() - start > 0.1:
+            if time.monotonic() - start > 0.1:
                 return False
         return True
 
@@ -232,12 +240,12 @@ class Radio(object):
             calFactor: Additional correction to corrects the slope, rising temp = rising val
 
         Returns:
-            int: Temperature in centigrade
+            int: Temperature in centigrade, or None if the radio did not respond
         """
         self._setMode(RF69_MODE_STANDBY)
         self._writeReg(REG_TEMP1, RF_TEMP1_MEAS_START)
-        while self._readReg(REG_TEMP1) & RF_TEMP1_MEAS_RUNNING:
-            pass
+        if not self._wait_reg(REG_TEMP1, RF_TEMP1_MEAS_RUNNING, until_set=False):
+            return None
         # COURSE_TEMP_COEF puts reading in the ballpark, user can add additional correction
         #'complement'corrects the slope, rising temp = rising val
         return (int(~self._readReg(REG_TEMP2)) * -1) + COURSE_TEMP_COEF + calFactor
@@ -246,15 +254,18 @@ class Radio(object):
         """Calibrate the internal RC oscillator for use in wide temperature variations.
 
         See RFM69 datasheet section [4.3.5. RC Timer Accuracy] for more information.
+
+        Returns:
+            bool: False if the radio did not respond
         """
         self._writeReg(REG_OSC1, RF_OSC1_RCCAL_START)
-        while self._readReg(REG_OSC1) & RF_OSC1_RCCAL_DONE == 0x00:
-            pass
+        return self._wait_reg(REG_OSC1, RF_OSC1_RCCAL_DONE)
 
     def begin_receive(self):
         """Begin listening for packets"""
-        while self.intLock:
-            time.sleep(.1)
+        start = time.monotonic()
+        while self.intLock and time.monotonic() - start < REG_POLL_TIMEOUT_S:
+            time.sleep(.01)
 
         if (self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
             # avoid RX deadlocks
@@ -279,7 +290,7 @@ class Radio(object):
             Packet: A single Packet, or False if none are waiting.
         """
         if len(self.packets):
-            return self.packets.pop(0)
+            return self.packets.popleft()
         else:
             return False
 
@@ -289,17 +300,21 @@ class Radio(object):
         Args:
             toAddress (int): Recipient node's ID
 
+        Returns:
+            bool: False if the acknowledgement could not be sent
+
         """
         # Wait for a clear channel, giving up rather than blocking indefinitely
-        now = time.time()
-        while (not self._canSend()) and time.time() - now < RF69_CSMA_LIMIT_S:
+        now = time.monotonic()
+        while (not self._canSend()) and time.monotonic() - now < RF69_CSMA_LIMIT_S:
             time.sleep(0.01)
 
         #turn off receiver to prevent reception while filling fifo
         self._setMode(RF69_MODE_STANDBY)
         #wait for modeReady
-        while (self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY) == 0x00:
-            pass
+        if not self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY):
+            self._setMode(RF69_MODE_RX)
+            return False
         # DIO0 is "Packet Sent"
         self._writeReg(REG_DIOMAPPING1, RF_DIOMAPPING1_DIO0_00)
 
@@ -309,11 +324,11 @@ class Radio(object):
         self.unselect()
 
         self._setMode(RF69_MODE_TX)
-        while ((self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PACKETSENT) == 0x00):
-            time.sleep(0.01)
-            pass # make sure packet is sent before putting more into the FIFO
+        # make sure packet is sent before putting more into the FIFO
+        sent = self._wait_reg(REG_IRQFLAGS2, RF_IRQFLAGS2_PACKETSENT, interval=0.01)
 
         self._setMode(RF69_MODE_RX)
+        return sent
 
     #
     # Internal functions
@@ -338,8 +353,8 @@ class Radio(object):
             return
         # we are using packet mode, so this check is not really needed
         # but waiting for mode ready is necessary when going from sleep because the FIFO may not be immediately available from previous mode
-        while self.mode == RF69_MODE_SLEEP and self._readReg(REG_IRQFLAGS1) & RF_IRQFLAGS1_MODEREADY == 0x00:
-            pass
+        if self.mode == RF69_MODE_SLEEP:
+            self._wait_reg(REG_IRQFLAGS1, RF_IRQFLAGS1_MODEREADY)
         self.mode = newMode
 
     def _canSend(self):
@@ -366,6 +381,21 @@ class Radio(object):
             self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_ON)
         else:
             self._writeReg(REG_PACKETCONFIG2,(self._readReg(REG_PACKETCONFIG2) & 0xFE) | RF_PACKET2_AES_OFF)
+
+    def _wait_reg(self, addr, mask, until_set=True, timeout=REG_POLL_TIMEOUT_S, interval=0):
+        """Wait for the masked bits of a register to be set, or cleared
+
+        Returns:
+            bool: False if the radio has not responded within timeout seconds
+
+        """
+        start = time.monotonic()
+        while bool(self._readReg(addr) & mask) != until_set:
+            if time.monotonic() - start > timeout:
+                return False
+            if interval:
+                time.sleep(interval)
+        return True
 
     def _readReg(self, addr):
         self.select()
@@ -417,41 +447,53 @@ class Radio(object):
 
     def _interruptHandler(self, pin):
         self.intLock = True
+        try:
+            self._read_payload()
+        finally:
+            # Always release the lock and go back to listening, even if the SPI
+            # transfers above failed. Leaving intLock set would block every
+            # later begin_receive and the radio would never recover.
+            self.intLock = False
+            self.begin_receive()
 
-        if self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY:
-            self._setMode(RF69_MODE_STANDBY)
+    def _read_payload(self):
+        """Read a received packet out of the FIFO, called with intLock held"""
+        if not (self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
+            return
 
-            self.select()
-            payload_length, target_id, sender_id, CTLbyte = self.spi.xfer2([REG_FIFO & 0x7f,0,0,0,0])[1:]
-            self.unselect()
+        self._setMode(RF69_MODE_STANDBY)
 
-            if payload_length > 66:
-                payload_length = 66
+        self.select()
+        payload_length, target_id, sender_id, CTLbyte = self.spi.xfer2([REG_FIFO & 0x7f,0,0,0,0])[1:]
+        self.unselect()
 
-            if not (self.promiscuousMode or target_id == self.address or target_id == RF69_BROADCAST_ADDR):
-                self.intLock = False
-                self.begin_receive()
-                return
+        if payload_length > 66:
+            payload_length = 66
 
-            data_length = payload_length - 3
-            ack_received  = bool(CTLbyte & 0x80)
-            ack_requested = bool(CTLbyte & 0x40)
-            self.select()
-            data = self.spi.xfer2([REG_FIFO & 0x7f] + [0 for i in range(0, data_length)])[1:]
-            self.unselect()
-            rssi = self._readRSSI()
+        # The payload always carries the 3 byte target/sender/CTL header, a
+        # shorter one is a corrupt frame rather than an empty packet
+        if payload_length < 3:
+            return
 
-            # When message received (acknowledgements are not data and are discarded,
-            # nothing here requests them)
-            if not ack_received:
-                self.packets.append(
-                    Packet(int(target_id), int(sender_id), int(rssi), list(data))
-                )
+        if not (self.promiscuousMode or target_id == self.address or target_id == RF69_BROADCAST_ADDR):
+            return
 
-            # Send acknowledgement if needed
-            if ack_requested and self.auto_acknowledge:
-                self.intLock = False
-                self.send_ack(sender_id)
+        data_length = payload_length - 3
+        ack_received  = bool(CTLbyte & 0x80)
+        ack_requested = bool(CTLbyte & 0x40)
+        self.select()
+        data = self.spi.xfer2([REG_FIFO & 0x7f] + [0 for i in range(0, data_length)])[1:]
+        self.unselect()
+        rssi = self._readRSSI()
 
-        self.intLock = False
-        self.begin_receive()
+        # When message received (acknowledgements are not data and are discarded,
+        # nothing here requests them)
+        if not ack_received:
+            self.packets.append(
+                Packet(int(target_id), int(sender_id), int(rssi), list(data))
+            )
+
+        # Send acknowledgement if needed
+        if ack_requested and self.auto_acknowledge:
+            self.intLock = False
+            self.send_ack(sender_id)

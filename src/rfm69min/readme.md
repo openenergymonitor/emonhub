@@ -19,4 +19,17 @@ Removed: transmit (other than acknowledgements), listen mode, asyncio support,
 the console logger, register dumps and every register definition not used by
 what is left. See the upstream repository for those.
 
+Changes on top of upstream, beyond the cut down:
+
+- every register poll has a timeout (`REG_POLL_TIMEOUT_S`) so an unresponsive
+  radio cannot block the interfacer thread forever
+- the interrupt handler always releases `intLock` and returns to receive, even
+  if an SPI transfer raises, so a single error cannot wedge the radio
+- frames claiming a payload shorter than the 3 byte header are discarded rather
+  than delivered as empty packets
+- the received packet queue is bounded (`MAX_QUEUED_PACKETS`, oldest dropped)
+- timeouts use `time.monotonic`, as a Pi without an RTC steps its wall clock at
+  boot
+- `send_ack` gives up after `RF69_CSMA_LIMIT_S` if the channel stays busy
+
 Licence: GPL v3 (rpi-rfm69), register definitions GPL v2 or later (LowPowerLabs).
