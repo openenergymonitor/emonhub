@@ -36,6 +36,17 @@ MAX_QUEUED_PACKETS = 100
 _spi_lock = threading.RLock()
 
 
+class InterruptSetupError(RuntimeError):
+    """The GPIO library could not set up edge detection on the DIO0 pin
+
+    GPIO libraries word this differently, RPi.GPIO raises "Failed to add edge
+    detection" while rpi-lgpio raises the lgpio message, "GPIO busy" for
+    example. The original message is kept, so callers matching on it still
+    match, and callers can catch this type instead.
+
+    """
+
+
 class Packet(object):
     """A received radio packet
 
@@ -127,6 +138,8 @@ class Radio(object):
             spiDevice (int): SPI device number.
             promiscuousMode (bool): Listen to all messages not just those addressed to this node ID.
             encryptionKey (str): 16 character encryption key.
+            useInterrupts (bool): Receive on the DIO0 interrupt. Set False to poll
+                instead, by calling _interruptHandler from the reading thread.
 
         """
         self.auto_acknowledge = kwargs.get('autoAcknowledge', True)
@@ -137,6 +150,8 @@ class Radio(object):
         self.spiBus = kwargs.get('spiBus', 0)
         self.spiDevice = kwargs.get('spiDevice', 0)
         self.promiscuousMode = kwargs.get('promiscuousMode', 0)
+        self.use_interrupts = kwargs.get('useInterrupts', True)
+        self.interrupt_enabled = False
 
         self.intLock = False
         self.mode = ""
@@ -210,8 +225,20 @@ class Radio(object):
             self._writeReg(value[0], value[1])
 
     def _init_interrupt(self):
+        """Receive on the DIO0 interrupt, unless the caller asked to poll
+
+        Raises:
+            InterruptSetupError: if the GPIO library cannot watch the pin
+
+        """
+        if not self.use_interrupts:
+            return
         GPIO.remove_event_detect(self.intPin)
-        GPIO.add_event_detect(self.intPin, GPIO.RISING, callback=self._interruptHandler)
+        try:
+            GPIO.add_event_detect(self.intPin, GPIO.RISING, callback=self._interruptHandler)
+        except Exception as err:
+            raise InterruptSetupError(str(err)) from err
+        self.interrupt_enabled = True
 
     #
     # End of Init

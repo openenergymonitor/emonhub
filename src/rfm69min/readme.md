@@ -33,6 +33,10 @@ Changes on top of upstream, beyond the cut down:
 - `send_ack` gives up after `RF69_CSMA_LIMIT_S` if the channel stays busy
 - SPI access is serialised with a lock, as the DIO0 interrupt handler runs on
   its own thread alongside the interfacer thread
+- a failure to watch the DIO0 pin raises `InterruptSetupError`, keeping the
+  GPIO library's own message, so the interfacer can recognise it whichever
+  library is installed, and `useInterrupts=False` asks for polling directly
+  rather than the caller patching the class
 
 Tests: `python3 src/rfm69min/test_radio.py`, which replaces spidev and RPi.GPIO
 with fakes so it runs anywhere, no Raspberry Pi and no radio module needed.

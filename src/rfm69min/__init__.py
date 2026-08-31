@@ -1,1 +1,1 @@
-from .radio import Radio, Packet
+from .radio import Radio, Packet, InterruptSetupError

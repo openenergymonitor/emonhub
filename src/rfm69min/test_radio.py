@@ -48,13 +48,15 @@ class FakeSpiDev:
         self.fifo = []          # bytes the next FIFO read returns
         self.overrides = {}     # address -> value, to simulate a stuck register
         self.fail = False       # raise on every transfer, as a dead SPI bus would
+        self.open_error = None  # refuse to open, as a missing device node would
         self.slow = False       # pause mid transfer, to expose threading races
         self.rssi = 180         # REG_RSSIVALUE, 180 reads as -90 dBm
         self.max_speed_hz = None
         self.no_cs = None
 
     def open(self, bus, device):
-        pass
+        if self.open_error:
+            raise OSError(self.open_error)
 
     def _read(self, addr):
         if addr in self.overrides:
@@ -115,6 +117,7 @@ class FakeGPIO:
     RISING = 'RISING'
     callbacks = {}
     cs_owner = None             # thread currently holding chip select low
+    edge_detect_error = None    # message to raise from add_event_detect
 
     @staticmethod
     def setmode(mode):
@@ -146,6 +149,8 @@ class FakeGPIO:
 
     @classmethod
     def add_event_detect(cls, pin, edge, callback=None):
+        if cls.edge_detect_error:
+            raise RuntimeError(cls.edge_detect_error)
         cls.callbacks[pin] = callback
 
     @staticmethod
@@ -170,8 +175,13 @@ sys.modules['RPi.GPIO'] = fake_gpio
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-from rfm69min import Radio                                  # noqa: E402
+from rfm69min import Radio, InterruptSetupError            # noqa: E402
 from rfm69min import radio as radio_module                  # noqa: E402
+
+# How each GPIO library words a failure to watch the DIO0 pin. RPi.GPIO's
+# wording is matched on by the interfacer, rpi-lgpio passes through whatever
+# lgpio reported, "GPIO busy" for a pin something else already holds.
+EDGE_DETECT_ERRORS = ["Failed to add edge detection", "GPIO busy"]
 
 # The settings EmonHubRFM69LPLInterfacer connects with
 BOARD = {'isHighPower': False, 'interruptPin': INT_PIN, 'resetPin': None,
@@ -268,17 +278,39 @@ def test_frequency_bands():
 
 
 def test_polling_mode():
-    """The interfacer disables interrupt setup and calls the handler itself"""
-    original = Radio._init_interrupt
-    try:
-        Radio._init_interrupt = lambda self: True
-        radio = new_radio()
-        spi.fifo = [7, 5, 21, 0x00, 1, 2, 3, 4]
-        radio._interruptHandler(INT_PIN)
-        packet = radio.get_packet()
-        assert packet and packet.sender == 21, "polling mode did not receive"
-    finally:
-        Radio._init_interrupt = original
+    """With useInterrupts off the reading thread calls the handler itself"""
+    FakeGPIO.callbacks.clear()
+    radio = Radio(43, 5, 210, useInterrupts=False, **BOARD)
+    assert radio.init_success, "radio init failed"
+    assert radio.interrupt_enabled is False, "interrupts were set up anyway"
+    assert INT_PIN not in FakeGPIO.callbacks, "an interrupt handler was registered"
+    radio.__enter__()
+
+    spi.fifo = [7, 5, 21, 0x00, 1, 2, 3, 4]
+    radio._interruptHandler(INT_PIN)
+    packet = radio.get_packet()
+    assert packet and packet.sender == 21, "polling mode did not receive"
+
+
+def test_edge_detection_failure_is_typed():
+    """However the GPIO library words it, the failure must be recognisable
+
+    The interfacer matches RPi.GPIO's wording, so the original message has to
+    survive, and catches the type, so other GPIO libraries are covered too.
+    """
+    for message in EDGE_DETECT_ERRORS:
+        FakeGPIO.edge_detect_error = message
+        try:
+            Radio(43, 5, 210, **BOARD)
+        except InterruptSetupError as err:
+            assert str(err) == message, "message changed to %r" % str(err)
+            assert isinstance(err, RuntimeError), "not a RuntimeError any more"
+        except Exception as err:
+            raise AssertionError("raised %s instead" % type(err).__name__)
+        else:
+            raise AssertionError("no error raised for %r" % message)
+        finally:
+            FakeGPIO.edge_detect_error = None
 
 
 def test_unresponsive_radio_does_not_block():
@@ -357,6 +389,89 @@ def test_shutdown():
     radio = new_radio()
     radio.__exit__()
     assert radio.mode == radio_module.RF69_MODE_SLEEP, "radio not asleep"
+
+
+# ---------------------------------------------------------------------------
+# The interfacer's side of the contract, how it recovers when the radio or the
+# GPIO library will not do what it is asked
+# ---------------------------------------------------------------------------
+
+def _interfacer(**kwargs):
+    """Build the real interfacer against the fake radio"""
+    import logging
+    log = logging.getLogger("EmonHub")
+    log.addHandler(logging.NullHandler())
+    log.propagate = False
+    from interfacers.EmonHubRFM69LPLInterfacer import EmonHubRFM69LPLInterfacer
+    FakeGPIO.callbacks.clear()
+    settings = dict(nodeid=5, networkID=210, interruptPin=INT_PIN,
+                    selPin=BOARD['selPin'], freqBand=43)
+    settings.update(kwargs)
+    return EmonHubRFM69LPLInterfacer("RFM69", **settings)
+
+
+def test_interfacer_falls_back_to_polling():
+    """Every GPIO library's wording has to reach the polling fallback"""
+    for message in EDGE_DETECT_ERRORS:
+        FakeGPIO.edge_detect_error = message
+        try:
+            interfacer = _interfacer()
+        finally:
+            FakeGPIO.edge_detect_error = None
+        assert interfacer.radio, "no radio after %r" % message
+        assert interfacer.radio.init_success, "radio not initialised after %r" % message
+        assert interfacer.polling_mode, "polling mode not enabled after %r" % message
+        # and it still receives, through the handler the interfacer calls itself
+        spi.fifo = [7, 5, 19, 0x00, 1, 2, 3, 4]
+        cargo = interfacer.read()
+        assert cargo and cargo.nodeid == 19, "no data in polling mode after %r" % message
+
+
+def test_interfacer_message_match_still_works_on_its_own():
+    """RPi.GPIO's wording must keep triggering the fallback by itself
+
+    The exception type was added alongside the message match, not instead of
+    it, so the message match has to still work with the type check disabled.
+    """
+    FakeGPIO.edge_detect_error = "Failed to add edge detection"
+    try:
+        interfacer = _interfacer()
+        interfacer.InterruptSetupError = None       # leave only the message match
+        interfacer.polling_mode = False
+        interfacer.connect()
+    finally:
+        FakeGPIO.edge_detect_error = None
+    assert interfacer.polling_mode, "the message match no longer reaches the fallback"
+    assert interfacer.radio and interfacer.radio.init_success, "radio did not start"
+
+
+def test_interfacer_survives_a_radio_that_will_not_start():
+    """A radio that raises on the way up must not take the interfacer with it
+
+    Anything other than a failed interrupt setup, no SPI device node for
+    instance, used to leave self.radio as False and then read its
+    init_success, which killed the interfacer with an AttributeError.
+    """
+    spi.open_error = "No such file or directory"
+    try:
+        interfacer = _interfacer()
+    finally:
+        spi.open_error = None
+    assert interfacer.radio is False, "expected no radio"
+    assert interfacer.read() is False, "expected no data from a radio that never started"
+
+
+def test_interfacer_watchdog_restarts_a_radio_that_never_receives():
+    """The watchdog is armed from connect, not from the first packet"""
+    interfacer = _interfacer()
+    assert interfacer.radio.init_success
+    first = interfacer.radio
+    interfacer.read()
+    assert interfacer.radio is first, "restarted before the watchdog period"
+
+    interfacer.watchdog_period = -1              # as if the period had elapsed
+    interfacer.read()
+    assert interfacer.radio is not first, "watchdog did not restart the radio"
 
 
 def main():
