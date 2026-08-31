@@ -84,6 +84,12 @@ rpi_lgpio_available() {
     apt-cache show python3-rpi-lgpio > /dev/null 2>&1
 }
 
+# The user emonhub is currently configured to run as, taken from the service
+# unit and any drop-in. Empty if emonhub is not installed yet.
+installed_user() {
+    systemctl show emonhub.service -p User 2>/dev/null | cut -d'=' -f2-
+}
+
 # List the raspberrypi configuration steps that have not been applied yet.
 # Used to decide whether there is any point asking the user, the steps
 # themselves are each guarded individually so this list does not have to be
@@ -157,10 +163,21 @@ fi
 # User input: check username to install emonhub with
 if [ -z "$2" ]; then
     user=$USER
-    read -p "Would you like to install emonhub under the $USER user? (y/n): " input
-    if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
-        echo "Please switch to the user that you wish emonhub to be installed under"
-        exit 0
+    emonhub_user=$(installed_user)
+
+    if [ "$emonhub_user" = "$user" ]; then
+        echo "emonhub is already installed under the $user user"
+    else
+        if [ -n "$emonhub_user" ]; then
+            echo "emonhub is currently installed under the $emonhub_user user"
+            read -p "Would you like to switch emonhub to run under the $user user? (y/n): " input
+        else
+            read -p "Would you like to install emonhub under the $user user? (y/n): " input
+        fi
+        if [ "$input" != "y" ] && [ "$input" != "Y" ]; then
+            echo "Please switch to the user that you wish emonhub to be installed under"
+            exit 0
+        fi
     fi
 
     echo "Running apt update"
@@ -396,9 +413,10 @@ if [ -d /lib/systemd/system ]; then
     fi
 fi
 
+dropin_dir=/lib/systemd/system/emonhub.service.d
+dropin=$dropin_dir/emonhub.conf
+
 if [ "$user" != "pi" ]; then
-    dropin_dir=/lib/systemd/system/emonhub.service.d
-    dropin=$dropin_dir/emonhub.conf
     dropin_content=$'[Service]\nUser='$user$'\nEnvironment="USER='$user'"'
 
     if [ ! -f "$dropin" ] || [ "$(cat $dropin)" != "$dropin_content" ]; then
@@ -415,6 +433,14 @@ if [ "$user" != "pi" ]; then
     else
         echo "emonhub drop-in User=$user already installed"
     fi
+elif [ -f "$dropin" ]; then
+    # pi is the user set in the service unit itself, remove any drop-in left
+    # over from a previous install under a different user
+    echo "removing emonhub drop-in, running as the default pi user"
+    sudo rm -f $dropin
+    sudo rmdir --ignore-fail-on-non-empty $dropin_dir
+    daemon_reload_required=1
+    restart_required=1
 fi
 
 if [ $daemon_reload_required -eq 1 ]; then
