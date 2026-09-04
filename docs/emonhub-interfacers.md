@@ -6,6 +6,7 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
 - [emonHub Interfacers](#emonhub-interfacers)
   - [List of Interfacers - (Links to GitHub)](#list-of-interfacers---links-to-github)
   - [Using emonHub](#using-emonhub)
+    - [ecoMain Modbus TCP energy meter](#ecomain-modbus-tcp-energy-meter)
     - [SDS011 Air-Quality sensor](#sds011-air-quality-sensor)
     - [Modbus Reader for Electric Meters](#modbus-electric-meters)
     - [Modbus Reader for Heat Meters](#modbus-heat-meters)
@@ -48,12 +49,17 @@ For a full list of interfacers, view GitHub source [https://github.com/openenerg
 - [RFM69 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/RF69)
 - [Plum ecoNET 300 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Econet300)
 - [E+E Environmental Modbus Sensors Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/E%2BE)
+- [ecoMain Interfacer](../conf/interfacer_examples/ecomain/)
 
 ## Using emonHub
 
 Examples of using emonHub for specific purposes.
 
 **Important: ensure there is no conflic of ttyUSB ports between emonHub interfacers e.g by default there is a `EmonOEMInterfacer` which reads from ttyUSB0 which is used to read data from emonTx V4 if connected via USB, this interfacer will need to be removed to allow another interfacer eg SDM120 / MBUS etc to read from ttyUSB0**
+
+### ecoMain Modbus TCP energy meter
+
+In Emoncms, open `Setup > EmonHub > Edit Config` and add an `EmonHubEcoMainInterfacer` entry. See the [ecoMain example and configuration guide](../conf/interfacer_examples/ecomain/) for the complete configuration, logical-meter mapping, Inputs field order, and read-only limitations.
 
 ### SDS011 Air-Quality sensor
 
