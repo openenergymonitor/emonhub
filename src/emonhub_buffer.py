@@ -48,6 +48,7 @@ class InMemoryBuffer(AbstractBuffer):
         self._buffer_type = "memory"
         self._maximumEntriesInBuffer = int(buffer_size)
         self._data_buffer = []
+        self._full_warning_issued = False
         self._log = logging.getLogger("EmonHub")
 
     def hasItems(self):
@@ -57,18 +58,35 @@ class InMemoryBuffer(AbstractBuffer):
         return self.size() >= self._maximumEntriesInBuffer
 
     def getMaxEntrySliceIndex(self):
+        # Number of oldest items to drop to leave room for one more without
+        # going over the limit.
         return max(0,
-                   self.size() - self._maximumEntriesInBuffer - 1)
+                   self.size() - self._maximumEntriesInBuffer + 1)
 
     def discardOldestItems(self):
-        self._data_buffer = self._data_buffer[self.getMaxEntrySliceIndex():]
+        # Only re-slice when something actually needs dropping. Slicing copies
+        # the whole list, so doing it on every store made the cost of queuing a
+        # frame grow with the size of the backlog.
+        index = self.getMaxEntrySliceIndex()
+        if index:
+            del self._data_buffer[:index]
 
     def discardOldestItemsIfFull(self):
         if self.isFull():
+            # Warn once on the way in rather than for every item stored. A full
+            # buffer means a long outage, and a warning per frame would rotate
+            # away the log needed to diagnose it.
+            if not self._full_warning_issued:
+                self._full_warning_issued = True
+                self._log.warning(
+                    "In-memory buffer (%s) reached limit of %d items, deleting oldest",
+                    self._bufferName, self._maximumEntriesInBuffer)
+            self.discardOldestItems()
+        elif self._full_warning_issued:
+            self._full_warning_issued = False
             self._log.warning(
-                "In-memory buffer (%s) reached limit of %d items, deleting oldest",
-                self._bufferName, self._maximumEntriesInBuffer)
-        self.discardOldestItems()
+                "In-memory buffer (%s) no longer full, %d items queued",
+                self._bufferName, self.size())
 
     def storeItem(self, data):
         self.discardOldestItemsIfFull()
@@ -90,7 +108,9 @@ class InMemoryBuffer(AbstractBuffer):
         blen = len(self._data_buffer)
         if number > blen:
             number = blen
-        self._data_buffer = self._data_buffer[number:]
+        # del rather than re-slicing: this runs after every successful post, and
+        # re-slicing copies the list and touches every item left in the backlog.
+        del self._data_buffer[:number]
 
     def size(self):
         return len(self._data_buffer)
