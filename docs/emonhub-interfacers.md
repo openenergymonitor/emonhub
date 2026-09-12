@@ -18,36 +18,64 @@ github_url: "https://github.com/openenergymonitor/emonhub/blob/master/docs/emonh
 
 To configure emonHub interfacers edit `emonhub.conf` which can be done via the emonHub section of Emoncms web UI or by editing the config file directly `/etc/emonhub/emonhub.conf`
 
-## List of Interfacers - (Links to GitHub)
+## Full List of Interfacers - (Links to GitHub)
 
 For a full list of interfacers, view GitHub source [https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers](https://github.com/openenergymonitor/emonhub/tree/master/src/interfacers). A number of these interfacers are not maintained and may not have been updated to work with Python3.
 
 *Links to interfacer specific readmes in [/conf/interfacer_examples](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples)*
 
-- [OEM Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/OEM) (A more flexible version of the Jee, EmonTx3 and space separated serial interfacer)
-- [Emoncms HTTP Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Emoncms)
-- [Socket Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Socket)
-- [Space separated serial interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/directserial)
+### Energy Monitors / Meters  
 - [EmonTX V3 Interfacer (key:value pairs, added by @owenduffy)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/directserial-serialtx3e)
-- [SDS011 Air Quality Sensor Interfacer (added by @danbates)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDS011)
-- [Tesla Power Wall Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/PowerWall)
-- [BMW Connected Drive Interface (added by @stuartpittaway)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/bmw)
-- [Graphite interfacer (added by @hmm01i)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/graphite)
-- [TCP Modbus interfacer e.g Fronius Inverters (added by @cjthuys)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/modbus)
+- [Smilics energy monitors interfacer (added by @K0den)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smilices)
+- [Estron SDMXXX-Modbus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDM120)
+- [Estron SDM630](https://github.com/openenergymonitor/emonhub/blob/master/conf/interfacer_examples/SDM630/sdm630.emonhub.conf)
+- [Rayleigh-ri-d35-100](https://github.com/openenergymonitor/emonhub/blob/master/conf/interfacer_examples/rayleigh-ri-d35-100/rayleigh-ri-d35-100.emonhub.conf) 
+
+### PV Inverters & Battery Storage
 - [Renogy Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Renogy)
 - [SMA Solar Interfacer (added by @stuartpittaway)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smasolar)
-- [Smilics energy monitors interfacer (added by @K0den)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smilices)
 - [Victron VE.Direct Protocol Interfacer (added by @jlark)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/vedirect)
-- [Pulse counting interfacer (added by @borpin)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Pulse)
-- [DS18B20 temperature sensing interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/DS18B20)
-- [SDMXXX-Modbus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDM120)
-- [M-Bus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/MBUS)
-- [Redis Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Redis)
-- [Influx Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Influx)
+- [Tesla Power Wall Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/PowerWall)
+- [GoodWe](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/GoodWe)
+- [SMA Inverter](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smasolar)
+- [Suna mp](https://github.com/openenergymonitor/emonhub/blob/master/src/interfacers/EmonHubSunampInterfacer.py)
+
+### Vehicles
 - [Jaguar Land Rover Interfacer (added by @dconlon)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/JaguarLandRover)
-- [RFM69 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/RF69)
-- [Plum ecoNET 300 Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Econet300)
-- [E+E Environmental Modbus Sensors Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/E%2BE)
+- [BMW Connected Drive Interface (added by @stuartpittaway)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/bmw)
+
+### Generic Interfaces
+- [OEM Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/OEM) (A more flexible version of the Jee, EmonTx3 and space separated serial interfacer)
+- [Emoncms HTTP Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Emoncms)
+- [TCP Modbus interfacer e.g Fronius Inverters (added by @cjthuys)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/modbus)
+- [Socket Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Socket)
+- [Space separated serial interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/directserial)
+- [Pulse counting interfacer (added by @borpin)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Pulse)
+- [M-Bus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/MBUS)
+
+
+### Database 
+- [Redis Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Redis)
+- [Graphite interfacer (added by @hmm01i)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/graphite)
+- [Influx Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Influx)
+
+### Wireless 
+- [RFM69 SPI LPL](https://github.com/openenergymonitor/emonhub/blob/master/src/interfacers/EmonHubRFM69LPLInterfacer.py)
+- [RFM69 interfacer - JeeLib Classic](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/RF69)
+- [RFM2Pi](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/RFM2Pi)
+
+### Heat Pump 
+- [Plum ecoNET 300 Interfacer (Grant HP290)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Econet300)
+- [EcoNext (Grant HP290)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Econext)
+- [Samsung Heat pump:  MIM-B19N Modbus  ](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/samsung-ashp)
+- [Nilan: exhaust air & heat recovery heat pumps](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Nilan)
+
+### Enviromental Sensors 
+- [DS18B20 temperature sensing interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/DS18B20)
+- [E+E Environmental Modbus Sensors Interfacer: Co2, temperature, air velocity](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/E%2BE)
+- [ConWinTop Modbus Environmental Sensors:  temperature, humidity, air velocity](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/conwintop)
+- [Produal AVT: air velocity and temperature](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/ProdualAVT)
+- [SDS011 Air Quality Sensor Interfacer (added by @danbates)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDS011)
 
 ## Using emonHub
 
