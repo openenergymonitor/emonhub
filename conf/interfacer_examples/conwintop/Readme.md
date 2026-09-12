@@ -6,8 +6,7 @@ ConWinTop have a range of environmental sensors with Modbus RS485 output
 
 - Test unit: CWT-ADTH-S
 - Temperature accuracy ± 0.3 ° C, humidity accuracy ± 3% RH, high precision, low drift;
-
-On the test unit with both DIP switches in the OFF position the default the **default address was 4**:
+- **DIP switches don't seem to work reliably to set Modbus address, use `set-address.py`script in this repo instead**
 
 *ADTH = Air, Duct, Temperature & Humidity *
 
@@ -39,6 +38,7 @@ On the test unit with both DIP switches in the OFF position the default the **de
 - Test unit: CWT-DTAS-10-S (10ms) : (Duct Type Air Sensor)
 - The accuracy of the range 0~10m/s is ±(0.1+2%FS); the accuracy of the range 0~15m/s, 0~20m/s, and
 0~30m/s is ±(0.2+2%FS) m/s
+- **DIP switches don't seem to work reliably to set Modbus address, use `set-address.py`script in this repo instead**
 
 ```
 [[ConWinTop]]
@@ -53,10 +53,10 @@ On the test unit with both DIP switches in the OFF position the default the **de
         read_interval = 10
         nodename = CWT
         [[[[meters]]]]
-            [[[[[ADTH]]]]]
+            [[[[[DTAS]]]]]
                 address = 4
                 registers = 0, 1
-                names = velocity, volume,     
+                names = velocity, volume     
                 scales = 0.1, 0.1
                 precision = 1, 1
 ```
