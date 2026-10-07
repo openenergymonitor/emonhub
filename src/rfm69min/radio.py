@@ -159,8 +159,13 @@ class Radio(object):
         self.packets = deque(maxlen=MAX_QUEUED_PACKETS)
 
         self._init_spi()
-        self._init_gpio()
-        self.init_success = self._initialize(freqBand, nodeID, networkID)
+        try:
+            self._init_gpio()
+            self.init_success = self._initialize(freqBand, nodeID, networkID)
+        except Exception:
+            # Caller never receives this instance, so release the SPI device here
+            self.close()
+            raise
         if self.init_success:
             self._encrypt(kwargs.get('encryptionKey', 0))
             self.set_power_level(kwargs.get('power', 70))
@@ -308,6 +313,9 @@ class Radio(object):
             time.sleep(.01)
 
         with _spi_lock:
+            # Closed while waiting for the lock
+            if self.spi is None:
+                return
             if (self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
                 # avoid RX deadlocks
                 self._writeReg(REG_PACKETCONFIG2, (self._readReg(REG_PACKETCONFIG2) & 0xFB) | RF_PACKET2_RXRESTART)
@@ -481,7 +489,22 @@ class Radio(object):
         """
         self._setHighPower(False)
         self.sleep()
+        self.close()
         GPIO.cleanup()
+
+    def close(self):
+        """Release the DIO0 interrupt and the SPI device
+
+        Does not talk to the radio, so it is safe on a radio that failed to start.
+        """
+        if self.interrupt_enabled:
+            GPIO.remove_event_detect(self.intPin)
+            self.interrupt_enabled = False
+        # Wait for any transfer in progress on another thread
+        with _spi_lock:
+            if self.spi is not None:
+                self.spi.close()
+                self.spi = None
 
     def __str__(self):
         return "Radio RFM69"
@@ -507,6 +530,9 @@ class Radio(object):
     def _read_payload(self):
         """Read a received packet out of the FIFO, called with intLock held"""
         with _spi_lock:
+            # Interrupt from a radio closed by a watchdog restart
+            if self.spi is None:
+                return
             if not (self.mode == RF69_MODE_RX and self._readReg(REG_IRQFLAGS2) & RF_IRQFLAGS2_PAYLOADREADY):
                 return
 
