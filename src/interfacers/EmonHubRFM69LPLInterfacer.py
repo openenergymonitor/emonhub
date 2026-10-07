@@ -32,6 +32,7 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
             self._log.error(err)
 
         self.Radio = False
+        self.radio = False
         self.InterruptSetupError = None
         self.polling_mode = False
         try:            
@@ -78,6 +79,14 @@ class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
         # Arm the watchdog from here, so that a radio which starts but never
         # receives anything is restarted as well as one that goes quiet
         self.last_received = time.monotonic()
+
+        # Release the previous radio, which otherwise keeps /dev/spidev open on
+        # every watchdog restart until emonhub runs out of file descriptors
+        if self.radio:
+            try:
+                self.radio.close()
+            except Exception as err:
+                self._log.error("Error closing RFM69: "+str(err))
 
         board = {'isHighPower': False, 'interruptPin': self.interruptPin, 'resetPin': self.resetPin, 'selPin':self.selPin, 'spiDevice': 0, 'encryptionKey':"89txbe4p8aik5kt3"}
 

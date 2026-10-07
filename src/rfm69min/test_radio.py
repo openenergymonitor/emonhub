@@ -53,10 +53,15 @@ class FakeSpiDev:
         self.rssi = 180         # REG_RSSIVALUE, 180 reads as -90 dBm
         self.max_speed_hz = None
         self.no_cs = None
+        self.open_handles = 0   # opened and not yet closed, to catch leaks
 
     def open(self, bus, device):
         if self.open_error:
             raise OSError(self.open_error)
+        self.open_handles += 1
+
+    def close(self):
+        self.open_handles -= 1
 
     def _read(self, addr):
         if addr in self.overrides:
@@ -391,6 +396,17 @@ def test_shutdown():
     assert radio.mode == radio_module.RF69_MODE_SLEEP, "radio not asleep"
 
 
+def test_interrupt_after_close_is_ignored():
+    """A callback already in flight when close() runs must not raise"""
+    radio = new_radio()
+    handler = FakeGPIO.callbacks[INT_PIN]
+    radio.close()
+    spi.fifo = [7, 5, 19, 0x00, 1, 2, 3, 4]
+    handler(INT_PIN)
+    assert radio.get_packet() is False, "closed radio received a packet"
+    assert not radio.intLock, "intLock left set"
+
+
 # ---------------------------------------------------------------------------
 # The interfacer's side of the contract, how it recovers when the radio or the
 # GPIO library will not do what it is asked
@@ -472,6 +488,52 @@ def test_interfacer_watchdog_restarts_a_radio_that_never_receives():
     interfacer.watchdog_period = -1              # as if the period had elapsed
     interfacer.read()
     assert interfacer.radio is not first, "watchdog did not restart the radio"
+
+
+def _watchdog_restarts(interfacer, count=10):
+    interfacer.watchdog_period = -1              # as if the period had elapsed
+    for _ in range(count):
+        interfacer.read()
+
+
+def test_interfacer_watchdog_restart_releases_spi():
+    """Each restart must close the previous radio's SPI device
+
+    Leaked handles accumulate every watchdog period until emonhub fails with
+    [Errno 24] Too many open files.
+    """
+    spi.open_handles = 0
+    interfacer = _interfacer()
+    _watchdog_restarts(interfacer)
+    assert interfacer.radio.init_success, "radio did not restart"
+    assert INT_PIN in FakeGPIO.callbacks, "interrupt not registered after restart"
+    assert spi.open_handles == 1, "%d SPI handles open, expected 1" % spi.open_handles
+
+
+def test_interfacer_restart_of_a_silent_radio_releases_spi():
+    """A radio that fails to start keeps its SPI device until closed"""
+    spi.open_handles = 0
+    spi.overrides = {0x2F: 0}                    # REG_SYNCVALUE1 never takes a write
+    try:
+        interfacer = _interfacer()
+        assert not interfacer.radio.init_success, "expected radio init to fail"
+        _watchdog_restarts(interfacer)
+    finally:
+        spi.overrides = {}
+    assert spi.open_handles == 1, "%d SPI handles open, expected 1" % spi.open_handles
+
+
+def test_interfacer_restart_in_polling_mode_releases_spi():
+    """Failed interrupt setup must not leave the first attempt's SPI device open"""
+    spi.open_handles = 0
+    FakeGPIO.edge_detect_error = EDGE_DETECT_ERRORS[0]
+    try:
+        interfacer = _interfacer()
+        _watchdog_restarts(interfacer)
+    finally:
+        FakeGPIO.edge_detect_error = None
+    assert interfacer.polling_mode, "polling mode not enabled"
+    assert spi.open_handles == 1, "%d SPI handles open, expected 1" % spi.open_handles
 
 
 def main():
