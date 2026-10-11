@@ -87,7 +87,7 @@ This interfacer is used to read from a SPI connected RFM69 radio module. This ma
 
 **rfm69spi configuration:**
 
-```test
+```text
 [[SPI]]
     Type = EmonHubRFM69LPLInterfacer
     [[[init_settings]]]
@@ -99,7 +99,7 @@ This interfacer is used to read from a SPI connected RFM69 radio module. This ma
 
 **emonPi2 configuration (resetPin = 24 and selPin = 16)**
 
-```test
+```text
 [[SPI]]
     Type = EmonHubRFM69LPLInterfacer
     [[[init_settings]]]
@@ -117,7 +117,7 @@ This interfacer is used to read from DS18B20 temperature sensors directly and is
 
 The temperature sensor data pin is connected to RaspberryPi GPIO17 and this pin is configured in */boot/config.txt.*
 
-```test
+```text
 [[DS18B20]]
     Type = EmonHubDS18B20Interfacer
     [[[init_settings]]]
