@@ -184,7 +184,7 @@ fi
 # ---------------------------------------------------------
 # Apt dependencies
 # ---------------------------------------------------------
-apt_packages="python3-serial python3-configobj python3-pip python3-pymodbus bluetooth python3-spidev"
+apt_packages="python3-serial python3-configobj python3-pip python3-pymodbus bluetooth python3-spidev python3-websocket"
 # removed libbluetooth-dev as this was causing a kernel update
 
 apt_missing=""

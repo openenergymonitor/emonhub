@@ -1,0 +1,15 @@
+{
+ "name": null,
+ "id": "shellypro1pm-aabbcc000001",
+ "mac": "AABBCC000001",
+ "slot": 1,
+ "model": "SPSW-201PE15UL",
+ "gen": 2,
+ "fw_id": "20260923-075607/2.0.1-ge1a198b",
+ "ver": "2.0.1",
+ "app": "Pro1PM",
+ "auth_en": false,
+ "auth_domain": null,
+ "provision": "complete",
+ "enhanced_security": false
+}

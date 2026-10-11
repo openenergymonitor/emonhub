@@ -1,0 +1,50 @@
+{
+ "em:0": {
+  "id": 0,
+  "a_current": 0.541,
+  "a_voltage": 228.1,
+  "a_act_power": 33.2,
+  "a_aprt_power": 123.7,
+  "a_pf": 0.26,
+  "a_freq": 50.0,
+  "b_current": 0.027,
+  "b_voltage": 228.1,
+  "b_act_power": 0.0,
+  "b_aprt_power": 6.1,
+  "b_pf": 0.0,
+  "b_freq": 50.0,
+  "c_current": 0.027,
+  "c_voltage": 228.1,
+  "c_act_power": 0.0,
+  "c_aprt_power": 6.3,
+  "c_pf": 0.0,
+  "c_freq": 50.0,
+  "n_current": null,
+  "total_current": 0.596,
+  "total_act_power": 33.241,
+  "total_aprt_power": 136.044,
+  "user_calibrated_phase": []
+ },
+ "emdata:0": {
+  "id": 0,
+  "a_total_act_energy": 20081.72,
+  "a_total_act_ret_energy": 0.0,
+  "b_total_act_energy": 0.81,
+  "b_total_act_ret_energy": 5.12,
+  "c_total_act_energy": 0.97,
+  "c_total_act_ret_energy": 6.19,
+  "total_act": 20083.49,
+  "total_act_ret": 11.31
+ },
+ "sys": {
+  "time": "23:07",
+  "unixtime": 1791756471,
+  "uptime": 1033554,
+  "restart_required": false
+ },
+ "temperature:0": {
+  "id": 0,
+  "tC": 38.2,
+  "tF": 100.8
+ }
+}
