@@ -31,14 +31,19 @@ class DS18B20:
         return sensors
 
     def _read_raw(self, sensor):
-        f = open(self._base_dir + sensor + '/w1_slave', 'r')
-        lines = f.readlines()
-        f.close()
-        return lines
+        try:
+            f = open(self._base_dir + sensor + '/w1_slave', 'r')
+            lines = f.readlines()
+            f.close()
+            return lines
+        except OSError:
+            return []
 
     def tempC(self, sensor):
         lines = self._read_raw(sensor)
         # retry = 0
+        if len(lines) < 2:
+            return False
         if len(lines[0]):
             while lines[0].strip()[-3:] != 'YES':
                 # time.sleep(0.2)
@@ -108,6 +113,10 @@ class EmonHubDS18B20Interfacer(EmonHubInterfacer):
 
                         # Read sensor value
                         value = self.ds.tempC(sensor)
+
+                        if value is False:
+                            self._log.debug(sensor + ": " + name + " read failed, skipping")
+                            continue
 
                         # Add sensor to arrays
                         c.names.append(name)

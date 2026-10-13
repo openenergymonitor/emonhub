@@ -6,6 +6,7 @@ Requires=var-log.mount
 After=var-log.mount network.target
 
 [Service]
+WorkingDirectory=/home/pi/
 Type=exec
 ExecStart=/usr/local/bin/emonhub/emonhub.py --config-file=/etc/emonhub/emonhub.conf --logfile=/var/log/emonhub/emonhub.log
 User=pi

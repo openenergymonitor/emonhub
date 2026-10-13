@@ -153,20 +153,23 @@ class EmonHubInterfacer(threading.Thread):
             # self._log.debug("%d adding frame to buffer => %s", rxc.uri, str)
 
         except:
+            # Only buffer a frame that was built without error. A frame that
+            # failed partway is incomplete, and an empty one causes emoncms to
+            # reject the whole batch it is sent in.
             self._log.warning("Failed to create emonCMS frame %s", f)
+        else:
+            # self._log.debug(str(carg.ref) + " added to buffer =>"
+            #                 + " time: " + str(carg.timestamp)
+            #                 + ", node: " + str(carg.node)
+            #                 + ", data: " + str(carg.data))
 
-        # self._log.debug(str(carg.ref) + " added to buffer =>"
-        #                 + " time: " + str(carg.timestamp)
-        #                 + ", node: " + str(carg.node)
-        #                 + ", data: " + str(carg.data))
+            # databuffer is of format:
+            # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
+            # [[1399980731, 10, 150, 3450 ...]]
 
-        # databuffer is of format:
-        # [[timestamp, nodeid, datavalues][timestamp, nodeid, datavalues]]
-        # [[1399980731, 10, 150, 3450 ...]]
+            # databuffer format can be overwritten by interfacer
 
-        # databuffer format can be overwritten by interfacer
-
-        self.buffer.storeItem(f)
+            self.buffer.storeItem(f)
 
     def read(self):
         """Read raw data from interface and pass for processing.
@@ -222,9 +225,11 @@ class EmonHubInterfacer(threading.Thread):
             if self._process_post(databuffer):
                 # In case of success, delete sample set from buffer
                 self.buffer.discardLastRetrievedItems(retrievedlength)
-            # log the time of last successful post
-            # slow down retry rate in the case where the last attempt failed
-            # stops continuous retry attempts filling up the log
+            # Timestamp the attempt, successful or not, so that a failing post
+            # is retried on the normal interval rather than continuously.
+            # This paces retries but does not back off: an interfacer that wants
+            # to wait longer the longer a server has been failing does so in its
+            # own _process_post, as the emoncms HTTP interfacer does.
             self._interval_timestamp = time.time()
 
 

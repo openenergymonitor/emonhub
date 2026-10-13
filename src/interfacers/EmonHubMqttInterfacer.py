@@ -9,6 +9,12 @@ Example emonhub configuration
         mqtt_port = 1883
         mqtt_user = emonpi
         mqtt_passwd = emonpimqtt2016
+        # TLS/SSL settings (MQTTS) - optional
+        # mqtt_tls_enabled = true
+        # mqtt_tls_ca_certs = /etc/ssl/certs/ca-certificates.crt
+        # mqtt_tls_certfile =
+        # mqtt_tls_keyfile =
+        # mqtt_tls_insecure = false
 
     [[[runtimesettings]]]
         subchannels = ToEmonCMS,
@@ -37,7 +43,9 @@ import json
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883):
+    def __init__(self, name, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883,
+                 mqtt_tls_enabled=False, mqtt_tls_ca_certs="", mqtt_tls_certfile="",
+                 mqtt_tls_keyfile="", mqtt_tls_insecure=False):
         """Initialize interfacer
 
         """
@@ -69,7 +77,12 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
             'mqtt_host': mqtt_host,
             'mqtt_port': mqtt_port,
             'mqtt_user': mqtt_user,
-            'mqtt_passwd': mqtt_passwd
+            'mqtt_passwd': mqtt_passwd,
+            'mqtt_tls_enabled': mqtt_tls_enabled,
+            'mqtt_tls_ca_certs': mqtt_tls_ca_certs,
+            'mqtt_tls_certfile': mqtt_tls_certfile,
+            'mqtt_tls_keyfile': mqtt_tls_keyfile,
+            'mqtt_tls_insecure': mqtt_tls_insecure
         })
 
         self._connected = False
@@ -79,6 +92,19 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
         self._mqttc.on_disconnect = self.on_disconnect
         self._mqttc.on_message = self.on_message
         self._mqttc.on_subscribe = self.on_subscribe
+
+        # Configure TLS/SSL if enabled
+        if str(self.init_settings['mqtt_tls_enabled']).lower() in ['true', '1', 'yes']:
+            ca_certs = self.init_settings['mqtt_tls_ca_certs'].strip() or None
+            certfile = self.init_settings['mqtt_tls_certfile'].strip() or None
+            keyfile = self.init_settings['mqtt_tls_keyfile'].strip() or None
+            try:
+                self._mqttc.tls_set(ca_certs=ca_certs, certfile=certfile, keyfile=keyfile)
+                if str(self.init_settings['mqtt_tls_insecure']).lower() in ['true', '1', 'yes']:
+                    self._mqttc.tls_insecure_set(True)
+                self._log.info("TLS enabled for MQTT connection to %s", mqtt_host)
+            except Exception as e:
+                self._log.error("Failed to configure TLS for MQTT: %s", e)
 
     def add(self, cargo):
         """Append data to buffer.

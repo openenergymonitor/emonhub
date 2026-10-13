@@ -1,0 +1,98 @@
+{
+ "input:0": {
+  "id": 0,
+  "state": null
+ },
+ "input:1": {
+  "id": 1,
+  "state": false
+ },
+ "switch:0": {
+  "id": 0,
+  "source": "MQTT",
+  "tag": null,
+  "output": true,
+  "apower": 2663.7,
+  "voltage": 226.8,
+  "freq": 50.0,
+  "current": 11.71,
+  "pf": 1.0,
+  "aenergy": {
+   "total": 12953080.104,
+   "by_minute": [
+    46077.256,
+    46101.195,
+    46110.846
+   ],
+   "minute_ts": 1791756420
+  },
+  "ret_aenergy": {
+   "total": 0.0,
+   "by_minute": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "minute_ts": 1791756420
+  },
+  "counts": {
+   "on_time": 3421140,
+   "on_time_rst_ts": 0,
+   "switch_on": 1569,
+   "switch_on_rst_ts": 0,
+   "on_above_thr": 2959980,
+   "on_above_thr_rst_ts": 0
+  },
+  "temperature": {
+   "tC": 61.7,
+   "tF": 143.1
+  }
+ },
+ "switch:1": {
+  "id": 1,
+  "source": "MQTT",
+  "tag": null,
+  "output": true,
+  "apower": 2667.3,
+  "voltage": 226.7,
+  "freq": 50.0,
+  "current": 11.755,
+  "pf": 1.0,
+  "aenergy": {
+   "total": 12853756.545,
+   "by_minute": [
+    46172.843,
+    46197.041,
+    46211.235
+   ],
+   "minute_ts": 1791756420
+  },
+  "ret_aenergy": {
+   "total": 5827.0,
+   "by_minute": [
+    0.0,
+    0.0,
+    0.0
+   ],
+   "minute_ts": 1791756420
+  },
+  "counts": {
+   "on_time": 2982030,
+   "on_time_rst_ts": 0,
+   "switch_on": 2156,
+   "switch_on_rst_ts": 0,
+   "on_above_thr": 2841480,
+   "on_above_thr_rst_ts": 0
+  },
+  "temperature": {
+   "tC": 63.6,
+   "tF": 146.5
+  }
+ },
+ "sys": {
+  "time": "23:07",
+  "unixtime": 1791756472,
+  "uptime": 1033578,
+  "restart_required": false
+ }
+}
