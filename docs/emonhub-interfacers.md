@@ -33,6 +33,7 @@ For a full list of interfacers, view GitHub source [https://github.com/openenerg
 - [Shelly Gen2+ (Pro 3EM, Pro 1PM/2PM, Plus, Gen3...)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Shelly)
 
 ### PV Inverters & Battery Storage
+- [Fronius Solar API](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/FroniusWebAPI)
 - [Renogy Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Renogy)
 - [SMA Solar Interfacer (added by @stuartpittaway)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/smasolar)
 - [Victron VE.Direct Protocol Interfacer (added by @jlark)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/vedirect)
