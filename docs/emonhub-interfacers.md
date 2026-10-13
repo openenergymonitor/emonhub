@@ -30,6 +30,7 @@ For a full list of interfacers, view GitHub source [https://github.com/openenerg
 - [Estron SDMXXX-Modbus Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/SDM120)
 - [Estron SDM630](https://github.com/openenergymonitor/emonhub/blob/master/conf/interfacer_examples/SDM630/sdm630.emonhub.conf)
 - [Rayleigh-ri-d35-100](https://github.com/openenergymonitor/emonhub/blob/master/conf/interfacer_examples/rayleigh-ri-d35-100/rayleigh-ri-d35-100.emonhub.conf) 
+- [Shelly Gen2+ (Pro 3EM, Pro 1PM/2PM, Plus, Gen3...)](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Shelly)
 
 ### PV Inverters & Battery Storage
 - [Renogy Interfacer](https://github.com/openenergymonitor/emonhub/tree/master/conf/interfacer_examples/Renogy)

@@ -1,0 +1,15 @@
+{
+ "name": null,
+ "id": "shellypro0110pm-aabbcc000004",
+ "mac": "AABBCC000004",
+ "slot": 0,
+ "model": "SPCC-001PE10EU",
+ "gen": 2,
+ "fw_id": "20260923-075707/2.0.1-ge1a198b",
+ "ver": "2.0.1",
+ "app": "ProDimmer0110VPM",
+ "auth_en": false,
+ "auth_domain": null,
+ "provision": "complete",
+ "enhanced_security": false
+}

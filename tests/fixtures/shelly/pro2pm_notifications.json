@@ -1,0 +1,136 @@
+[
+ {
+  "src": "shellypro2pm-aabbcc000002",
+  "dst": "emonhub",
+  "method": "NotifyStatus",
+  "params": {
+   "ts": 1791756491.69,
+   "switch:0": {
+    "apower": 0,
+    "current": 0,
+    "output": false,
+    "pf": 0,
+    "source": "MQTT"
+   }
+  }
+ },
+ {
+  "src": "shellypro2pm-aabbcc000002",
+  "dst": "emonhub",
+  "method": "NotifyStatus",
+  "params": {
+   "ts": 1791756492.02,
+   "switch:1": {
+    "apower": 0,
+    "current": 0,
+    "output": false,
+    "pf": 0,
+    "source": "MQTT"
+   }
+  }
+ },
+ {
+  "src": "shellypro2pm-aabbcc000002",
+  "dst": "emonhub",
+  "method": "NotifyStatus",
+  "params": {
+   "ts": 1791756540.0,
+   "switch:1": {
+    "counts": {
+     "on_above_thr": 2841510,
+     "on_above_thr_rst_ts": 0,
+     "on_time": 2982060,
+     "on_time_rst_ts": 0,
+     "switch_on": 2156,
+     "switch_on_rst_ts": 0
+    }
+   }
+  }
+ },
+ {
+  "src": "shellypro2pm-aabbcc000002",
+  "dst": "emonhub",
+  "method": "NotifyStatus",
+  "params": {
+   "ts": 1791756540.0,
+   "switch:0": {
+    "counts": {
+     "on_above_thr": 2960010,
+     "on_above_thr_rst_ts": 0,
+     "on_time": 3421170,
+     "on_time_rst_ts": 0,
+     "switch_on": 1569,
+     "switch_on_rst_ts": 0
+    }
+   }
+  }
+ },
+ {
+  "src": "shellypro2pm-aabbcc000002",
+  "dst": "emonhub",
+  "method": "NotifyStatus",
+  "params": {
+   "ts": 1791756540.0,
+   "switch:0": {
+    "aenergy": {
+     "by_minute": [
+      9209.057,
+      46090.299,
+      46077.256
+     ],
+     "minute_ts": 1791756540,
+     "total": 12953094.683
+    },
+    "apower": 0.0,
+    "aprtpower": 0.0,
+    "current": 0.0,
+    "freq": 49.99,
+    "pf": 0.0,
+    "ret_aenergy": {
+     "by_minute": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "minute_ts": 1791756540,
+     "total": 0.0
+    },
+    "voltage": 228.0
+   }
+  }
+ },
+ {
+  "src": "shellypro2pm-aabbcc000002",
+  "dst": "emonhub",
+  "method": "NotifyStatus",
+  "params": {
+   "ts": 1791756540.0,
+   "switch:1": {
+    "aenergy": {
+     "by_minute": [
+      9229.182,
+      46182.351,
+      46172.843
+     ],
+     "minute_ts": 1791756540,
+     "total": 12853771.154
+    },
+    "apower": 0.0,
+    "aprtpower": 0.0,
+    "current": 0.0,
+    "freq": 50.0,
+    "pf": 0.0,
+    "ret_aenergy": {
+     "by_minute": [
+      0.0,
+      0.0,
+      0.0
+     ],
+     "minute_ts": 1791756540,
+     "total": 5827.0
+    },
+    "voltage": 227.8
+   }
+  }
+ }
+]
