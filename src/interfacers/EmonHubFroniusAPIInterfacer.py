@@ -1,161 +1,171 @@
 import time
-import json
-import Cargo
 import requests
-import emonhub_coder
-
+import Cargo
 from emonhub_interfacer import EmonHubInterfacer
 
-"""class EmonFroniusAPIInterfacer
-
-Template interfacer for use in development
-
 """
+[[Fronius]]
+    Type = EmonHubFroniusAPIInterfacer
+    [[[init_settings]]]
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        name = fronius
+        host = 192.168.1.11
+        readinterval = 10
+"""
+
+"""class EmonHubFroniusAPIInterfacer
+
+Reads a Fronius inverter, and the smart meter connected to it, over the
+Fronius Solar API (http://<host>/solar_api/v1/).
+
+Every readinterval seconds it requests:
+- GetPowerFlowRealtimeData: PV, grid, load and battery power and the energy totals
+- GetInverterInfo: the inverter status code
+- GetInverterRealtimeData (3PInverterData): phase voltages and currents,
+  only while the inverter is running
+
+Values are published by name, so a value the system does not report (no battery,
+no meter, a single phase inverter, an inverter asleep at night) is left out
+without affecting the others. If the power flow request fails nothing is published.
+"""
+
+# Inverter status code while feeding in
+STATUS_RUNNING = 7
+
+# Input name, key in Body.Data.Site of GetPowerFlowRealtimeData
+SITE_VALUES = (
+    ("pv_power", "P_PV"),
+    ("grid_power", "P_Grid"),
+    ("load_power", "P_Load"),
+    ("battery_power", "P_Akku"),
+    ("day_energy", "E_Day"),
+    ("total_energy", "E_Total"),
+)
+
+# Input name, key in Body.Data of GetInverterRealtimeData 3PInverterData
+PHASE_VALUES = (
+    ("voltage_l1", "UAC_L1"),
+    ("voltage_l2", "UAC_L2"),
+    ("voltage_l3", "UAC_L3"),
+    ("current_l1", "IAC_L1"),
+    ("current_l2", "IAC_L2"),
+    ("current_l3", "IAC_L3"),
+)
+
+# Errors from an unreachable inverter or an unexpected reply
+REQUEST_ERRORS = (requests.exceptions.RequestException, ValueError, KeyError, TypeError)
+
 
 class EmonHubFroniusAPIInterfacer(EmonHubInterfacer):
 
-    def __init__(self, name,  webAPI_IP='192.168.1.13', webAPI_port=0):
-        """Initialize Interfacer
+    # seconds to wait for each request
+    TIMEOUT = 5
 
-        """
-
-        # Initialization
+    def __init__(self, name):
         super().__init__(name)
 
-        # add or alter any default settings for this interfacer
-        # defaults previously defined in inherited emonhub_interfacer
-        # here we are just changing the batchsize from 1 to 100
-        # and the interval from 0 to 30
-        # self._defaults.update({'batchsize': 100,'interval': 30})
-
-        # This line will stop the default values printing to logfile at start-up
-        #self._settings.update(self._defaults)
+        self._settings.update(self._defaults)
 
         # Interfacer specific settings
-        # (settings not included in the inherited EmonHubInterfacer)
-        # The set method below is called from emonhub.py on
-        # initialisation and settings change and copies the
-        # interfacer specific settings over to _settings
-        #self._template_settings = {'read_interval': 10.0}
-       # self._template_settings = {'webAPI_IP': '192.168.1.13'}
-       # #self._template_settings = ('webAPI_port': 69}
-       # try:
-       #     webAPI_IP =  self.init_settings['webAPI_IP']
-       #     webAPI_port =  self.init_settings['webAPI_port']
-       # except Exception as err:
-       #     print("Other error occurred: " + str(err))
-        self.webAPI_IP = webAPI_IP
-        self.webAPI_port = webAPI_port
-        self._log.debug("EmonModbusTcpInterfacer args: %s - %s", webAPI_IP, webAPI_port)
-        #print(self.webAPI_IP)
-        #print(self.webAPI_port)
+        self._template_settings = {'name': 'fronius',
+                                   'host': '',
+                                   'device_id': '1',
+                                   'readinterval': 10.0}
 
+        self._last_time = 0
+        self._failing = False
 
     def read(self):
-        """Read data and process
+        # Request inverter data at user specified interval
+        if time.time() - self._last_time < self._settings['readinterval']:
+            return
+        self._last_time = time.time()
 
-        Return data as a list: [NodeID, val1, val2]
+        if not self._settings['host']:
+            return
 
-        """
-        self._log.info("starting read")
-        self._log.debug("EmonHubAPIInterfacer args: %s - %s", self.webAPI_IP, self.webAPI_port)
-
-        # create a new cargo object, set data values
-        time.sleep(float(self._settings['interval']))
-        f = []
-        c = Cargo.new_cargo(rawdata="")
-
-      #get inverter status
-        url = "http://" +self.init_settings["webAPI_IP"] + "/solar_api/v1/GetInverterInfo.cgi"
         try:
-            self._log.debug("Status URL: " + url)
-            response = requests.get(url)
-            response.raise_for_status()
-        except HTTPError as http_err:
-            self._log.error("HTTP error occurred: "+ str(http_err))
-        except Exception as err:
-            self._log.error("Other error occurred: " + str(err))
-        else:
+            values = self._fetch()
+        except REQUEST_ERRORS as e:
+            # Warn when requests start failing, not on every one
+            if not self._failing:
+                self._log.warning("%s couldn't read inverter at %s: %s", self.name, self._settings['host'], e)
+                self._failing = True
+            return
 
-            response_dict = response.json()
-            Inverter_status=response_dict["Body"]["Data"]["1"]["StatusCode"]
-            self._log.info("webAPI inverter status: " + str(Inverter_status))
-            self._log.debug("Inverter Status Code " + str(Inverter_status))
-            self._log.info("webAPI Device Offline")
+        if self._failing:
+            self._log.info("%s inverter at %s reachable again", self.name, self._settings['host'])
+            self._failing = False
 
-            t = emonhub_coder.encode('H',Inverter_status)
-            f = f + list(t)
-
-          # get local grid power data
-            
-            url = "http://"+self.init_settings["webAPI_IP"]+"/solar_api/v1/GetPowerFlowRealtimeData.fcgi"
-            try:
-                self._log.debug("Status URL: " + url)
-                response = requests.get(url)
-                response.raise_for_status()
-            except HTTPError as http_err:
-                self._log.error("HTTP error occurred: "+ str(http_err))
-            except Exception as err:
-                self._log.error("Other error occurred: " + st(err))
-            else:
-                 response_dict = response.json()
-                 AC_power_watts = response_dict["Body"]["Data"]["Inverters"]["1"]["P"]
-                 t = emonhub_coder.encode('f',AC_power_watts * 10)
-                 f = f + list(t)
-                 AC_LifetimekWh = response_dict["Body"]["Data"]["Inverters"]["1"]["E_Total"]
-                 t = emonhub_coder.encode('f',AC_LifetimekWh * 10)
-                 f = f + list(t)
-                 DayWh = response_dict["Body"]["Data"]["Inverters"]["1"]["E_Day"]
-                 t = emonhub_coder.encode('f',DayWh * 1)
-                 f = f + list(t)
-
-            # send dummy results for invertstring data as its not available in the api
-            for x in range(4):
-                t = emonhub_coder.encode('h',0)
-                f = f + list(t)
-
-            PhVphA = 0
-            PhVphB = 0
-            PhVphC = 0
-
-            if Inverter_status == 7 : # 7 = Inverter running
-                
-              # get inverter 3phase data phase amps and phase voltage
-                url = "http://"+self.init_settings["webAPI_IP"]+"/solar_api/v1/GetInverterRealtimeData.cgi?Scope=Device&DeviceID=1&DataCollection=3PInverterData&DeviceId=1"
-                try:
-                    self._log.debug("Status URL: " + url)
-                    response = requests.get(url)
-                    response.raise_for_status()
-                except HTTPError as http_err:
-                    self._log.error("HTTP error occurred: "+ str(http_err))
-                except Exception as err:
-                    self._log.error("Other error occurred: " + st(err))
-                else:
-                    response_dict = response.json()
-                    PhVphA = response_dict["Body"]["Data"]["UAC_L1"]["Value"]
-                    PhVphB = response_dict["Body"]["Data"]["UAC_L2"]["Value"]
-                    PhVphC = response_dict["Body"]["Data"]["UAC_L3"]["Value"]
-            t = emonhub_coder.encode('f',PhVphA * 10)
-            f = f + list(t)
-            t = emonhub_coder.encode('f',PhVphB * 10)
-            f = f + list(t)
-            t = emonhub_coder.encode('f',PhVphC * 10)
-            f = f + list(t)
-
-
-            self._log.debug("reporting data: " + str(f))
-            if int(self._settings['nodeId']):
-                c.nodeid = int(self._settings['nodeId'])
-                c.realdata = f
-            else:
-                c.nodeid = int(12)
-                c.realdata = f
-            self._log.debug("Return from read data: " + str(c.realdata))
+        c = Cargo.new_cargo()
+        c.nodeid = self._settings['name']
+        c.names = list(values.keys())
+        c.realdata = list(values.values())
         return c
 
+    def _get(self, path):
+        """Request a Solar API path and return Body.Data"""
+        url = "http://%s/solar_api/v1/%s" % (self._settings['host'], path)
+        reply = requests.get(url, timeout=self.TIMEOUT)
+        reply.raise_for_status()
+        response = reply.json()
+        status = response["Head"]["Status"]
+        if status["Code"] != 0:
+            raise ValueError("%s: error %s %s" % (path, status["Code"], status.get("Reason", "")))
+        return response["Body"]["Data"]
+
+    def _fetch(self):
+        """Return a dict of input name: value"""
+        values = {}
+
+        site = self._get("GetPowerFlowRealtimeData.fcgi")["Site"]
+        for name, key in SITE_VALUES:
+            value = site.get(key)
+            # P_PV is null while the inverter is asleep
+            if value is None and key == "P_PV":
+                value = 0
+            if value is not None:
+                values[name] = value
+
+        # Status and phase data are optional, publish the power flow values without them
+        device_id = str(self._settings['device_id'])
+        try:
+            status = self._get("GetInverterInfo.cgi")[device_id]["StatusCode"]
+        except REQUEST_ERRORS as e:
+            self._log.debug("%s no inverter status: %s", self.name, e)
+            return values
+        values["inverter_status"] = status
+
+        if status == STATUS_RUNNING:
+            path = "GetInverterRealtimeData.cgi?Scope=Device&DeviceId=%s&DataCollection=3PInverterData" % device_id
+            try:
+                data = self._get(path)
+            except REQUEST_ERRORS as e:
+                self._log.debug("%s no phase data: %s", self.name, e)
+                return values
+            for name, key in PHASE_VALUES:
+                item = data.get(key)
+                if isinstance(item, dict) and item.get("Value") is not None:
+                    values[name] = item["Value"]
+
+        return values
 
     def set(self, **kwargs):
-        for key in kwargs:
-            setting = kwargs[key]
+        for key, setting in self._template_settings.items():
+            # Decide which setting value to use
+            if key in kwargs.keys():
+                setting = kwargs[key]
+            if key in self._settings and self._settings[key] == setting:
+                continue
+            if key == 'readinterval':
+                try:
+                    setting = float(setting)
+                except ValueError:
+                    self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
+                    continue
+            self._log.info("Setting %s %s: %s", self.name, key, setting)
             self._settings[key] = setting
-            self._log.debug("Setting %s %s: %s", self.name, key, setting)
+
+        # include kwargs from parent
+        super().set(**kwargs)

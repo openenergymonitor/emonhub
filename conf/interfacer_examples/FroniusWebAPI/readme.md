@@ -1,40 +1,54 @@
-# Fronius Web API interface
+# Fronius Web API interfacer
 
-This interface starts a http connection and retrieves inverter and power meter information for publishing via mqtt to emonCMS
-The Web API is documented in detail on the Fronius Web site. The PDF can be downloaded here https://www.fronius.com/en/solar-energy/installers-partners/products/all-products/system-monitoring/open-interfaces/fronius-solar-api-json-
+Reads a Fronius inverter, and the smart meter connected to it, over the Fronius Solar API on the local network. The Solar API may need to be enabled first in the inverter's web interface; it is off by default on newer GEN24 firmware.
 
-## Usage and configuration
+The Solar API is documented by Fronius: [Fronius Solar API (JSON)](https://www.fronius.com/en/solar-energy/installers-partners/products/all-products/system-monitoring/open-interfaces/fronius-solar-api-json-)
 
-There is a sample FroniusWebAPI.emonhub.conf file located in this directory.
+## Configuration
 
-### Sample interfacer config within emonhub.conf
-
-Sample configuration for modbus TCP clients
-All inputs are derived from the webapi json output
+Copy [FroniusWebAPI.emonhub.conf](FroniusWebAPI.emonhub.conf) into the `[interfacers]` section of emonhub.conf:
 
 ```
-
-### This interfacer manages connections to fronius inverters via webapi
-[[FroniusAPI]]
+[[Fronius]]
     Type = EmonHubFroniusAPIInterfacer
     [[[init_settings]]]
-	webAPI_IP = 192.168.1.11  # ip address of the inverter.
-	webAPI_port = 80  # http port the inverter listens on. default is 80 unless changed on the inverter settings.
     [[[runtimesettings]]]
-	nodeId = 12
-        interval = 20   # time in seconds between checks, This is in addition to emonhub_interfacer.run() sleep time of .01
         pubchannels = ToEmonCMS,
-
+        name = fronius
+        host = 192.168.1.11
+        readinterval = 10
 ```
 
-### Sample Node declaration in emonhub.conf
-Node ID must match node ID set in interfacer definition above
+| Setting | Default | Description |
+|---|---|---|
+| `name` | `fronius` | emoncms node name |
+| `host` | | IP address or hostname of the inverter. Add `:port` if the web interface is not on port 80 |
+| `readinterval` | `10` | Seconds between reads |
+| `device_id` | `1` | Inverter device id, used for the status and phase values |
 
-```
-[[12]]
-    nodename = froniusAPI
-```
-## Sample web api responses.
+No `[nodes]` entry is needed: inputs are published by name.
+
+## Inputs
+
+| Input | Unit | Source |
+|---|---|---|
+| `pv_power` | W | PV production. Published as 0 while the inverter is asleep |
+| `grid_power` | W | Positive importing from the grid, negative exporting. Needs a Fronius smart meter |
+| `load_power` | W | Household consumption, negative while consuming (Fronius convention). Needs a smart meter |
+| `battery_power` | W | Positive discharging, negative charging. Only with a battery |
+| `day_energy` | Wh | PV energy today. Not reported by some models, e.g. GEN24 |
+| `total_energy` | Wh | Lifetime PV energy |
+| `inverter_status` | | Inverter status code: 0-6 starting up, 7 running, 8 standby, 9 boot loading, 10 error |
+| `voltage_l1`, `voltage_l2`, `voltage_l3` | V | Phase voltages, three phase inverters while running |
+| `current_l1`, `current_l2`, `current_l3` | A | Phase currents, three phase inverters while running |
+
+Power, energy and the smart meter values are system totals from `GetPowerFlowRealtimeData`, so they include all inverters in a Fronius Solar Net. The status and phase values are for the inverter set by `device_id`.
+
+An input the system does not report is left out rather than published as 0. If the inverter cannot be reached nothing is published, so emoncms shows a gap. A warning is logged when reads start failing and again when the inverter is reachable.
+
+To log PV generation in emoncms, use `Log to feed` on `pv_power` and `Wh Accumulator` on `total_energy`. To log household consumption as a positive value, add `x -1` before logging `load_power`.
+
+## Sample Solar API responses
 
 /solar_api/v1/GetInverterInfo.cgi
 ```
