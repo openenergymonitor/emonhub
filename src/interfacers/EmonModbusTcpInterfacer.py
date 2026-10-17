@@ -5,8 +5,7 @@ from emonhub_interfacer import EmonHubInterfacer
 
 """class EmonModbusTcpInterfacer
 Monitors Modbus devices using modbus tcp
-At this stage, only read_holding_registers() is implemented in the read() method
-if needed, please change the function to read_input_registers()
+Reads holding registers by default, or input registers with register_type = input
 """
 
 class EmonModbusTcpInterfacer(EmonHubInterfacer):
@@ -168,10 +167,13 @@ class EmonModbusTcpInterfacer(EmonHubInterfacer):
                     self._log.debug("reading register #: %s, qty #: %s, unit #: %s", register, qty, unitId)
 
                     try:
-                        # According to the Modbus specification, input registers numbered, e.g., 1-16 are
-                        # transmitted as 0-15. If input registers must be read instead of holding registers,
-                        # change read_holding_registers to read_input_registers in the following line.
-                        self.rVal = self._con.read_holding_registers(register - 1, qty, slave=unitId)
+                        # According to the Modbus specification, registers numbered, e.g., 1-16 are
+                        # transmitted as 0-15. Set register_type = input to read input registers (FC 04)
+                        # instead of holding registers (FC 03).
+                        if self._settings.get("register_type", "holding") == "input":
+                            self.rVal = self._con.read_input_registers(register - 1, qty, slave=unitId)
+                        else:
+                            self.rVal = self._con.read_holding_registers(register - 1, qty, slave=unitId)
                         assert self.rVal.function_code < 0x80
                     except Exception as e:
                         self._log.error("Connection failed on read of register: %s : %s", register, e)
