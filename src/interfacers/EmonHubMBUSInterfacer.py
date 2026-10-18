@@ -430,6 +430,8 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                       # --------------------------
                       
                       if record in records or len(records)==0:
+                          # records may be a dict of record number -> name to override the name above
+                          if isinstance(records, dict): name = records[record]
                           result[name] = [value*scale,unit]
                       if debug: print("\n-----------------------------------------",end='\t')
                       next='DIF'
@@ -522,12 +524,11 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                             valid = False  # Validate checksum
                             
                     if bid == bid_end and val == 0x16:
-                        time_elapsed = time.time()-start_time
-
-                        self.invalid_count += 1
-                        self._log.debug("Invalid MBUS data received %d bytes %0.1f ms, count: %d" % (bid,time_elapsed*1000,self.invalid_count))
-                                
                         if valid: # Parse frame if still valid
+                            time_elapsed = time.time()-start_time
+                            # Only consecutive invalid reads should trigger a reconnect
+                            self.invalid_count = 0
+                            self._log.debug("MBUS data received %d bytes %0.1f ms" % (bid+1,time_elapsed*1000))
                             if self.use_meterbus_lib:
                                 return self.parse_frame_meterbus_lib(data,records)
                             else:
@@ -622,6 +623,12 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                         self.add_result_to_cargo(meter,c,result)
                     elif meter_type=="kamstrup403":
                         result = self.request_data(address,[1,4,7,8,9,10,11,12,14])
+                        self.add_result_to_cargo(meter,c,result)
+                    # Kamstrup Multical 402, named by record number as the generated names
+                    # depend on how the pulse inputs are configured (technical description 5512-820)
+                    elif meter_type=="kamstrup402":
+                        result = self.request_data(address,{2:"Energy",3:"Volume",4:"Hours",5:"FlowT",6:"ReturnT",
+                                                            7:"DeltaT",8:"Power",10:"FlowRate",16:"Cooling"})
                         self.add_result_to_cargo(meter,c,result)
                         # ------------------------------------------------------
                             
