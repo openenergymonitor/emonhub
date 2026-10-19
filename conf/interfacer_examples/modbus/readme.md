@@ -42,6 +42,8 @@ The default unit or slave number is 1. To query registers from different slaves,
     nUnit = 2, 2, 2, 2, 3
 ```
 
+Holding registers (function code 03) are read by default. To read input registers (function code 04) instead, add `register_type = input` to the runtime settings.
+
 ### Sample Node declaration in emonhub.conf
 Node ID must match node ID set in interfacer definition above
 
