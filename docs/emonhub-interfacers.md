@@ -432,7 +432,7 @@ Many electricity and heat meters are available with meter bus (M-Bus) outputs. U
 List attached meters as shown in the example below.
 
 - **address:** The address of the meter is also usually possible to find and or set via the meter LCD configuration interface. If in doubt try 0 or 254. It's also usually possible to set the ID by M-Bus interface [Here is a script](https://github.com/emoncms/usefulscripts/tree/master/mbus) to check and set the address which has been tested to work on Kamstrup Multical 403 and Sontex 531.
-- **type:** Available options include: standard, qalcosonic_e3, sontex531, sdm120
+- **type:** Available options include: standard, qalcosonic_e3, sontex531, sdm120, kamstrup403, kamstrup402
 
 **Note:** We've experienced reliability issues reading from the M-Bus version of the SDM120 electric meters. We recommend using the Modbus version with a seperate Modbus reader for more reliable results. For more information please see [https://community.openenergymonitor.org/t/sdm120-mbus-meter-freezing-drop-out/20765/2](https://community.openenergymonitor.org/t/sdm120-mbus-meter-freezing-drop-out/20765/2).
 
@@ -453,6 +453,26 @@ List attached meters as shown in the example below.
             [[[[[heatmeter]]]]]
                 address = 1
                 type = kamstrup403
+```
+
+#### Kamstrup Multical 402
+
+The M-Bus module only refreshes its data from the meter every ~28 seconds, so reading more often than every 30 seconds returns repeated values. The `kamstrup402` type publishes `Energy` (E1), `Volume` (V1), `Hours`, `FlowT`, `ReturnT`, `DeltaT`, `Power`, `FlowRate`, `Cooling` (E3) and the calculated `heat_calc`; the year/month target values, tariff registers and pulse inputs are skipped.
+
+```text
+[[MBUS]]
+    Type = EmonHubMBUSInterfacer
+    [[[init_settings]]]
+        device = /dev/ttyAMA0
+        baud = 2400
+    [[[runtimesettings]]]
+        pubchannels = ToEmonCMS,
+        read_interval = 30
+        nodename = MBUS
+        [[[[meters]]]]
+            [[[[[heatmeter]]]]]
+                address = 1
+                type = kamstrup402
 ```
 
 #### Sontex 531
