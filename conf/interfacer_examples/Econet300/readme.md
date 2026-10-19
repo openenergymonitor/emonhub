@@ -19,3 +19,5 @@ Example configuration:
             pollinterval = 60
         [[[runtimesettings]]]
             pubchannels = ToEmonCMS,
+
+Which inputs appear depends on how the heat pump is configured (number of circuits, weather compensation, whether DHW is enabled). Parameters the bridge doesn't return are logged once and then skipped. The parameter list, and how to find more, is in `PARAMS_GRANT_AERONA_R290` in `src/interfacers/EmonHubEconet300Interfacer.py`.
