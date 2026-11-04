@@ -397,7 +397,10 @@ if [ -d /lib/systemd/system ]; then
         echo "emonhub.service already installed"
     fi
 
-    if ! systemctl is-enabled --quiet emonhub.service; then
+    # The unit is a symlink to its service file, so is-enabled reports "alias"
+    # whether it is enabled or not: check for the link that enabling creates.
+    # This also re-enables a service that was disabled by hand.
+    if [ ! -e /etc/systemd/system/multi-user.target.wants/emonhub.service ]; then
         echo "Enabling emonhub.service"
         sudo systemctl enable emonhub.service
     fi
