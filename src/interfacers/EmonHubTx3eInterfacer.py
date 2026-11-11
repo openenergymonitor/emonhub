@@ -12,6 +12,17 @@ for csv format use the EmonHubSerialInterfacer
 
 
 class EmonHubTx3eInterfacer(ehi.EmonHubSerialInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the emonTx, e.g. /dev/ttyUSB0. Expects key:value lines starting with MSG:.",
+            "com_baud": "Serial baud rate of the emonTx, typically 115200. Default 9600."
+        },
+        "runtime": {
+            "nodename": "Node name for the inputs. Leave empty to use nodeoffset as the node id. Default empty."
+        }
+    }
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer

@@ -34,6 +34,23 @@ MBUS interfacer for use in development
 """
 
 class EmonHubMBUSInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "device": "Serial device of the M-Bus reader, e.g. /dev/ttyUSB0. Trailing * matches any port starting with that path. Default /dev/ttyUSB0.",
+            "device_vid": "Optional USB vendor ID filter, as a decimal number, e.g. 1659.",
+            "device_pid": "Optional USB product ID filter, as a decimal number.",
+            "baud": "M-Bus baud rate, typically 2400 or 4800. Default 2400.",
+            "use_meterbus_lib": "Parse frames with the pyMeterBus library when set. Any non-empty value enables it, including false. Leave unset to disable."
+        },
+        "runtime": {
+            "read_interval": "Seconds between readings, aligned to the clock. Default 10.",
+            "nodename": "Node name for published inputs. Default MBUS.",
+            "validate_checksum": "Discard frames with a bad checksum. Only the exact value False disables it. Default True.",
+            "meters": "Subsection with one [[[[[name]]]]] block per meter, each with address (default 1) and type: standard, qalcosonic_e3, sontex531, sdm120, kamstrup403 or kamstrup402."
+        }
+    }
 
     def __init__(self, name, device="/dev/ttyUSB0", device_vid=False, device_pid=False, baud=2400, use_meterbus_lib=False):
         """Initialize Interfacer

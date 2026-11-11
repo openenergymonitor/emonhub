@@ -13,6 +13,18 @@ Monitors the serial port for data from 'Serial Format 2' type devices
 """
 
 class EmonHubOEMInterfacer(ehi.EmonHubSerialInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the connected device, e.g. /dev/ttyAMA0 for the emonPi or /dev/ttyUSB0 for a USB device. Default /dev/ttyAMA0.",
+            "com_baud": "Serial baud rate. Use 115200 for current OpenEnergyMonitor firmware, 38400 for older radio boards. Default 38400."
+        },
+        "runtime": {
+            "datacode": "Default datacode for decoding space-separated byte frames from nodes without datacodes in [nodes]. Default h. Ignored once JSON or key:value data is received.",
+            "nodename": "Node name for JSON and key:value data. Space-separated frames use the node id in the frame. Defaults to the interfacer name."
+        }
+    }
 
     def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=38400):
         """Initialize Interfacer

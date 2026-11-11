@@ -42,6 +42,16 @@ Example config snippets:
 """
 
 class EmonHubBleInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "device_addr": "Bluetooth LE MAC address of the sensor, e.g. 00:0b:57:64:8c:a2. Required."
+        },
+        "runtime": {
+            "read_interval": "Time between readings of temperature, humidity and battery level in seconds. Default 60."
+        }
+    }
 
     def __init__(self, name, device_addr):
         """Initialize interfacer

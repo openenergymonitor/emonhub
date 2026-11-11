@@ -16,6 +16,16 @@ Monitors Renogy Rover via USB RS232 Cable over modbus
 """
 
 class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the Renogy Rover USB cable. Default /dev/ttyUSB0.",
+            "com_baud": "Modbus serial baud rate, typically 9600. Set it explicitly, as the built-in default fails to connect.",
+            "toextract": "Currently has no effect. Values read are fixed: BatteryPercent, Charging_Stage, BatteryTemp_F, SolarVoltage, SolarCurrent, SolarPower, PowerGenToday.",
+            "poll_interval": "Currently has no effect. Use the interval runtime setting to set the time between readings."
+        }
+    }
 
     def __init__(self, name, com_port='/dev/ttyUSB0', com_baud=9600, toextract='' , poll_interval=30):
         """Initialize Interfacer

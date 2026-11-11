@@ -8,6 +8,18 @@ Read RFM69 radio data (LowPowerLabs format)
 
 """
 class EmonHubRFM69LPLInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "nodeid": "Radio node id of this receiver, 1 to 1023. Default 5.",
+            "networkID": "Radio network id, 0 to 255. Must match the transmitting nodes. Default 210.",
+            "interruptPin": "Radio interrupt (DIO0) pin, BOARD numbering. Falls back to polling if the interrupt cannot be set up. Default 22.",
+            "resetPin": "Radio reset pin, BOARD numbering. Leave unset if the hardware has no reset line. Default none.",
+            "selPin": "Radio chip select pin, BOARD numbering. Default 26.",
+            "freqBand": "Radio frequency band code. 49 for 433.92 MHz on current OpenEnergyMonitor hardware, 43 for 433 MHz on legacy nodes. Default 43."
+        }
+    }
 
     def __init__(self, name, nodeid = 5, networkID = 210, interruptPin = 22, resetPin = None, selPin = 26, freqBand = 43):
         """Initialize Interfacer

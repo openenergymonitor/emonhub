@@ -42,6 +42,20 @@ Example emonhub configuration
 """
 
 class EmonHubPulseCounterInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "pulse_pin": "GPIO pin of the pulse sensor, BOARD (physical) numbering. Required. Use a separate interfacer for each sensor.",
+            "bouncetime": "Debounce time in ms. Pulses closer together than this are ignored. Default 1.",
+            "rate_limit": "Minimum time between posts in seconds. Posts only when the count has changed. Default 2."
+        },
+        "runtime": {
+            "pulse_pin": "Set from init_settings, changing it here has no effect.",
+            "bouncetime": "Set from init_settings, changing it here has no effect.",
+            "rate_limit": "Set from init_settings, changing it here has no effect."
+        }
+    }
 
     def __init__(self, name, pulse_pin=None, bouncetime=1, rate_limit=2):
         """Initialize interfacer

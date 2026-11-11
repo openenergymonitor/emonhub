@@ -8,6 +8,15 @@ Fetch Tesla Power Wall state of charge
 """
 
 class EmonHubTeslaPowerWallInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "name": "Node name for the state of charge input in emoncms. Default powerwall.",
+            "url": "Powerwall state of charge URL, e.g. http://POWERWALL-IP/api/system_status/soe. Nothing is read until set.",
+            "readinterval": "Seconds between readings, also used as the request timeout. Default 10."
+        }
+    }
 
     def __init__(self, name):
         super().__init__(name)

@@ -34,6 +34,24 @@ def log_exceptions_from_class_method(func):
     return wrapper
 
 class EmonHubInterfacer(threading.Thread):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "pause": "Stops sending data on when set to out or all. Values: off, in, out, all. in is accepted but currently has no effect.",
+            "interval": "Minimum time between sends from the buffer, in seconds. 0 sends on every loop.",
+            "datacode": "Default datacode for decoding nodes that have no datacode or datacodes under [nodes]. 0 passes values through without decoding.",
+            "scale": "Default scale for nodes that have no scale or scales under [nodes].",
+            "timestamped": "Socket interfacer only. Expects a Unix timestamp as the first value of each received line. true or false.",
+            "targeted": "Socket and PacketGen only. Expects a target node ID after the source node ID. true or false. No effect on other interfacers.",
+            "nodeoffset": "Number added to the node ID of received data. Used by serial and radio interfacers, Pulse, BLE and Socket.",
+            "pubchannels": "Channels this interfacer sends received data to. With no channels the interfacer does not read data.",
+            "subchannels": "Channels this interfacer takes data from, to send on to its destination.",
+            "batchsize": "Maximum number of buffered items sent in one go. Capped at the interfacer's own limit.",
+            "nodelistonly": "Discards data from nodes not listed under [nodes]. true or false."
+        }
+    }
+
     def __init__(self, name):
         # Initialise logger
         self._log = logging.getLogger("EmonHub")

@@ -32,6 +32,20 @@ Example emonhub configuration
 """
 
 class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "pins": "GPIO pins to read, BOARD (physical) numbering, comma-separated. Add a trailing comma for a single pin, e.g. 13,",
+            "invert": "1 inverts the reported pin state, 0 reports it as read. Default 0."
+        },
+        "runtime": {
+            "pins": "Set from init_settings, changing it here has no effect.",
+            "nodename": "Currently has no effect. Node name is fixed at gpio.",
+            "read_interval": "Currently has no effect. Pins are read every 10 seconds.",
+            "invert": "Set from init_settings, changing it here has no effect."
+        }
+    }
 
     def __init__(self, name, pins, invert=0):
         """Initialize interfacer

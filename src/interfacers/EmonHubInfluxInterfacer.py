@@ -5,6 +5,22 @@ import requests
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubInfluxInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "influx_host": "InfluxDB server hostname or IP address. Default localhost.",
+            "influx_interval": "Default seconds between posts to InfluxDB. A runtime interval setting overrides it. Default 30.",
+            "influx_port": "InfluxDB HTTP port. Default 8086, set it explicitly as the built-in default causes an error.",
+            "influx_user": "InfluxDB username. Default emoncms.",
+            "influx_passwd": "InfluxDB password. Default emoncmspw.",
+            "influx_db": "InfluxDB 1.x database to write to. Default emoncms."
+        },
+        "runtime": {
+            "batchsize": "Maximum number of buffered frames sent in one post. Default 100, upper limit 250.",
+            "prefix": "Currently has no effect. Prefix tag is always written as 'prefix'."
+        }
+    }
 
     def __init__(self, name, influx_host='localhost', influx_interval=30, influx_port=8086, influx_user='emoncms', influx_passwd='emoncmspw', influx_db='emoncms'):
         # Initialization

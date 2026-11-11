@@ -19,6 +19,24 @@ Fetch metrics from econext-gateway (RS-485 gateway for GM3 based heat pump contr
 
 
 class EmonHubEconextInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "host": "Hostname or IP address of the econext-gateway. Overridden by the runtime setting of the same name.",
+            "port": "Gateway HTTP port. Default 8000. Overridden by the runtime setting of the same name.",
+            "pollinterval": "Seconds between successful polls. Default 60. Overridden by the runtime setting of the same name.",
+            "nodeid": "Node id for the heat pump inputs. Default 30. Overridden by the runtime setting of the same name."
+        },
+        "runtime": {
+            "host": "Hostname or IP address of the econext-gateway. Falls back to the init_settings value. Nothing is read until set.",
+            "port": "Gateway HTTP port. Falls back to the init_settings value, default 8000.",
+            "pollinterval": "Seconds between successful polls. Falls back to the init_settings value, default 60. Failed polls retry after 10 to 60 seconds.",
+            "nodeid": "Node id for the heat pump inputs. Falls back to the init_settings value, default 30.",
+            "nodename": "Node name for the heat pump inputs. Defaults to the interfacer name.",
+            "timeout": "HTTP request timeout in seconds. Default 10."
+        }
+    }
 
     # Default parameter mappings: (gateway_name, emoncms_name)
     # Config entries with matching gateway_name override the emoncms_name.

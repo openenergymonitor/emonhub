@@ -28,6 +28,22 @@ SDM120 interfacer for use in development
 """
 
 class EmonHubSDM120Interfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "device": "Serial device of the RS485 adapter. Default /dev/modbus.",
+            "baud": "Modbus baud rate of the SDM120 meter. Default 2400."
+        },
+        "runtime": {
+            "read_interval": "Seconds between readings, aligned to the clock. Default 10.",
+            "nodename": "Node name for published inputs. Default sdm120.",
+            "prefix": "Text added before each input name. Default empty.",
+            "datafields": "Comma-separated sdm_modbus SDM120 fields to read, e.g. voltage,power_active,import_energy_active.",
+            "names": "Comma-separated input names, in the same order as datafields. Field name is used where none is given.",
+            "precision": "Comma-separated decimal places, in the same order as datafields. Setting it here causes a read error, leave unset to use the defaults."
+        }
+    }
 
     def __init__(self, name, device="/dev/modbus", baud=2400):
         """Initialize Interfacer

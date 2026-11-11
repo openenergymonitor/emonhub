@@ -42,6 +42,29 @@ import Cargo
 import json
 
 class EmonHubMqttInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "mqtt_user": "MQTT broker username.",
+            "mqtt_passwd": "MQTT broker password.",
+            "mqtt_host": "MQTT broker address. Default 127.0.0.1.",
+            "mqtt_port": "MQTT broker port. Default 1883, MQTTS usually uses 8883.",
+            "mqtt_tls_enabled": "Connect over TLS (MQTTS). Accepts true, 1 or yes. Default false.",
+            "mqtt_tls_ca_certs": "Path to CA certificate file for server verification. Leave blank to use system CAs.",
+            "mqtt_tls_certfile": "Path to client certificate file, needed for mutual TLS authentication only.",
+            "mqtt_tls_keyfile": "Path to client private key file, needed for mutual TLS authentication only.",
+            "mqtt_tls_insecure": "Skip server hostname verification when true. Not recommended. Default false."
+        },
+        "runtime": {
+            "node_format_enable": "Set to 1 to publish all values of a node as one comma-separated payload, e.g. emonhub/rx/10/values. Default 1.",
+            "node_format_basetopic": "Base topic for node format, with trailing slash. Default emonhub/. Also subscribes to <basetopic>tx/# for data to send out on pubchannels.",
+            "nodevar_format_enable": "Set to 1 to publish each value on its own topic, e.g. emon/emontx/power1. Used by the emoncms MQTT input. Default 0.",
+            "nodevar_format_basetopic": "Base topic for node variable format, with trailing slash. Default nodes/, emoncms expects emon/.",
+            "node_JSON_enable": "Set to 1 to publish each node as one JSON object with names, values and time, e.g. emon/emontx. Default 0.",
+            "node_JSON_basetopic": "Base topic for JSON format, with trailing slash. Topic is basetopic plus node name. Default emon/."
+        }
+    }
 
     def __init__(self, name, mqtt_user=" ", mqtt_passwd=" ", mqtt_host="127.0.0.1", mqtt_port=1883,
                  mqtt_tls_enabled=False, mqtt_tls_ca_certs="", mqtt_tls_certfile="",

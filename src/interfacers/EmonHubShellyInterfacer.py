@@ -544,6 +544,14 @@ def make_device(name, config, log):
 
 
 class EmonHubShellyInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "read_interval": "Seconds between published readings, aligned to the clock. Minimum 1, default 10.",
+            "devices": "Subsection with one named section per Shelly device. Each needs host and may set fields, password and transport (ws or http). Section name becomes the node name."
+        }
+    }
 
     def __init__(self, name):
         super().__init__(name)

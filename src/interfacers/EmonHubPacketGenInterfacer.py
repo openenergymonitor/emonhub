@@ -10,6 +10,16 @@ Monitors a socket for data, typically from ethernet link
 """
 
 class EmonHubPacketGenInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "interval": "Seconds between requests for the polling interval set in the emoncms PacketGen module. 0 disables them. Default 5.",
+            "datacode": "Datacode used to decode packet values. Default b (signed byte).",
+            "apikey": "Emoncms API key for PacketGen module requests, 32 characters.",
+            "url": "Emoncms server root, e.g. http://localhost. /emoncms/packetgen/ is appended to it. Default http://localhost/emoncms."
+        }
+    }
 
     def __init__(self, name):
         """Initialize interfacer

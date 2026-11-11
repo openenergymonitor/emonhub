@@ -10,6 +10,16 @@ Monitors a socket for data, typically from ethernet link
 """
 
 class EmonHubSocketInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "port_nb": "TCP port to listen on for space-separated data lines ending in CRLF. Default 50011."
+        },
+        "runtime": {
+            "apikey": "Optional 32-character key. When set, lines without the key are discarded and the key is removed from accepted lines."
+        }
+    }
 
     def __init__(self, name, port_nb=50011):
         """Initialize Interfacer

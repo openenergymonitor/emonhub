@@ -11,6 +11,16 @@ Template interfacer for use in development
 """
 
 class EmonHubTemplateInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "port_nb": "Currently has no effect."
+        },
+        "runtime": {
+            "read_interval": "Seconds to wait between generated test frames. Default 10."
+        }
+    }
 
     def __init__(self, name, port_nb=50011):
         """Initialize Interfacer

@@ -22,6 +22,17 @@ Monitors car metrics via Jaguar Land Rover API
 """
 
 class EmonHubJaguarLandRoverInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "jlrusername": "Username for the Jaguar Land Rover InControl account. Requires the jlrpy Python module.",
+            "jlrpassword": "Password for the Jaguar Land Rover InControl account.",
+            "timeinverval": "Seconds between API reads while the car is not charging. Default 600.",
+            "duringchargetimeinterval": "Seconds between API reads while the car is charging. Default 60.",
+            "nodeid": "Node id for the car inputs. Default 28."
+        }
+    }
 
     def __init__(self, name, jlrusername='', jlrpassword='', timeinverval=600, duringchargetimeinterval=60, nodeid=28):
         """Initialize interfacer"""

@@ -24,6 +24,17 @@ from smalibrary import SMASolar_library
 Monitors a SMA Solar inverter over bluetooth
 """
 class EmonHubSMASolarInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "inverteraddress": "Bluetooth address of the inverter, e.g. 00:80:25:1D:AC:53. Run hcitool scan to find it.",
+            "inverterpincode": "Inverter PIN code, up to 12 digits. Default 0000.",
+            "timeinverval": "Seconds between readings. Default 10.",
+            "nodeid": "Node id for the inverter inputs. Default 29.",
+            "packettrace": "Logs Bluetooth packets at debug level. Any non-empty value enables it, including 0. Leave unset to disable."
+        }
+    }
 
     def __init__(self, name, inverteraddress='', inverterpincode='0000', timeinverval=10, nodeid=29, packettrace=0):
         """Initialize interfacer"""

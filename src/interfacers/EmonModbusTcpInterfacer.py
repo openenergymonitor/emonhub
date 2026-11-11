@@ -9,6 +9,18 @@ Reads holding registers by default, or input registers with register_type = inpu
 """
 
 class EmonModbusTcpInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "modbus_IP": "IP address of the Modbus TCP device. Default 192.168.1.10.",
+            "modbus_port": "Modbus TCP port, usually 502. Default 0, so it needs to be set."
+        },
+        "runtime": {
+            "nodeId": "Node ID for published data. Must match a [nodes] entry that sets names and datacode(s). Required.",
+            "register": "Comma-separated register numbers, 1-based, decimal or hex such as 0xA001. One per name in the node's rx section."
+        }
+    }
 
     def __init__(self, name, modbus_IP='192.168.1.10', modbus_port=0):
         """Initialize Interfacer

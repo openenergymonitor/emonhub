@@ -22,6 +22,18 @@ Redis interfacer for use in development
 """
 
 class EmonHubRedisInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "redis_host": "Redis server hostname or IP address. Default localhost.",
+            "redis_port": "Redis server port. Default 6379.",
+            "redis_db": "Redis database number. Default 0."
+        },
+        "runtime": {
+            "prefix": "Prefix for Redis keys, joined with a colon to form prefix:nodeid:name. Default empty."
+        }
+    }
 
     def __init__(self, name, redis_host='localhost', redis_port=6379, redis_db=0):
         """Initialize Interfacer

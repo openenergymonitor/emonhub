@@ -11,6 +11,22 @@ Monitors the serial port for data from "Jee" type device
 """
 
 class EmonHubJeeInterfacer(ehi.EmonHubSerialInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the RFM69Pi or emonPi radio board, e.g. /dev/ttyAMA0. Default /dev/ttyAMA0.",
+            "com_baud": "Serial baud rate of the radio board. 38400 for RFM69Pi and emonPi, 9600 for old RFM12Pi boards. Default 38400."
+        },
+        "runtime": {
+            "datacode": "Default datacode for decoding radio packets from nodes without datacodes in [nodes]. Accepts 0, b, B, h, H, l, L or f. Default h.",
+            "baseid": "Radio node id of the receiving board, 1 to 26. Default 15.",
+            "frequency": "Radio frequency in MHz: 433, 868 or 915. Must match the other nodes. Default 433.",
+            "group": "Radio network group, 0 to 250. Must match the other nodes. Default 210.",
+            "quiet": "true stops the radio board reporting corrupted packets, false reports them. Default true.",
+            "calibration": "Mains voltage calibration sent to the radio board: 230V (UK/EU) or 110V (US). Default 230V."
+        }
+    }
 
     def __init__(self, name, com_port='/dev/ttyAMA0', com_baud=38400):
         """Initialize Interfacer

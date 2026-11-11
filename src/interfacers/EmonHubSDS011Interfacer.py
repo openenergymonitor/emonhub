@@ -26,6 +26,18 @@ https://pypi.org/project/sds011/
 """
 
 class EmonHubSDS011Interfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the SDS011 sensor, e.g. /dev/ttyUSB0.",
+            "readinterval": "Currently has no effect. Use readinterval under runtimesettings."
+        },
+        "runtime": {
+            "nodename": "Node name for the pm_25, pm_10 and msg inputs. Default SDS011.",
+            "readinterval": "Time between readings in minutes. 0 reads every 5 seconds. Sensor sleeps between readings above 30 seconds. Default 5."
+        }
+    }
 
     def __init__(self, name, com_port="", readinterval=5):
         """Initialize Interfacer"""

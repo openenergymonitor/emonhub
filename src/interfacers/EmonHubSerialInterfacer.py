@@ -10,6 +10,14 @@ Monitors the serial port for data
 """
 
 class EmonHubSerialInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the device, e.g. /dev/ttyUSB0. Device must send lines of space-separated values with the node id first.",
+            "com_baud": "Serial baud rate, to match the connected device. Default 9600."
+        }
+    }
 
     def __init__(self, name, com_port='', com_baud=9600):
         """Initialize interfacer

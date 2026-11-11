@@ -11,6 +11,20 @@ from emonhub_interfacer import EmonHubInterfacer
 import emonhub_version
 
 class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "interval": "Seconds between bulk posts to emoncms. Default 30. Repeated failures back off up to 600 seconds.",
+            "batchsize": "Maximum number of buffered frames sent in one post. Default 1000, upper limit 1000.",
+            "apikey": "Emoncms write API key, 32 characters. Buffered data is discarded while no valid key is set.",
+            "url": "Emoncms server address, starting with http or https. Default http://emoncms.org.",
+            "senddata": "Set to 1 to post input data to <url>/input/bulk.json. Default 1.",
+            "sendstatus": "Set to 1 to ping the emoncms myip module with the hub's address. Only sent when senddata is 0. Default 0.",
+            "sendnames": "Set to 1 to send node names and input names with each value. Enables compress. Default 0.",
+            "compress": "Set to 1 to zlib compress the post body when this reduces its size. Default 0."
+        }
+    }
 
     def __init__(self, name):
         # Initialization

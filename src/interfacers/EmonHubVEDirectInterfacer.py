@@ -10,6 +10,17 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
 
     """
 
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the Victron VE.Direct cable, e.g. /dev/ttyUSB0.",
+            "com_baud": "Serial baud rate. VE.Direct uses 19200. Default 9600.",
+            "toextract": "Comma-separated list of VE.Direct field labels to read, e.g. V,I,SOC. Order must match the input names in [nodes]. ON/OFF values become 1/0.",
+            "poll_interval": "Time between readings in seconds. Default 30."
+        }
+    }
+
 
     WAIT_HEADER, IN_KEY, IN_VALUE, IN_CHECKSUM = range(4)
 

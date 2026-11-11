@@ -95,6 +95,24 @@ SDM120 interfacer for use in development
 """
 
 class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "device": "Serial device of the RS485 adapter, e.g. /dev/ttyUSB0. Trailing * matches any port starting with that path. Default /dev/modbus.",
+            "device_vid": "Optional USB vendor ID filter, as a decimal number.",
+            "device_pid": "Optional USB product ID filter, as a decimal number.",
+            "baud": "Modbus baud rate, e.g. 2400 or 9600. Default 2400.",
+            "parity": "Serial parity: none, even, odd, mark or space. Default none.",
+            "datatype": "Default register type: float (32-bit over two registers, function code 4) or int (signed 16-bit, function code 3). Default float."
+        },
+        "runtime": {
+            "read_interval": "Seconds between readings, aligned to the clock. Default 10.",
+            "nodename": "Node name for published inputs. Default sdm120.",
+            "prefix": "Text added before each input name, which is prefix + meter name + _ + register name. Default empty.",
+            "meters": "Subsection with one [[[[[name]]]]] block per meter: address, registers, names, precision, scales, datatypes, functioncodes, byteorder."
+        }
+    }
 
     def __init__(self, name, device="/dev/modbus", device_vid=False, device_pid=False, baud=2400, parity="none", datatype="float"):
         """Initialize Interfacer

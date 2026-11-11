@@ -197,6 +197,17 @@ def extract_values(regParams, editParams, params_map):
     return data, missing
 
 class EmonHubEconet300Interfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "host": "Hostname or IP address of the ecoNET 300 bridge. Required.",
+            "username": "HTTP basic auth username for the bridge. Required.",
+            "password": "HTTP basic auth password for the bridge. Required.",
+            "pollinterval": "Seconds between successful polls. After an error the bridge is polled again in 10 seconds. Required.",
+            "nodeid": "Node id for the heat pump inputs. Default 30."
+        }
+    }
 
     def __init__(self, name, host, username, password, pollinterval, nodeid=30):
         """Initialize the Econet300 interfacer.

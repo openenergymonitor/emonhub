@@ -23,6 +23,18 @@ Monitors BMW i3 car metrics via BMW API
 """
 
 class EmonHubBMWInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "bmwapiusername": "Username for the BMW ConnectedDrive website.",
+            "bmwapipassword": "Password for the BMW ConnectedDrive website.",
+            "tempcredentialfile": "File that caches the API access token across restarts. Default /tmp/bmwcredentials.json.",
+            "timeinverval": "Seconds between API reads while the car is not charging. Default 600.",
+            "duringchargetimeinterval": "Seconds between API reads while the car is charging. Default 60.",
+            "nodeid": "Node id for the car inputs. Default 28."
+        }
+    }
 
     ROOT_URL = "https://www.bmw-connecteddrive.co.uk"
     USER_AGENT = "MCVApp/1.5.2 (iPhone; iOS 9.1; Scale/2.00)"

@@ -13,6 +13,17 @@ Monitors the serial port for data from 'Serial Format 2' type devices
 """
 
 class EmonHubSunampInterfacer(ehi.EmonHubSerialInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "com_port": "Serial port of the Sunamp heat battery controller. Default /dev/ttyUSB0.",
+            "com_baud": "Serial baud rate of the Sunamp controller. Default 115200."
+        },
+        "runtime": {
+            "nodename": "Node name for the inputs. Defaults to the interfacer name."
+        }
+    }
 
     def __init__(self, name, com_port='/dev/ttyUSB0', com_baud=115200):
         """Initialize Interfacer

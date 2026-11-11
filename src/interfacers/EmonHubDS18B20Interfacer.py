@@ -65,6 +65,16 @@ DS18B20 interfacer for use in development
 """
 
 class EmonHubDS18B20Interfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "read_interval": "Time between readings in seconds, aligned to the clock. Default 10.",
+            "nodename": "Node name for the temperature inputs. Default sensors.",
+            "ids": "Comma-separated sensor ids, e.g. 28-000008e2db06. Paired by position with names. Unlisted sensors use their id as input name.",
+            "names": "Comma-separated input names, in the same order as ids."
+        }
+    }
 
     def __init__(self, name):
         """Initialize Interfacer

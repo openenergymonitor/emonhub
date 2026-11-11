@@ -11,6 +11,40 @@ import time
 import logging
 from configobj import ConfigObj
 
+# Descriptions of settings, shown in the emoncms config editor.
+# Plain strings only, read without importing this module.
+settings_info = {
+    "hub": {
+        "loglevel": "Detail written to emonhub.log: DEBUG, INFO, WARNING, ERROR or CRITICAL. Applied without a restart.",
+        "autoconf": "Adds known nodes to [nodes] from templates in available.conf when they first send data. 1 on, 0 off. Restart emonhub after changing.",
+        "use_syslog": "Also sends log messages to syslog when set to yes. Read at start-up, so restart emonhub after changing.",
+        "log_backup_count": "Number of old log files kept when emonhub.log is rotated. Default 1.",
+        "log_max_bytes": "Size at which emonhub.log is rotated, in bytes. Default 5120000."
+    },
+    "node": {
+        "nodename": "Name used for this node's inputs in emoncms, in place of the node ID.",
+        "nodeids": "Only used in autoconf templates in available.conf to match node IDs. No effect here.",
+        "datalength": "Only used in autoconf templates in available.conf to match data length. No effect here."
+    },
+    "rx": {
+        "names": "Input names, one per value, in the order the values are received.",
+        "datacodes": "Datacode for each value, giving its binary type. Total size must match the received data length or the frame is discarded.",
+        "datacode": "Single datacode used for every value when datacodes is not set.",
+        "scales": "Multiplier for each value, e.g. 0.01 turns 2345 into 23.45. Count must match the number of values.",
+        "scale": "Single multiplier used for every value when scales is not set.",
+        "units": "Unit for each value. Not read by emonhub at present, kept for reference and node templates.",
+        "whitening": "Undoes radio data whitening by XOR with 0x55 on each byte. Set to 1 to enable."
+    },
+    "tx": {
+        "names": "Names of the values sent to this node. Not read by emonhub at present, kept for reference.",
+        "datacodes": "Datacode for each value sent, giving its binary type.",
+        "datacode": "Single datacode used for every value sent when datacodes is not set.",
+        "scales": "Divisor for each value before sending, the reverse of the rx scales.",
+        "scale": "Single divisor used for every value sent when scales is not set.",
+        "units": "Unit for each value. Not read by emonhub at present, kept for reference."
+    }
+}
+
 """class EmonHubSetup
 
 User interface to setup the hub.

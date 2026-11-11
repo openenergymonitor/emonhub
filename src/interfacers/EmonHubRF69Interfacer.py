@@ -131,6 +131,17 @@ def crc16_update(crc, byte):
 
 
 class EmonHubRF69Interfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "init": {
+            "nodeid": "Radio node id of this receiver, 1 to 63. Use 63 to receive packets for all nodes. Only used with format 2. Required, typically 5.",
+            "group": "Radio network group, 0 to 255. Must match the transmitting nodes. Required, typically 210.",
+            "format": "Packet format of the transmitting nodes: 1 for JeeLib classic (hardware up to Nov 2022), 2 for JeeLib native. Default 2.",
+            "selPin": "Radio chip select pin, Raspberry Pi BOARD (physical) numbering. 16 on emonPi2, emonPi3 and emonHP, 26 on emonBase RFM69 SPI. Default 16.",
+            "resetPin": "Radio reset pin, BOARD numbering, e.g. 24 on emonPi2. Leave unset if the hardware has no reset line. Default none."
+        }
+    }
 
     def __init__(self, name, nodeid, group, format=JEELIB_NATIVE, selPin=16, resetPin=None):
         """Initialize Interfacer

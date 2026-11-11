@@ -20,6 +20,18 @@ Fetch GoodWe state of charge and other variables
 """
 
 class EmonHubGoodWeInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "name": "Node name for the inverter inputs in emoncms. Default goodwe.",
+            "ip": "Inverter IP address on the local network. Nothing is read until set.",
+            "port": "Inverter UDP port. Default 8899.",
+            "timeout": "Seconds to wait for each inverter reply. Default 2. Value is passed on as text, so setting it may stop readings.",
+            "retries": "Number of retries when the inverter does not reply. Default 3. Value is passed on as text, so setting it may stop readings.",
+            "readinterval": "Seconds between readings. Default 10."
+        }
+    }
 
     def __init__(self, name):
         super().__init__(name)

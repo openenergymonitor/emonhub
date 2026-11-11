@@ -5,6 +5,17 @@ import socket
 from emonhub_interfacer import EmonHubInterfacer
 
 class EmonHubGraphiteInterfacer(EmonHubInterfacer):
+    # Descriptions of settings, shown in the emoncms config editor.
+    # Plain strings only, read without importing this module.
+    settings_info = {
+        "runtime": {
+            "interval": "Seconds between posts to Graphite. Default 30.",
+            "batchsize": "Maximum number of buffered frames sent in one post. Default 100, upper limit 250.",
+            "graphite_host": "Graphite server hostname or IP address. Default localhost. Do not add a trailing comma.",
+            "graphite_port": "Graphite plaintext TCP port. Default 2003.",
+            "prefix": "First part of each metric path, e.g. emonpi.emontx.power1. Default emonpi."
+        }
+    }
 
     def __init__(self, name):
         # Initialization
