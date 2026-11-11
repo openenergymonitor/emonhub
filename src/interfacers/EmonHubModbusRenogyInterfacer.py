@@ -21,7 +21,7 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
     settings_info = {
         "init": {
             "com_port": "Serial port of the Renogy Rover USB cable. Default /dev/ttyUSB0.",
-            "com_baud": "Modbus serial baud rate, typically 9600. Set it explicitly, as the built-in default fails to connect.",
+            "com_baud": "Modbus serial baud rate. Default 9600.",
             "toextract": "Currently has no effect. Values read are fixed: BatteryPercent, Charging_Stage, BatteryTemp_F, SolarVoltage, SolarCurrent, SolarPower, PowerGenToday.",
             "poll_interval": "Currently has no effect. Use the interval runtime setting to set the time between readings."
         }
@@ -68,7 +68,7 @@ class EmonHubModbusRenogyInterfacer(EmonHubInterfacer):
         
         try:
             self._modcon = False
-            self._log.info("Starting Modbus client on " + com_port + " at " + com_baud)
+            self._log.info("Starting Modbus client on " + str(com_port) + " at " + str(com_baud))
             # Connect to the controller and get values
             client = ModbusClient(method = 'rtu', port = com_port, baudrate = int(com_baud), stopbits = 1, bytesize = 8, parity = 'N')
             client.connect()

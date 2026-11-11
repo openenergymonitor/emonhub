@@ -41,7 +41,7 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
             "prefix": "Text added before each input name. Default empty.",
             "datafields": "Comma-separated sdm_modbus SDM120 fields to read, e.g. voltage,power_active,import_energy_active.",
             "names": "Comma-separated input names, in the same order as datafields. Field name is used where none is given.",
-            "precision": "Comma-separated decimal places, in the same order as datafields. Setting it here causes a read error, leave unset to use the defaults."
+            "precision": "Comma-separated decimal places, in the same order as datafields."
         }
     }
 
@@ -169,8 +169,10 @@ class EmonHubSDM120Interfacer(EmonHubInterfacer):
                 self._settings[key] = setting
                 continue
             elif key == 'precision':
+                if isinstance(setting, str):
+                    setting = [setting]
                 self._log.info("Setting %s precision: %s", self.name, ",".join(map(str,setting)))
-                self._settings[key] = setting
+                self._settings[key] = [int(p) for p in setting]
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)

@@ -38,7 +38,7 @@ class EmonHubInterfacer(threading.Thread):
     # Plain strings only, read without importing this module.
     settings_info = {
         "runtime": {
-            "pause": "Stops sending data on when set to out or all. Values: off, in, out, all. in is accepted but currently has no effect.",
+            "pause": "Pauses the interfacer: in stops reading, out stops sending, all stops both. Default off.",
             "interval": "Minimum time between sends from the buffer, in seconds. 0 sends on every loop.",
             "datacode": "Default datacode for decoding nodes that have no datacode or datacodes under [nodes]. 0 passes values through without decoding.",
             "scale": "Default scale for nodes that have no scale or scales under [nodes].",
@@ -117,8 +117,9 @@ class EmonHubInterfacer(threading.Thread):
         """
         while not self.stop:
 
-            # Only read if there is a pub channel defined for the interfacer
-            if len(self._settings["pubchannels"]):
+            # Only read if there is a pub channel and input is not paused
+            if len(self._settings["pubchannels"]) \
+                    and str(self._settings['pause']).lower() not in ['all', 'in']:
                 # Read the input and process data if available
                 rxc = self.read()
                 if rxc:

@@ -17,7 +17,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
             "interval": "Seconds between requests for the polling interval set in the emoncms PacketGen module. 0 disables them. Default 5.",
             "datacode": "Datacode used to decode packet values. Default b (signed byte).",
             "apikey": "Emoncms API key for PacketGen module requests, 32 characters.",
-            "url": "Emoncms server root, e.g. http://localhost. /emoncms/packetgen/ is appended to it. Default http://localhost/emoncms."
+            "url": "Emoncms server root, e.g. http://localhost. /emoncms/packetgen/ is appended to it. Default http://localhost."
         }
     }
 
@@ -32,7 +32,7 @@ class EmonHubPacketGenInterfacer(EmonHubInterfacer):
         self._control_timestamp = 0
         self._control_interval = 5
         self._defaults.update({'interval': 5, 'datacode': 'b'})
-        self._pg_settings = {'apikey': "", 'url': 'http://localhost/emoncms'}
+        self._pg_settings = {'apikey': "", 'url': 'http://localhost'}
         self._settings.update(self._pg_settings)
 
     def read(self):

@@ -36,7 +36,7 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
     # Plain strings only, read without importing this module.
     settings_info = {
         "init": {
-            "pins": "GPIO pins to read, BOARD (physical) numbering, comma-separated. Add a trailing comma for a single pin, e.g. 13,",
+            "pins": "GPIO pins to read, BOARD (physical) numbering, comma-separated, e.g. 13, 15.",
             "invert": "1 inverts the reported pin state, 0 reports it as read. Default 0."
         },
         "runtime": {
@@ -57,6 +57,8 @@ class EmonHubDigitalInputInterfacer(EmonHubInterfacer):
 
         # Pins is already a list e.g ['13','15']
         # convert to list of integers
+        if isinstance(pins, str):
+            pins = [pins]
         pins = [int(p) for p in pins]
 
         self._settings.update({

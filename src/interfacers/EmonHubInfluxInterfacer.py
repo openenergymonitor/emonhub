@@ -11,14 +11,14 @@ class EmonHubInfluxInterfacer(EmonHubInterfacer):
         "init": {
             "influx_host": "InfluxDB server hostname or IP address. Default localhost.",
             "influx_interval": "Default seconds between posts to InfluxDB. A runtime interval setting overrides it. Default 30.",
-            "influx_port": "InfluxDB HTTP port. Default 8086, set it explicitly as the built-in default causes an error.",
+            "influx_port": "InfluxDB HTTP port. Default 8086.",
             "influx_user": "InfluxDB username. Default emoncms.",
             "influx_passwd": "InfluxDB password. Default emoncmspw.",
             "influx_db": "InfluxDB 1.x database to write to. Default emoncms."
         },
         "runtime": {
             "batchsize": "Maximum number of buffered frames sent in one post. Default 100, upper limit 250.",
-            "prefix": "Currently has no effect. Prefix tag is always written as 'prefix'."
+            "prefix": "Value of the prefix tag written with each point. Default prefix."
         }
     }
 
@@ -113,7 +113,7 @@ class EmonHubInfluxInterfacer(EmonHubInterfacer):
         """
 
         host = self.init_settings['influx_host'].strip("[']")
-        port = int(self.init_settings['influx_port'].strip("[']"))
+        port = int(str(self.init_settings['influx_port']).strip("[']"))
         url = "http://" + host + ":" + str(port) + "/write"
         self._log.debug("Influx target: %s", url)
         message = '\n'.join(metrics) + '\n'
@@ -138,8 +138,8 @@ class EmonHubInfluxInterfacer(EmonHubInterfacer):
                 setting = self._influx_settings[key]
             if key in self._settings and self._settings[key] == setting:
                 continue
-            else:
-                self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)
+            self._log.info("Setting %s %s: %s", self.name, key, setting)
+            self._settings[key] = setting
 
     """
     def set(self, **kwargs):

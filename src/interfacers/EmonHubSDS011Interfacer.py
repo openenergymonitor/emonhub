@@ -31,11 +31,11 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
     settings_info = {
         "init": {
             "com_port": "Serial port of the SDS011 sensor, e.g. /dev/ttyUSB0.",
-            "readinterval": "Currently has no effect. Use readinterval under runtimesettings."
+            "readinterval": "Time between readings in minutes, used unless readinterval is set under runtimesettings. Default 5."
         },
         "runtime": {
             "nodename": "Node name for the pm_25, pm_10 and msg inputs. Default SDS011.",
-            "readinterval": "Time between readings in minutes. 0 reads every 5 seconds. Sensor sleeps between readings above 30 seconds. Default 5."
+            "readinterval": "Time between readings in minutes. 0 reads every 5 seconds. Sensor sleeps between readings above 30 seconds. Defaults to the init_settings value."
         }
     }
 
@@ -53,7 +53,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
 
         self._settings.update(self._defaults)
 
-        self._template_settings = {'nodename': 'SDS011', 'readinterval': 5}
+        self._template_settings = {'nodename': 'SDS011', 'readinterval': readinterval}
 
         ### GLOBALS ###
         self.previous_time = time.time()
@@ -63,7 +63,7 @@ class EmonHubSDS011Interfacer(EmonHubInterfacer):
         self.sensor_waking = False
         self.timenow = time.time()
         self.count = 0
-        self.readinterval = readinterval * 60 # convert to seconds.
+        self.readinterval = int(readinterval) * 60 # convert to seconds.
 
         ### INIT COM PORT ###
         try:

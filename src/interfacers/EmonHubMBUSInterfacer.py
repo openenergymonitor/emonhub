@@ -42,12 +42,12 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
             "device_vid": "Optional USB vendor ID filter, as a decimal number, e.g. 1659.",
             "device_pid": "Optional USB product ID filter, as a decimal number.",
             "baud": "M-Bus baud rate, typically 2400 or 4800. Default 2400.",
-            "use_meterbus_lib": "Parse frames with the pyMeterBus library when set. Any non-empty value enables it, including false. Leave unset to disable."
+            "use_meterbus_lib": "Set to 1 or true to parse frames with the pyMeterBus library. Default off."
         },
         "runtime": {
             "read_interval": "Seconds between readings, aligned to the clock. Default 10.",
             "nodename": "Node name for published inputs. Default MBUS.",
-            "validate_checksum": "Discard frames with a bad checksum. Only the exact value False disables it. Default True.",
+            "validate_checksum": "Discards frames with a bad checksum. Set to 0 or false to disable. Default on.",
             "meters": "Subsection with one [[[[[name]]]]] block per meter, each with address (default 1) and type: standard, qalcosonic_e3, sontex531, sdm120, kamstrup403 or kamstrup402."
         }
     }
@@ -85,7 +85,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
         # If use_meterbus_lib is true, try to load module
         # pip3 install pyMeterBus
         self.use_meterbus_lib = False
-        if use_meterbus_lib:
+        if str(use_meterbus_lib).lower() in ['1', 'true', 'yes', 'on']:
             try:
                 from pyMeterBus import meterbus
                 self.meterbus = meterbus
@@ -680,9 +680,7 @@ class EmonHubMBUSInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'validate_checksum':
                 self._log.info("Setting %s validate_checksum: %s", self.name, setting)
-                self._settings[key] = True
-                if setting=='False': 
-                    self._settings[key] = False
+                self._settings[key] = str(setting).lower() not in ['0', 'false', 'no', 'off']
                 continue
             elif key == 'meters':
                 self._log.info("Setting %s meters: %s", self.name, json.dumps(setting))            

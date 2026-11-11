@@ -27,8 +27,8 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
             "name": "Node name for the inverter inputs in emoncms. Default goodwe.",
             "ip": "Inverter IP address on the local network. Nothing is read until set.",
             "port": "Inverter UDP port. Default 8899.",
-            "timeout": "Seconds to wait for each inverter reply. Default 2. Value is passed on as text, so setting it may stop readings.",
-            "retries": "Number of retries when the inverter does not reply. Default 3. Value is passed on as text, so setting it may stop readings.",
+            "timeout": "Seconds to wait for each inverter reply. Default 2.",
+            "retries": "Number of retries when the inverter does not reply. Default 3.",
             "readinterval": "Seconds between readings. Default 10."
         }
     }
@@ -115,15 +115,15 @@ class EmonHubGoodWeInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'port':
                 self._log.info("Setting %s %s: %s", self.name, key, setting)
-                self._settings[key] = setting
+                self._settings[key] = int(setting)
                 continue
             elif key == 'timeout':
                 self._log.info("Setting %s %s: %s", self.name, key, setting)
-                self._settings[key] = setting
+                self._settings[key] = float(setting)
                 continue
             elif key == 'retries':
                 self._log.info("Setting %s %s: %s", self.name, key, setting)
-                self._settings[key] = setting
+                self._settings[key] = int(setting)
                 continue
             else:
                 self._log.warning("'%s' is not valid for %s: %s", setting, self.name, key)

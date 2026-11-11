@@ -32,7 +32,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
             "inverterpincode": "Inverter PIN code, up to 12 digits. Default 0000.",
             "timeinverval": "Seconds between readings. Default 10.",
             "nodeid": "Node id for the inverter inputs. Default 29.",
-            "packettrace": "Logs Bluetooth packets at debug level. Any non-empty value enables it, including 0. Leave unset to disable."
+            "packettrace": "Set to 1 or true to log Bluetooth packets at debug level. Default off."
         }
     }
 
@@ -50,7 +50,7 @@ class EmonHubSMASolarInterfacer(EmonHubInterfacer):
         self._btRetrySleepTime = 10
         self.no_bluetooth_reported = False
 
-        self._packettrace = bool(packettrace)
+        self._packettrace = str(packettrace).lower() in ['1', 'true', 'yes', 'on']
 
         # seems a hack & needs explaining why we need this
         self.MySerialNumber = bytearray([0x08, 0x00, 0xaa, 0xbb, 0xcc, 0xdd])
