@@ -20,7 +20,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             "apikey": "Emoncms write API key, 32 characters. Buffered data is discarded while no valid key is set.",
             "url": "Emoncms server address, starting with http or https. Default http://emoncms.org.",
             "senddata": "Set to 1 to post input data to <url>/input/bulk.json. Default 1.",
-            "sendstatus": "Set to 1 to send the hub's address to the emoncms myip module, at most once a minute. Default 0.",
             "sendnames": "Set to 1 to send node names and input names with each value. Enables compress. Default 0.",
             "compress": "Set to 1 to zlib compress the post body when this reduces its size. Default 0."
         }
@@ -43,7 +42,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
             'apikey': "",
             'url': "http://emoncms.org",
             'senddata': 1,
-            'sendstatus': 0,
             'sendnames': 0,
             'compress': 0
         }
@@ -57,7 +55,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         # Retry backoff state, see _schedule_retry
         self._retry_not_before = 0
         self._consecutive_failures = 0
-        self._last_status = 0
         # Longest a failing post will wait before trying again, and equally the
         # posting interval at or above which backing off is not worth doing.
         # See _schedule_retry.
@@ -321,18 +318,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
         if time.time() < self._retry_not_before:
             return False
 
-        # Status to the emoncms myip module, at most once a minute
-        if self._settings['sendstatus'] and time.time() - self._last_status >= 60:
-            self._last_status = time.time()
-            post_url = self._settings['url'] + '/myip/set.json?apikey='
-            self._log.info("sending: " + post_url + "E-M-O-N-C-M-S-A-P-I-K-E-Y")
-            post_url = post_url + self._settings['apikey']
-            try:
-                reply = self.session.get(post_url, timeout=60)
-                reply.raise_for_status()
-            except requests.exceptions.RequestException as ex:
-                self._log.warning("%s couldn't send myip status update to server: %s", self.name, ex)
-
         if self._settings['senddata']:
             number_of_frames = len(databuffer)
             
@@ -469,10 +454,6 @@ class EmonHubEmoncmsHTTPInterfacer(EmonHubInterfacer):
                 continue
             elif key == 'senddata':
                 self._log.info("Setting %s senddata: %s", self.name, setting)
-                self._settings[key] = int(setting)
-                continue
-            elif key == 'sendstatus':
-                self._log.info("Setting %s sendstatus: %s", self.name, setting)
                 self._settings[key] = int(setting)
                 continue
             elif key == 'sendnames':
