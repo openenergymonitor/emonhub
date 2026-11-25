@@ -46,6 +46,7 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         self.bytes_sum = 0
         self.state = self.WAIT_HEADER
         self.dict = {}
+        self.in_hex = False
 
         # Parser requirements
         self._extract = toextract
@@ -61,6 +62,15 @@ class EmonHubVEDirectInterfacer(EmonHubInterfacer):
         Return None if more data is needed, return an empty dict if the
         checksum was wrong, return a dict of valid data otherwise.
         """
+        # HEX replies can interrupt text anywhere. They are not included
+        # in the text checksum; the checksum byte itself may also be ':'.
+        if not self.in_hex and self.state != self.IN_CHECKSUM and byte == b':':
+            self.in_hex = True
+        if self.in_hex:
+            if byte == b'\n':
+                self.in_hex = False
+            return None
+
         self.bytes_sum += ord(byte)
         if self.state == self.WAIT_HEADER:
             if byte == self.header1:
