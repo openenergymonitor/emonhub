@@ -35,7 +35,7 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
         self._ser = self._open_serial_port(com_port, com_baud)
 
         # Initialize RX buffer
-        self._rx_buf = ''
+        self._rx_buf = b''
 
     def close(self):
         """Close serial port"""
@@ -79,17 +79,23 @@ class EmonHubSerialInterfacer(EmonHubInterfacer):
             return False
 
         # Read serial RX
-        self._rx_buf = self._rx_buf + self._ser.readline().decode()
+        self._rx_buf = self._rx_buf + self._ser.readline()
 
         # If line incomplete, exit
-        if '\r\n' not in self._rx_buf:
+        if b'\r\n' not in self._rx_buf:
             return
 
         # Remove CR,LF
         f = self._rx_buf[:-2]
 
         # Reset buffer
-        self._rx_buf = ''
+        self._rx_buf = b''
+
+        try:
+            f = f.decode()
+        except UnicodeDecodeError:
+            self._log.warning("Discarding serial line with invalid UTF-8")
+            return False
 
         # Create a Payload object
         c = Cargo.new_cargo(rawdata=f)
