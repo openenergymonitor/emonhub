@@ -110,7 +110,10 @@ class EmonHubMqttInterfacer(EmonHubInterfacer):
 
         self._connected = False
 
-        self._mqttc = mqtt.Client()
+        if hasattr(mqtt, 'CallbackAPIVersion'):
+            self._mqttc = mqtt.Client(callback_api_version=mqtt.CallbackAPIVersion.VERSION1)
+        else:
+            self._mqttc = mqtt.Client()
         self._mqttc.on_connect = self.on_connect
         self._mqttc.on_disconnect = self.on_disconnect
         self._mqttc.on_message = self.on_message
