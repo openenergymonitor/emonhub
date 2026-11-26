@@ -9,6 +9,7 @@
 
 import time
 import logging
+import os
 from configobj import ConfigObj
 import emonhub_coder as ehc
 """class EmonHubAutoConf
@@ -46,12 +47,14 @@ def match_from_available(nodeid,realdata):
 class EmonHubAutoConf:
     
     def __init__(self,settings):
-        filename = "/opt/openenergymonitor/emonhub/conf/available.conf"
+        filename = os.path.join(os.path.dirname(os.path.realpath(__file__)),
+                                "..", "conf", "available.conf")
     
         # Initialize logger
         self._log = logging.getLogger("EmonHub")
         
         self.enabled = False
+        self.available = {}
         
         if 'autoconf' in settings['hub']:
             if int(settings['hub']['autoconf'])==1:
@@ -62,7 +65,8 @@ class EmonHubAutoConf:
         if self.enabled:
             self._log.debug("Automatic configuration of nodes enabled")
         else:
-            self._log.debug("Automatic configuration of nodes disabled")    
+            self._log.debug("Automatic configuration of nodes disabled")
+            return
                    
         # Initialize attribute settings as a ConfigObj instance
         try:
