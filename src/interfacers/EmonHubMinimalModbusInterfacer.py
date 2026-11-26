@@ -104,7 +104,7 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
             "device_pid": "Optional USB product ID filter, as a decimal number.",
             "baud": "Modbus baud rate, e.g. 2400 or 9600. Default 2400.",
             "parity": "Serial parity: none, even, odd, mark or space. Default none.",
-            "datatype": "Default register type: float (32-bit over two registers, function code 4) or int (signed 16-bit, function code 3). Default float."
+            "datatype": "Default register type: float (32-bit over two registers, function code 4) or int/uint (signed/unsigned 16-bit, function code 3). Default float."
         },
         "runtime": {
             "read_interval": "Seconds between readings, aligned to the clock. Default 10.",
@@ -274,14 +274,14 @@ class EmonHubMinimalModbusInterfacer(EmonHubInterfacer):
                                 curr_datatype = self._settings['meters'][meter]['datatypes'][i]
 
                             if self._settings['meters'][meter]['functioncodes'] == []:
-                                curr_functioncode = 3 if curr_datatype == 'int' else 4
+                                curr_functioncode = 3 if curr_datatype in ('int', 'uint') else 4
                             else:
                                 curr_functioncode = self._settings['meters'][meter]['functioncodes'][i]
 
                             try:
-                                if curr_datatype == 'int':
+                                if curr_datatype in ('int', 'uint'):
                                     time.sleep(0.1)
-                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=curr_functioncode, signed=True)
+                                    value = self._rs485.read_register(int(self._settings['meters'][meter]['registers'][i]), functioncode=curr_functioncode, signed=(curr_datatype == 'int'))
                                         
                                 elif curr_datatype == 'float':
                                     time.sleep(0.1)

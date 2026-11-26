@@ -148,6 +148,13 @@ The [SDM120-Modbus-MID](https://shop.openenergymonitor.com/sdm120-modbus-mid-45a
 
 2\. Login to the local copy of Emoncms running on the emonPi/emonBase and navigate to Setup > EmonHub. Click on 'Edit Config' and add the following config to the interfacers section to enable reading from the SDM120 meter:
 
+**Register types:** `EmonHubMinimalModbusInterfacer` accepts `datatype = float`
+(the default, two registers), `int` (signed 16-bit), or `uint` (unsigned 16-bit,
+0–65535) in `init_settings`. A meter's `datatypes` list can override the type
+for each register. Both integer types default to function code 3; use the
+meter's `functioncodes` list for input registers (function code 4). Existing
+`int` configurations keep their signed interpretation.
+
 **read_interval:** Interval between readings in seconds
 
 Example single SDM120 / SDM230 EmonHub (V2.3.4+) configuration:
